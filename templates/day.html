@@ -24,11 +24,70 @@
     <h2 class="day-title">{{ day.title }}</h2>
     {% if day.location %}
     <span class="location-badge">{{ day.location.name }}</span>
+    {% if day.location.vibe %}
+    <div class="location-vibe">{{ day.location.vibe }}</div>
+    {% endif %}
     {% endif %}
     {% if day.is_buffer_day %}
     <span class="buffer-badge">Buffer Day</span>
     {% endif %}
 </header>
+
+<!-- Transport to this location (travel days) -->
+{% if transport_routes %}
+<section class="transport-banner">
+    <h3 class="slot-heading">&#x1f686; Getting Here</h3>
+    {% for route in transport_routes %}
+    <div class="transport-card">
+        <div class="transport-icon">
+            {% if 'Shinkansen' in route.transport_type %}&#x1f685;{% elif 'Bus' in route.transport_type %}&#x1f68c;{% elif 'Ferry' in route.transport_type %}&#x26f4;{% else %}&#x1f686;{% endif %}
+        </div>
+        <div class="transport-details">
+            <div class="transport-route-text">{{ route.route_from }} &rarr; {{ route.route_to }}</div>
+            <div class="transport-meta">
+                {{ route.transport_type }}{% if route.train_name %} &middot; {{ route.train_name }}{% endif %}{% if route.duration %} &middot; {{ route.duration }}{% endif %}
+            </div>
+        </div>
+        <div class="transport-badges">
+            {% if route.jr_pass_covered %}
+            <span class="jr-badge">JR</span>
+            {% elif route.cost_if_not_covered %}
+            <span class="transport-cost">{{ route.cost_if_not_covered }}</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<!-- Flights on this day -->
+{% if day_flights %}
+<section class="day-flights-section">
+    <h3 class="slot-heading">&#x2708; Flights Today</h3>
+    {% for flight in day_flights %}
+    <div class="flight-card-tripit compact">
+        <div class="flight-card-header">
+            <span class="flight-airline">{{ flight.airline }}</span>
+            <span class="flight-number">{{ flight.flight_number }}</span>
+        </div>
+        <div class="flight-route-visual">
+            <div class="flight-endpoint">
+                <div class="flight-time">{{ flight.depart_time or '--:--' }}</div>
+                <div class="flight-airport">{{ flight.route_from }}</div>
+            </div>
+            <div class="flight-connector">
+                <div class="flight-line"></div>
+                {% if flight.duration %}<div class="flight-duration-label">{{ flight.duration }}</div>{% endif %}
+            </div>
+            <div class="flight-endpoint">
+                <div class="flight-time">{{ flight.arrive_time or '--:--' }}</div>
+                <div class="flight-airport">{{ flight.route_to }}</div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
 
 <!-- Activities grouped by time slot -->
 {% set slots = ['morning', 'afternoon', 'evening', 'night'] %}
@@ -51,7 +110,13 @@
             </label>
             <div class="activity-content">
                 <div class="activity-title-row">
+                    {% if activity.start_time %}
+                    <span class="activity-start-time">{{ activity.start_time }}</span>
+                    {% endif %}
                     <span class="activity-title">{{ activity.title }}</span>
+                    {% if activity.cost_per_person %}
+                    <span class="cost-badge">&yen;{{ activity.cost_per_person | int }}</span>
+                    {% endif %}
                     {% if activity.jr_pass_covered %}
                     <span class="jr-badge" title="Covered by JR Pass">JR</span>
                     {% endif %}

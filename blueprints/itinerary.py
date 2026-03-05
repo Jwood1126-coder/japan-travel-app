@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, jsonify, request
-from models import db, Day, Activity, Trip, Location, BudgetItem, Flight
+from models import db, Day, Activity, Trip, Location, BudgetItem, Flight, TransportRoute
 from datetime import datetime, date
 
 itinerary_bp = Blueprint('itinerary', __name__)
@@ -57,8 +57,32 @@ def day_view(day_number):
     total_days = Day.query.count()
     prev_day = day_number - 1 if day_number > 1 else None
     next_day = day_number + 1 if day_number < total_days else None
+
+    # Transport routes: find routes for travel days (location changed from previous day)
+    transport_routes = []
+    if day.location:
+        prev_day_obj = Day.query.filter_by(day_number=day_number - 1).first() if day_number > 1 else None
+        if prev_day_obj and prev_day_obj.location and prev_day_obj.location.name != day.location.name:
+            prev_loc = prev_day_obj.location.name
+            cur_loc = day.location.name
+            routes = TransportRoute.query.filter_by(route_from=prev_loc, route_to=cur_loc).all()
+            if not routes:
+                # Try partial match (first word of location name)
+                routes = TransportRoute.query.filter(
+                    TransportRoute.route_from.contains(prev_loc.split()[0]),
+                    TransportRoute.route_to.contains(cur_loc.split()[0])
+                ).all()
+            transport_routes = routes
+
+    # Flights on this day
+    day_flights = Flight.query.filter(
+        (Flight.depart_date == day.date) | (Flight.arrive_date == day.date)
+    ).order_by(Flight.leg_number).all()
+
     return render_template('day.html', day=day, prev_day=prev_day,
-                           next_day=next_day, total_days=total_days)
+                           next_day=next_day, total_days=total_days,
+                           transport_routes=transport_routes,
+                           day_flights=day_flights)
 
 
 @itinerary_bp.route('/api/activities/<int:activity_id>/toggle', methods=['POST'])

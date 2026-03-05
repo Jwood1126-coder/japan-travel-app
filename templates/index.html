@@ -77,16 +77,55 @@
 <!-- Flights -->
 {% if flights %}
 <section class="flights-section">
-    <h2>Flights</h2>
-    {% for flight in flights %}
-    <div class="flight-card">
-        <div class="flight-direction">{{ flight.direction | capitalize }}</div>
-        <div class="flight-route">
-            <strong>{{ flight.route_from }}</strong> &rarr; <strong>{{ flight.route_to }}</strong>
+    <h2>&#x2708; Flights</h2>
+    {% set outbound = flights | selectattr('direction', 'equalto', 'outbound') | list %}
+    {% set inbound = flights | selectattr('direction', 'equalto', 'return') | list %}
+    {% for group_label, group_flights in [('Outbound', outbound), ('Return', inbound)] %}
+    {% if group_flights %}
+    <h3 class="flight-group-title">{{ group_label }}</h3>
+    {% for flight in group_flights %}
+    <div class="flight-card-tripit">
+        <div class="flight-card-header">
+            <span class="flight-airline">{{ flight.airline }}</span>
+            <span class="flight-number">{{ flight.flight_number }}</span>
+            {% if flight.booking_status and flight.booking_status != 'not_booked' %}
+            <span class="booking-badge {{ flight.booking_status }}">{{ flight.booking_status | replace('_', ' ') | title }}</span>
+            {% endif %}
         </div>
-        <div class="flight-detail">{{ flight.flight_number }} &middot; {{ flight.airline }}</div>
-        <div class="flight-detail">{{ flight.depart_date.strftime('%b %d') }} {{ flight.depart_time or '' }}</div>
+        <div class="flight-route-visual">
+            <div class="flight-endpoint">
+                <div class="flight-time">{{ flight.depart_time or '--:--' }}</div>
+                <div class="flight-airport">{{ flight.route_from }}</div>
+                <div class="flight-date-sm">{{ flight.depart_date.strftime('%b %d') }}</div>
+            </div>
+            <div class="flight-connector">
+                <div class="flight-line"></div>
+                {% if flight.duration %}
+                <div class="flight-duration-label">{{ flight.duration }}</div>
+                {% endif %}
+                {% if flight.aircraft %}
+                <div class="flight-aircraft">{{ flight.aircraft }}</div>
+                {% endif %}
+            </div>
+            <div class="flight-endpoint">
+                <div class="flight-time">{{ flight.arrive_time or '--:--' }}</div>
+                <div class="flight-airport">{{ flight.route_to }}</div>
+                {% if flight.arrive_date and flight.arrive_date != flight.depart_date %}
+                <div class="flight-date-sm">{{ flight.arrive_date.strftime('%b %d') }}</div>
+                {% endif %}
+            </div>
+        </div>
+        {% if flight.cost_amount %}
+        <div class="flight-card-footer">
+            <span class="flight-cost">{{ flight.cost_type }}: {{ flight.cost_amount }}</span>
+        </div>
+        {% endif %}
+        {% if flight.notes %}
+        <div class="flight-notes">{{ flight.notes }}</div>
+        {% endif %}
     </div>
+    {% endfor %}
+    {% endif %}
     {% endfor %}
 </section>
 {% endif %}

@@ -14,8 +14,44 @@
 [data-theme="dark"] {
     --sakura-light: #2d1f24;
     --sakura-text: #FFB7C5;
+    --sakura-dark: #FF8FA3;
     --completed-bg: #1a2e1a;
+    --completed-text: #6b7280;
+    --accent: #FF6B9D;
 }
+[data-theme="dark"] .bottom-nav { background: rgba(30,30,30,0.95); border-top-color: #333; }
+[data-theme="dark"] .more-menu-sheet { background: #1e1e1e; }
+[data-theme="dark"] .more-menu-handle { background: #555; }
+[data-theme="dark"] .day-overview-card,
+[data-theme="dark"] .flight-card-tripit,
+[data-theme="dark"] .activity-card,
+[data-theme="dark"] .option-card,
+[data-theme="dark"] .ref-section,
+[data-theme="dark"] .entry-card { border-color: #333; }
+[data-theme="dark"] .day-overview-card:hover { background: var(--sakura-light); }
+[data-theme="dark"] .day-overview-card.today { border-color: var(--accent); }
+[data-theme="dark"] .progress-bar { background: #333; }
+[data-theme="dark"] .activity-user-note { background: #3d3520; color: #fef3c7; }
+[data-theme="dark"] .cost-badge { background: #2d2d2d; color: #9ca3af; }
+[data-theme="dark"] .booking-badge.booked,
+[data-theme="dark"] .booking-badge.confirmed { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .booking-badge.pending { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .transport-card { background: linear-gradient(135deg, var(--sakura-light), transparent); border-color: #4a2030; }
+[data-theme="dark"] .buffer-badge { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .badge.breakfast { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .badge.onsen { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .budget-calc { background: var(--sakura-light); }
+[data-theme="dark"] .chat-bubble.assistant { background: #2d2d2d; }
+[data-theme="dark"] .chat-input-bar { background: #1e1e1e; border-top-color: #333; }
+[data-theme="dark"] .prompt-btn { background: var(--sakura-light); border-color: #4a2030; }
+[data-theme="dark"] .fab { box-shadow: 0 4px 12px rgba(255,107,157,0.3); }
+[data-theme="dark"] .substitutes-section { border-color: #444; }
+[data-theme="dark"] .slot-heading { border-bottom-color: #4a2030; }
+[data-theme="dark"] .activity-start-time { background: #3d1f2d; }
+[data-theme="dark"] .book-link.alt { background: #555; }
+[data-theme="dark"] .select-btn { border-color: var(--accent); color: var(--accent); }
+[data-theme="dark"] .login-error { color: #fc8181; }
+[data-theme="dark"] .stat-card { background: var(--sakura-light); }
 
 /* Global */
 body {
@@ -556,6 +592,122 @@ body {
     font-size: 0.85rem;
     color: var(--pico-muted-color);
 }
+
+/* TripIt-Style Flight Cards */
+.flight-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pico-muted-color);
+    margin: 1rem 0 0.5rem;
+}
+.flight-card-tripit {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 12px;
+    border: 1px solid var(--pico-muted-border-color);
+}
+.flight-card-tripit.compact { padding: 0.75rem; }
+.flight-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+}
+.flight-airline { font-weight: 600; font-size: 0.9rem; }
+.flight-number { font-size: 0.8rem; color: var(--pico-muted-color); }
+.booking-badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+.booking-badge.booked, .booking-badge.confirmed { background: #d1fae5; color: #065f46; }
+.booking-badge.pending { background: #fef3c7; color: #92400e; }
+.flight-route-visual {
+    display: flex;
+    align-items: center;
+}
+.flight-endpoint { text-align: center; min-width: 60px; }
+.flight-time { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+.compact .flight-time { font-size: 1.1rem; }
+.flight-airport { font-size: 0.9rem; font-weight: 600; color: var(--pico-muted-color); }
+.flight-date-sm { font-size: 0.7rem; color: var(--pico-muted-color); }
+.flight-connector { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px; }
+.flight-line {
+    width: 100%;
+    height: 2px;
+    background: var(--sakura);
+    position: relative;
+}
+.flight-line::before, .flight-line::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sakura-dark);
+}
+.flight-line::before { left: 0; }
+.flight-line::after { right: 0; }
+.flight-duration-label { font-size: 0.75rem; color: var(--pico-muted-color); margin-top: 4px; }
+.flight-aircraft { font-size: 0.7rem; color: var(--pico-muted-color); }
+.flight-card-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+    font-size: 0.85rem;
+}
+.flight-cost { color: var(--pico-muted-color); }
+.flight-notes { font-size: 0.8rem; color: var(--pico-muted-color); margin-top: 4px; font-style: italic; }
+
+/* Transport Route Cards */
+.transport-banner { margin-bottom: 1.5rem; }
+.transport-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--sakura-light), transparent);
+    border: 1px solid var(--sakura);
+}
+.transport-icon { font-size: 1.5rem; min-width: 36px; text-align: center; }
+.transport-details { flex: 1; min-width: 0; }
+.transport-route-text { font-weight: 600; font-size: 0.9rem; }
+.transport-meta { font-size: 0.8rem; color: var(--pico-muted-color); }
+.transport-badges { display: flex; align-items: center; gap: 4px; }
+.transport-cost { font-size: 0.8rem; font-weight: 600; color: var(--accent); white-space: nowrap; }
+
+/* Activity Start Times & Cost Badges */
+.activity-start-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--sakura-light);
+    padding: 1px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+.cost-badge {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+/* Location Details in Day Header */
+.location-vibe {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    font-style: italic;
+    margin-top: 4px;
+}
+.day-flights-section { margin-bottom: 1.5rem; }
 
 /* Accommodations */
 .location-tabs {
