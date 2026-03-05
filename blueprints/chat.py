@@ -254,8 +254,15 @@ def send_message():
     media_type = None
     image_filename = None
 
+    MODEL_MAP = {
+        'fast': 'claude-haiku-4-5-20250929',
+        'balanced': 'claude-sonnet-4-5-20250929',
+        'deep': 'claude-opus-4-6-20250929',
+    }
+
     if request.content_type and 'multipart/form-data' in request.content_type:
         user_message = request.form.get('message', '').strip()
+        model_choice = request.form.get('model', 'balanced')
         image_file = request.files.get('image')
         if image_file and image_file.filename:
             from blueprints.uploads import save_chat_image
@@ -287,6 +294,7 @@ def send_message():
     else:
         data = request.get_json()
         user_message = data.get('message', '').strip()
+        model_choice = data.get('model', 'balanced')
 
     if not user_message and not image_data:
         return jsonify({'error': 'Empty message'}), 400
@@ -332,7 +340,8 @@ def send_message():
     user_content.append({"type": "text", "text": user_message})
     messages.append({"role": "user", "content": user_content})
 
-    has_image = image_data is not None
+    max_tokens = 2048 if image_data else 1024
+    model_id = MODEL_MAP.get(model_choice, 'claude-sonnet-4-5-20250929')
     app = current_app._get_current_object()
 
     def generate():
@@ -342,86 +351,59 @@ def send_message():
             system = SYSTEM_PROMPT + '\n\n' + context
             full_response = ''
 
-            if has_image:
-                # Image flow: non-streaming first call with tools
-                response = client.messages.create(
-                    model='claude-sonnet-4-5-20250929',
-                    max_tokens=2048,
-                    system=system,
-                    messages=messages,
-                    tools=TOOLS,
-                )
+            # First call: non-streaming to detect tool use
+            response = client.messages.create(
+                model=model_id,
+                max_tokens=max_tokens,
+                system=system,
+                messages=messages,
+                tools=TOOLS,
+            )
 
-                tool_results = []
-                text_parts = []
+            # Process response blocks — extract text and execute tools
+            tool_results = []
+            text_parts = []
+            for block in response.content:
+                if block.type == 'tool_use':
+                    yield f"data: {json.dumps({'processing': f'Updating: {block.name}...'})}\n\n"
+                    with app.app_context():
+                        result = _execute_tool(block.name, block.input)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": json.dumps(result),
+                    })
+                elif block.type == 'text':
+                    text_parts.append(block.text)
+
+            if tool_results:
+                # Follow-up call: stream the final response after tool execution
+                # Convert SDK content blocks to dicts for the messages array
+                assistant_content = []
                 for block in response.content:
-                    if block.type == 'tool_use':
-                        yield f"data: {json.dumps({'processing': f'Updating: {block.name}...'})}\n\n"
-                        with app.app_context():
-                            result = _execute_tool(block.name, block.input)
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": json.dumps(result),
+                    if block.type == 'text':
+                        assistant_content.append({"type": "text", "text": block.text})
+                    elif block.type == 'tool_use':
+                        assistant_content.append({
+                            "type": "tool_use",
+                            "id": block.id,
+                            "name": block.name,
+                            "input": block.input,
                         })
-                    elif block.type == 'text':
-                        text_parts.append(block.text)
-
-                if tool_results:
-                    messages.append({"role": "assistant", "content": response.content})
-                    messages.append({"role": "user", "content": tool_results})
-                    with client.messages.stream(
-                        model='claude-sonnet-4-5-20250929',
-                        max_tokens=1024,
-                        system=system,
-                        messages=messages,
-                    ) as stream:
-                        for text in stream.text_stream:
-                            full_response += text
-                            yield f"data: {json.dumps({'text': text})}\n\n"
-                else:
-                    full_response = ''.join(text_parts)
-                    yield f"data: {json.dumps({'text': full_response})}\n\n"
-            else:
-                # Text-only: first call with tools (non-streaming to catch tool use)
-                response = client.messages.create(
-                    model='claude-sonnet-4-5-20250929',
+                messages.append({"role": "assistant", "content": assistant_content})
+                messages.append({"role": "user", "content": tool_results})
+                with client.messages.stream(
+                    model=model_id,
                     max_tokens=1024,
                     system=system,
                     messages=messages,
-                    tools=TOOLS,
-                )
-
-                tool_results = []
-                text_parts = []
-                for block in response.content:
-                    if block.type == 'tool_use':
-                        yield f"data: {json.dumps({'processing': f'Updating: {block.name}...'})}\n\n"
-                        with app.app_context():
-                            result = _execute_tool(block.name, block.input)
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": block.id,
-                            "content": json.dumps(result),
-                        })
-                    elif block.type == 'text':
-                        text_parts.append(block.text)
-
-                if tool_results:
-                    messages.append({"role": "assistant", "content": response.content})
-                    messages.append({"role": "user", "content": tool_results})
-                    with client.messages.stream(
-                        model='claude-sonnet-4-5-20250929',
-                        max_tokens=1024,
-                        system=system,
-                        messages=messages,
-                    ) as stream:
-                        for text in stream.text_stream:
-                            full_response += text
-                            yield f"data: {json.dumps({'text': text})}\n\n"
-                else:
-                    full_response = ''.join(text_parts)
-                    yield f"data: {json.dumps({'text': full_response})}\n\n"
+                ) as stream:
+                    for text in stream.text_stream:
+                        full_response += text
+                        yield f"data: {json.dumps({'text': text})}\n\n"
+            else:
+                full_response = ''.join(text_parts)
+                yield f"data: {json.dumps({'text': full_response})}\n\n"
 
             # Save assistant response
             with app.app_context():
@@ -451,27 +433,53 @@ def chat_history():
 
 def _build_context():
     """Build dynamic context about the current trip state."""
+    from models import Trip
     parts = []
     today = date.today()
 
+    trip = Trip.query.first()
+    if trip:
+        days_until = (trip.start_date - today).days
+        if days_until > 0:
+            parts.append(f"TODAY is {today.strftime('%B %d, %Y')} — "
+                         f"{days_until} days until trip starts ({trip.start_date.strftime('%B %d')})")
+        elif today <= trip.end_date:
+            parts.append(f"TRIP IS ACTIVE — today is {today.strftime('%B %d')}")
+        else:
+            parts.append(f"Trip ended on {trip.end_date.strftime('%B %d')}")
+
     current_day = Day.query.filter(Day.date == today).first()
     if current_day:
-        parts.append(f"TODAY is Day {current_day.day_number} "
+        parts.append(f"\nTODAY is Day {current_day.day_number} "
                      f"({current_day.date.strftime('%B %d')}): "
                      f"{current_day.title}")
-        activities = Activity.query.filter_by(day_id=current_day.id).order_by(
-            Activity.sort_order).all()
-        if activities:
-            parts.append("Today's activities:")
-            for a in activities:
-                status = '[DONE]' if a.is_completed else '[ ]'
-                parts.append(f"  {status} {a.title} ({a.time_slot or ''})")
+        for a in current_day.activities:
+            if a.is_substitute:
+                continue
+            status = '[DONE]' if a.is_completed else '[ ]'
+            time_info = f" @ {a.start_time}" if a.start_time else f" ({a.time_slot})" if a.time_slot else ""
+            parts.append(f"  {status} {a.title}{time_info}")
 
     tomorrow = today + timedelta(days=1)
     next_day = Day.query.filter(Day.date == tomorrow).first()
     if next_day:
-        parts.append(f"\nTOMORROW is Day {next_day.day_number}: "
-                     f"{next_day.title}")
+        parts.append(f"\nTOMORROW is Day {next_day.day_number}: {next_day.title}")
+        for a in next_day.activities:
+            if a.is_substitute:
+                continue
+            time_info = f" @ {a.start_time}" if a.start_time else f" ({a.time_slot})" if a.time_slot else ""
+            parts.append(f"  {a.title}{time_info}")
+
+    # Full itinerary summary (so chat can reference any day)
+    all_days = Day.query.order_by(Day.day_number).all()
+    if all_days:
+        parts.append("\nFULL ITINERARY:")
+        for d in all_days:
+            loc = d.location.name if d.location else '?'
+            act_count = sum(1 for a in d.activities if not a.is_substitute)
+            done_count = sum(1 for a in d.activities if not a.is_substitute and a.is_completed)
+            parts.append(f"  Day {d.day_number} ({d.date.strftime('%b %d')}): "
+                         f"{d.title} @ {loc} [{done_count}/{act_count} done]")
 
     # All flights
     flights = Flight.query.order_by(Flight.direction, Flight.leg_number).all()
@@ -482,17 +490,29 @@ def _build_context():
             parts.append(f"  {f.airline} {f.flight_number}: {f.route_from}->{f.route_to} "
                          f"{f.depart_date} {f.depart_time or ''} ({f.booking_status}){conf}")
 
-    # Booked/selected accommodations
-    accom = AccommodationOption.query.filter(
-        (AccommodationOption.is_selected == True) |
-        (AccommodationOption.booking_status != 'not_booked')
-    ).all()
-    if accom:
+    # All accommodations with full status
+    accom_locs = AccommodationLocation.query.order_by(
+        AccommodationLocation.check_in_date).all()
+    all_options = AccommodationOption.query.all()
+    opts_by_loc = {}
+    for opt in all_options:
+        opts_by_loc.setdefault(opt.location_id, []).append(opt)
+
+    if accom_locs:
         parts.append("\nACCOMMODATIONS:")
-        for a in accom:
-            loc = AccommodationLocation.query.get(a.location_id)
-            conf = f" [Conf: {a.confirmation_number}]" if a.confirmation_number else ""
-            parts.append(f"  {loc.location_name}: {a.name} ({a.booking_status}){conf}")
+        for loc in accom_locs:
+            opts = opts_by_loc.get(loc.id, [])
+            selected = next((o for o in opts if o.is_selected), None)
+            if selected:
+                conf = f" [Conf: {selected.confirmation_number}]" if selected.confirmation_number else ""
+                parts.append(f"  {loc.location_name} ({loc.check_in_date.strftime('%b %d')}-"
+                             f"{loc.check_out_date.strftime('%b %d')}): "
+                             f"{selected.name} ({selected.booking_status}){conf}")
+            else:
+                active = [o for o in opts if not o.is_eliminated]
+                parts.append(f"  {loc.location_name} ({loc.check_in_date.strftime('%b %d')}-"
+                             f"{loc.check_out_date.strftime('%b %d')}): "
+                             f"UNDECIDED — {len(active)} options remaining")
 
     # Transport routes
     routes = TransportRoute.query.order_by(TransportRoute.sort_order).all()
@@ -512,4 +532,4 @@ def _build_context():
         parts.append(f"\nBUDGET: Estimated ${total_est_low:.0f}-${total_est_high:.0f}, "
                      f"Actual so far: ${total_actual:.0f}")
 
-    return '\n'.join(parts) if parts else 'Trip has not started yet.'
+    return '\n'.join(parts) if parts else 'Trip planning in early stages.'

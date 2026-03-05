@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#FFB7C5">
+    <meta name="theme-color" content="#F2B5C4">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Japan Trip">
@@ -14,25 +14,26 @@
     <title>{% block title %}Japan 2026{% endblock %}</title>
 </head>
 <body>
+    {% from "icons.html" import icon_home, icon_check, icon_chat, icon_more, icon_hotel, icon_map, icon_book, icon_moon, icon_logout %}
     <main class="container app-main">
         {% block content %}{% endblock %}
     </main>
 
     <nav class="bottom-nav" role="navigation" aria-label="Main navigation">
         <a href="{{ url_for('itinerary.index') }}" class="nav-item {% if request.endpoint in ('itinerary.index', 'itinerary.day_view') %}active{% endif %}" aria-label="Home" {% if request.endpoint in ('itinerary.index', 'itinerary.day_view') %}aria-current="page"{% endif %}>
-            <span class="nav-icon" aria-hidden="true">&#x1f3e0;</span>
+            <span class="nav-icon" aria-hidden="true">{{ icon_home(22) }}</span>
             <span class="nav-label">Home</span>
         </a>
         <a href="{{ url_for('checklists.checklists_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('checklists') %}active{% endif %}" aria-label="Checklist" {% if request.endpoint and request.endpoint.startswith('checklists') %}aria-current="page"{% endif %}>
-            <span class="nav-icon" aria-hidden="true">&#x2705;</span>
+            <span class="nav-icon" aria-hidden="true">{{ icon_check(22) }}</span>
             <span class="nav-label">Checklist</span>
         </a>
         <a href="{{ url_for('chat.chat_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('chat') %}active{% endif %}" aria-label="Chat" {% if request.endpoint and request.endpoint.startswith('chat') %}aria-current="page"{% endif %}>
-            <span class="nav-icon" aria-hidden="true">&#x1f4ac;</span>
+            <span class="nav-icon" aria-hidden="true">{{ icon_chat(22) }}</span>
             <span class="nav-label">Chat</span>
         </a>
         <a href="#" class="nav-item" onclick="toggleMore(event)" aria-label="More options" aria-haspopup="true">
-            <span class="nav-icon" aria-hidden="true">&#x2026;</span>
+            <span class="nav-icon" aria-hidden="true">{{ icon_more(22) }}</span>
             <span class="nav-label">More</span>
         </a>
     </nav>
@@ -42,11 +43,11 @@
         <div class="more-menu-backdrop" onclick="closeMore()"></div>
         <div class="more-menu-sheet" role="menu">
             <div class="more-menu-handle"></div>
-            <a href="{{ url_for('accommodations.accommodations_view') }}" class="more-link">&#x1f3e8; Accommodations</a>
-            <a href="{{ url_for('itinerary.map_view') }}" class="more-link">&#x1f5fa; Trip Map</a>
-            <a href="{{ url_for('reference.reference_view') }}" class="more-link">&#x1f4d6; Reference Guide</a>
-            <a href="#" class="more-link" onclick="toggleTheme()">&#x1f319; Toggle Dark Mode</a>
-            <a href="{{ url_for('logout') }}" class="more-link">&#x1f6aa; Logout</a>
+            <a href="{{ url_for('accommodations.accommodations_view') }}" class="more-link">{{ icon_hotel(18) }} Accommodations</a>
+            <a href="{{ url_for('itinerary.map_view') }}" class="more-link">{{ icon_map(18) }} Trip Map</a>
+            <a href="{{ url_for('reference.reference_view') }}" class="more-link">{{ icon_book(18) }} Reference Guide</a>
+            <a href="#" class="more-link" onclick="toggleTheme()">{{ icon_moon(18) }} Toggle Dark Mode</a>
+            <a href="{{ url_for('logout') }}" class="more-link">{{ icon_logout(18) }} Logout</a>
         </div>
     </div>
 

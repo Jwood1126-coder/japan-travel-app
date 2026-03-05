@@ -3,18 +3,19 @@
 
 {% block content %}
 <header>
-    <h1>&#x1f5fa; Trip Map</h1>
+{% from "icons.html" import icon_map, icon_train, icon_hotel %}
+    <h1>{{ icon_map(22) }} Trip Map</h1>
     <div class="map-controls" id="dayFilters">
         <button class="map-ctrl-btn active" data-filter="all">All</button>
-        <button class="map-ctrl-btn" data-filter="flights">&#9992; Flights</button>
+        <button class="map-ctrl-btn" data-filter="flights">Flights</button>
         {% for d in days_data %}
         <button class="map-ctrl-btn" data-filter="day-{{ d.day_number }}"
                 title="{{ d.title }}">D{{ d.day_number }}</button>
         {% endfor %}
     </div>
     <div class="map-controls map-layer-toggles">
-        <button class="map-toggle active" data-layer="transport">&#x1f686; Routes</button>
-        <button class="map-toggle active" data-layer="accom">&#x1f3e8; Hotels</button>
+        <button class="map-toggle active" data-layer="transport">Routes</button>
+        <button class="map-toggle active" data-layer="accom">Hotels</button>
     </div>
 </header>
 <div id="trip-map"></div>
@@ -30,6 +31,11 @@ const daysData = {{ days_data | tojson }};
 const accomMarkers = {{ accom_markers | tojson }};
 const flightLegs = {{ flight_legs | tojson }};
 const groundRoutes = {{ ground_routes | tojson }};
+
+// ---- SVG icons for popups ----
+const SVG_HOTEL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V7l9-4 9 4v14"/><path d="M9 21v-4h6v4"/><path d="M3 11h18"/></svg>';
+const SVG_PIN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+const SVG_BOOK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>';
 
 // ---- Day color palette (15 distinguishable colors) ----
 const DAY_COLORS = [
@@ -92,7 +98,7 @@ function accomIcon(status) {
     const borderColor = booked ? '#34A853' : '#FF9800';
     return L.divIcon({
         className: 'map-accom-icon',
-        html: '<div class="accom-pin" style="border-color:' + borderColor + '">&#x1f3e8;</div>',
+        html: '<div class="accom-pin" style="border-color:' + borderColor + '">' + SVG_HOTEL + '</div>',
         iconSize: [30, 30], iconAnchor: [15, 15], popupAnchor: [0, -17],
     });
 }
@@ -134,7 +140,7 @@ japanCities.forEach(m => {
         html += '</div>';
     }
 
-    if (m.guide_url) html += '<a href="' + m.guide_url + '" target="_blank" rel="noopener" class="popup-link">&#x1f4d6; Travel Guide</a>';
+    if (m.guide_url) html += '<a href="' + m.guide_url + '" target="_blank" rel="noopener" class="popup-link">' + SVG_BOOK + ' Travel Guide</a>';
     html += '</div>';
 
     L.marker([m.lat, m.lng], { icon: sakuraIcon() })
@@ -165,7 +171,7 @@ daysData.forEach(d => {
             if (a.time_slot) actHtml += '<span class="popup-time">' + a.time_slot + '</span> ';
             actHtml += '<span>' + a.title + '</span>';
             actHtml += ' <a href="' + gmapsLink(a.title, d.location_name) +
-                       '" target="_blank" rel="noopener" class="popup-gmaps" title="Open in Google Maps">&#x1f4cd;</a>';
+                       '" target="_blank" rel="noopener" class="popup-gmaps" title="Open in Google Maps">' + SVG_PIN + '</a>';
             actHtml += '</div>';
         });
         actHtml += '<a href="/day/' + d.day_number + '" class="popup-link">View full day</a></div>';
@@ -189,7 +195,7 @@ accomMarkers.forEach(m => {
     html += '<div class="popup-dates">' + m.check_in + ' &ndash; ' + m.check_out +
             ' (' + m.nights + 'N)</div>';
     if (m.selected_name) {
-        html += '<div class="popup-accom">&#x1f3e8; ' + m.selected_name + '</div>';
+        html += '<div class="popup-accom">' + SVG_HOTEL + ' ' + m.selected_name + '</div>';
         const statusLabel = m.booking_status.replace(/_/g, ' ');
         html += '<span class="booking-badge ' + m.booking_status + '">' +
                 statusLabel.charAt(0).toUpperCase() + statusLabel.slice(1) + '</span>';
@@ -200,7 +206,7 @@ accomMarkers.forEach(m => {
     html += '<div class="popup-links"><a href="/accommodations" class="popup-link">View options</a>';
     if (m.selected_name) {
         html += ' &middot; <a href="' + gmapsLink(m.selected_name, m.location_name) +
-                '" target="_blank" rel="noopener" class="popup-link">&#x1f4cd; Map</a>';
+                '" target="_blank" rel="noopener" class="popup-link">' + SVG_PIN + ' Map</a>';
     }
     html += '</div></div>';
 

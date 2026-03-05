@@ -2,8 +2,9 @@
 {% block title %}Japan 2026 - Dashboard{% endblock %}
 
 {% block content %}
+{% from "icons.html" import icon_sakura, icon_lightbulb, icon_check, icon_raindrop, icon_currency, icon_book, icon_hotel, icon_plane %}
 <header class="dash-header">
-    <h1>Japan 2026 &#x1f338;</h1>
+    <h1>Japan 2026 {{ icon_sakura(22) }}</h1>
     {% if days_until is not none and days_until > 0 %}
         <p class="countdown">{{ days_until }} days to go!</p>
     {% elif trip_started and current_day %}
@@ -25,12 +26,12 @@
     <div class="next-up-subtitle">{{ next_up.subtitle }}</div>
     {% endif %}
     {% if next_up.tip %}
-    <div class="next-up-tip">&#x1f4a1; {{ next_up.tip }}</div>
+    <div class="next-up-tip">{{ icon_lightbulb(16) }} {{ next_up.tip }}</div>
     {% endif %}
 </a>
 {% elif next_up and next_up.type == 'all_set' %}
 <div class="next-up-card urgency-low">
-    <div class="next-up-label">&#x2705; Status</div>
+    <div class="next-up-label">{{ icon_check(16) }} Status</div>
     <div class="next-up-title">{{ next_up.title }}</div>
     <div class="next-up-subtitle">{{ next_up.subtitle }}</div>
 </div>
@@ -46,12 +47,14 @@
                 <span class="weather-icon">{{ w.icon }}</span>
                 <span>{{ w.temp_high|round|int }}&deg;/{{ w.temp_low|round|int }}&deg;F</span>
                 {% if w.rain_pct and w.rain_pct > 10 %}
-                <span class="rain-badge">&#x1f4a7; {{ w.rain_pct }}%</span>
+                <span class="rain-badge">{{ icon_raindrop(14) }} {{ w.rain_pct }}%</span>
                 {% endif %}
             </div>
         {% else %}
-            {# Show first available day's weather #}
-            {% for dn in weather_data|sort %}
+            {# Show first available day's weather (sorted numerically) #}
+            {% set sorted_keys = weather_data.keys()|list|map('int')|sort|map('string')|list %}
+            {% if sorted_keys %}
+                {% set dn = sorted_keys[0] %}
                 {% set w = weather_data[dn] %}
                 <div class="info-bar-weather">
                     <span class="weather-icon">{{ w.icon }}</span>
@@ -60,14 +63,13 @@
                     <span class="rain-badge">{{ w.rain_pct }}%</span>
                     {% endif %}
                 </div>
-                {% if loop.first %}{% endif %}
-            {% endfor %}
+            {% endif %}
         {% endif %}
     {% endif %}
 
     {% if exchange_rate and exchange_rate.rate %}
     <div class="info-bar-currency" onclick="toggleCurrencyConverter()" data-rate="{{ exchange_rate.rate }}">
-        <span>&#x1f4b1; $1 = &yen;{{ exchange_rate.rate|round|int }}</span>
+        <span>{{ icon_currency(16) }} $1 = &yen;{{ exchange_rate.rate|round|int }}</span>
     </div>
     {% endif %}
 </div>
@@ -120,7 +122,7 @@
             </div>
             {% if group.location_obj and group.location_obj.guide_url %}
             <a href="{{ group.location_obj.guide_url }}" target="_blank" rel="noopener"
-               class="guide-link-sm" onclick="event.stopPropagation()">&#x1f4d6;</a>
+               class="guide-link-sm" onclick="event.stopPropagation()">{{ icon_book(16) }}</a>
             {% endif %}
         </div>
         {% if group.location_obj and group.location_obj.vibe %}
@@ -164,7 +166,7 @@
 
         {% if group.accom_name %}
         <div class="loc-group-accom">
-            <span class="loc-accom-icon">&#x1f3e8;</span>
+            <span class="loc-accom-icon">{{ icon_hotel(16) }}</span>
             <span class="loc-accom-name">{{ group.accom_name }}</span>
             {% if group.accom_status and group.accom_status != 'not_booked' %}
             <span class="booking-badge {{ group.accom_status }}">
@@ -174,7 +176,7 @@
         </div>
         {% elif group.accom_pending_count > 0 %}
         <div class="loc-group-accom pending">
-            <span class="loc-accom-icon">&#x1f3e8;</span>
+            <span class="loc-accom-icon">{{ icon_hotel(16) }}</span>
             <span class="loc-accom-name">Not booked &middot; {{ group.accom_pending_count }} option{{ 's' if group.accom_pending_count != 1 }}</span>
         </div>
         {% endif %}
@@ -185,7 +187,7 @@
 <!-- Flights -->
 {% if flights %}
 <section class="flights-section" id="flights">
-    <h2>&#x2708; Flights</h2>
+    <h2>{{ icon_plane(20) }} Flights</h2>
     {% set outbound = flights | selectattr('direction', 'equalto', 'outbound') | list %}
     {% set inbound = flights | selectattr('direction', 'equalto', 'return') | list %}
     {% for group_label, group_flights in [('Outbound', outbound), ('Return', inbound)] %}

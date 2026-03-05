@@ -4,7 +4,14 @@
 {% block content %}
 <div class="chat-container">
     <header class="chat-header">
-        <h1>&#x1f4ac; Trip Assistant</h1>
+        <div class="chat-header-row">
+            <h1>Trip Assistant</h1>
+            <div class="model-selector">
+                <button class="model-pill" data-model="fast" title="Haiku — fastest responses">Fast</button>
+                <button class="model-pill" data-model="balanced" title="Sonnet — balanced speed and quality">Balanced</button>
+                <button class="model-pill" data-model="deep" title="Opus — deepest reasoning">Deep</button>
+            </div>
+        </div>
     </header>
 
     <div class="chat-messages" id="chatMessages">
@@ -42,10 +49,15 @@
         <input type="file" id="chatImageInput" accept="image/*" capture="environment"
                style="display:none" onchange="handleImageSelect(this)">
         <button class="attach-btn" onclick="document.getElementById('chatImageInput').click()"
-                title="Upload photo">&#x1f4ce;</button>
-        <input type="text" id="chatInput" placeholder="Ask about your trip..."
-               onkeydown="if(event.key==='Enter')sendMessage()">
-        <button onclick="sendMessage()" id="sendBtn">&#x27A4;</button>
+                title="Upload photo">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <textarea id="chatInput" rows="1" placeholder="Ask about your trip..."
+                  oninput="autoGrow(this)"
+                  onkeydown="handleChatKeydown(event)"></textarea>
+        <button onclick="sendMessage()" id="sendBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
     </div>
 </div>
 {% endblock %}

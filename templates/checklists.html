@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Checklists{% endblock %}
 
+{% from "icons.html" import icon_check, icon_link, icon_delete, icon_chevron, icon_pin, icon %}
+
 {% macro render_checklist_item(item, deletable=false) %}
 <div class="checklist-item {% if item.is_completed %}completed{% endif %}"
      data-id="{{ item.id }}">
@@ -16,11 +18,11 @@
         </label>
         {% if item.url %}
         <a href="{{ item.url }}" target="_blank" rel="noopener" class="task-link-icon"
-           onclick="event.stopPropagation()">&#x1f517;</a>
+           onclick="event.stopPropagation()">{{ icon_link(16) }}</a>
         {% endif %}
         {% if deletable %}
         <button class="delete-item-btn" onclick="event.stopPropagation(); deleteItem({{ item.id }})"
-                title="Delete item">&#x2715;</button>
+                title="Delete item">{{ icon_delete(14) }}</button>
         {% endif %}
     </div>
 
@@ -28,7 +30,7 @@
     {# ===== DECISION ITEM: expandable with options ===== #}
     <div class="checklist-item-header decision-header"
          onclick="toggleItemExpand({{ item.id }})">
-        <span class="expand-arrow" id="arrow-{{ item.id }}">&#x25B6;</span>
+        <span class="expand-arrow" id="arrow-{{ item.id }}">{{ icon_chevron(14) }}</span>
         <span class="decision-title">{{ item.title }}</span>
 
         {# Option count for accommodation items #}
@@ -118,7 +120,7 @@
                 {% endif %}
                 {% if option.address %}
                 <a href="{{ option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-                    &#x1f4cd; {{ option.address }}
+                    {{ icon_pin(14) }} {{ option.address }}
                 </a>
                 {% endif %}
                 <div class="cl-option-actions">
@@ -130,11 +132,11 @@
                     {% endif %}
                     <button class="select-btn-sm {% if option.is_selected %}active{% endif %}"
                             onclick="selectAccomOption({{ option.id }})">
-                        {{ '&#x2713; Selected' | safe if option.is_selected else 'Select' }}
+                        {{ 'Selected' if option.is_selected else 'Select' }}
                     </button>
                     <button class="eliminate-btn {% if option.is_eliminated %}active{% endif %}"
                             onclick="eliminateAccomOption({{ option.id }})">
-                        {{ 'Restore' if option.is_eliminated else '&#x2717;' | safe }}
+                        {{ 'Restore' if option.is_eliminated else 'Remove' }}
                     </button>
                 </div>
                 {# Booking tracker for selected option #}
@@ -183,11 +185,11 @@
                     {% endif %}
                     <button class="select-btn-sm {% if option.is_selected %}active{% endif %}"
                             onclick="selectClOption({{ option.id }})">
-                        {{ '&#x2713; Selected' | safe if option.is_selected else 'Select' }}
+                        {{ 'Selected' if option.is_selected else 'Select' }}
                     </button>
                     <button class="eliminate-btn {% if option.is_eliminated %}active{% endif %}"
                             onclick="eliminateClOption({{ option.id }})">
-                        {{ 'Restore' if option.is_eliminated else '&#x2717;' | safe }}
+                        {{ 'Restore' if option.is_eliminated else 'Remove' }}
                     </button>
                 </div>
                 <textarea class="option-notes" placeholder="Notes..."
@@ -210,7 +212,7 @@
 
 {% block content %}
 <header>
-    <h1>&#x2705; Checklists</h1>
+    <h1>{{ icon_check(22) }} Checklists</h1>
 </header>
 
 <!-- Tab switcher -->
@@ -222,7 +224,7 @@
 {% if tab == 'pre_trip' and sections %}
 {% for section in sections %}
 <section class="checklist-section" id="cat-{{ section.key }}">
-    <h2>{{ section.icon | safe }} {{ section.label }}</h2>
+    <h2>{{ icon(section.icon, 18) }} {{ section.label }}</h2>
     <div class="checklist-progress">
         {{ section.progress.done }}/{{ section.progress.total }} complete
         {% if section.progress.decided %} &middot; {{ section.progress.decided }} decided{% endif %}
@@ -235,7 +237,7 @@
     <div class="checklist-subgroup">
         <div class="checklist-subgroup-header">
             {% if section.key == 'accommodations' %}
-            <span class="subgroup-icon">&#x1f4cd;</span>
+            <span class="subgroup-icon">{{ icon_pin(16) }}</span>
             {% endif %}
             <span class="subgroup-name">{{ subgroup.name }}</span>
             <span class="subgroup-count">{{ subgroup.entries | length }}</span>
@@ -268,7 +270,7 @@
 {% endif %}
 
 <div class="upcoming-event-card {{ event.type }}">
-    <div class="event-icon">{{ event.icon | safe }}</div>
+    <div class="event-icon">{{ icon(event.icon, 20) }}</div>
     <div class="event-info">
         {% if event.time %}
         <div class="event-time">{{ event.time }}</div>
@@ -277,18 +279,18 @@
         <div class="event-subtitle">{{ event.subtitle }}</div>
         {% if event.address %}
         <a href="{{ event.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-            &#x1f4cd; {{ event.address }}
+            {{ icon_pin(14) }} {{ event.address }}
         </a>
         {% endif %}
     </div>
     <div class="event-status-badge {{ event.status }}">
-        {% if event.status == 'confirmed' %}&#x2713; Confirmed
+        {% if event.status == 'confirmed' %}Confirmed
         {% elif event.status == 'booked' %}Booked
         {% elif event.status == 'not_booked' %}Not Booked
         {% elif event.status == 'jr_covered' %}JR Pass
         {% elif event.status == 'ticket_needed' %}Need Ticket
         {% elif event.status == 'upcoming' %}Upcoming
-        {% elif event.status == 'info' %}&#x2139;
+        {% elif event.status == 'info' %}Info
         {% else %}{{ event.status }}
         {% endif %}
     </div>

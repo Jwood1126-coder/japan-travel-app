@@ -3,6 +3,31 @@
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 let selectedImage = null;
+let selectedModel = localStorage.getItem('chatModel') || 'balanced';
+
+// Model selector
+document.querySelectorAll('.model-pill').forEach(btn => {
+    if (btn.dataset.model === selectedModel) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.model-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedModel = btn.dataset.model;
+        localStorage.setItem('chatModel', selectedModel);
+    });
+});
+
+// Auto-growing textarea
+function autoGrow(el) {
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleChatKeydown(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+    }
+}
 
 function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -58,6 +83,7 @@ async function sendMessage() {
     if (!text && !selectedImage) return;
 
     chatInput.value = '';
+    chatInput.style.height = 'auto';
     chatInput.disabled = true;
     document.getElementById('sendBtn').disabled = true;
 
@@ -74,17 +100,35 @@ async function sendMessage() {
         document.getElementById('imagePreview').style.display = 'none';
     }
 
-    // Add assistant bubble (empty, will stream into it)
-    const assistantContent = addBubble('assistant', '');
+    // Show thinking indicator
+    const thinking = document.createElement('div');
+    thinking.className = 'thinking-indicator';
+    thinking.innerHTML = '<div class="thinking-dot"></div><div class="thinking-dot"></div><div class="thinking-dot"></div>';
+    chatMessages.appendChild(thinking);
+    scrollToBottom();
+
+    let assistantContent = null;
+    let responseBuffer = '';
+
+    // Sync DOM with buffer on tab return
+    const visHandler = () => {
+        if (document.visibilityState === 'visible' && assistantContent && responseBuffer) {
+            if (assistantContent.textContent !== responseBuffer) {
+                assistantContent.textContent = responseBuffer;
+                scrollToBottom();
+            }
+        }
+    };
+    document.addEventListener('visibilitychange', visHandler);
 
     try {
         let response;
 
         if (selectedImage) {
-            // Multipart form upload
             const formData = new FormData();
             formData.append('message', text);
             formData.append('image', selectedImage);
+            formData.append('model', selectedModel);
             selectedImage = null;
             document.getElementById('chatImageInput').value = '';
 
@@ -96,7 +140,7 @@ async function sendMessage() {
             response = await fetch('/api/chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text }),
+                body: JSON.stringify({ message: text, model: selectedModel }),
             });
         }
 
@@ -115,11 +159,19 @@ async function sendMessage() {
                     try {
                         const data = JSON.parse(line.slice(6));
                         if (data.text) {
-                            assistantContent.textContent += data.text;
+                            responseBuffer += data.text;
+                            if (!assistantContent) {
+                                thinking.remove();
+                                assistantContent = addBubble('assistant', '');
+                            }
+                            assistantContent.textContent = responseBuffer;
                             scrollToBottom();
                         }
                         if (data.processing) {
-                            // Show processing status
+                            if (!assistantContent) {
+                                thinking.remove();
+                                assistantContent = addBubble('assistant', '');
+                            }
                             const proc = document.createElement('div');
                             proc.className = 'processing-indicator';
                             proc.textContent = data.processing;
@@ -127,10 +179,13 @@ async function sendMessage() {
                             scrollToBottom();
                         }
                         if (data.error) {
+                            if (!assistantContent) {
+                                thinking.remove();
+                                assistantContent = addBubble('assistant', '');
+                            }
                             assistantContent.textContent = 'Error: ' + data.error;
                         }
                         if (data.done) {
-                            // Remove processing indicators
                             document.querySelectorAll('.processing-indicator').forEach(el => el.remove());
                         }
                     } catch (e) {
@@ -140,9 +195,18 @@ async function sendMessage() {
             }
         }
     } catch (err) {
-        assistantContent.textContent = 'Connection error. Please try again.';
+        thinking.remove();
+        if (responseBuffer && assistantContent) {
+            assistantContent.textContent = responseBuffer + '\n\n[Connection lost — partial response shown]';
+        } else {
+            if (!assistantContent) {
+                assistantContent = addBubble('assistant', '');
+            }
+            assistantContent.textContent = 'Connection error. Please try again.';
+        }
     }
 
+    document.removeEventListener('visibilitychange', visHandler);
     chatInput.disabled = false;
     document.getElementById('sendBtn').disabled = false;
     chatInput.focus();

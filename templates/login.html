@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#FFB7C5">
+    <meta name="theme-color" content="#F2B5C4">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
     <title>Japan 2026 - Login</title>
@@ -13,7 +13,9 @@
         <div class="login-card">
             <h1 class="login-title">Japan 2026</h1>
             <p class="login-subtitle">Cherry Blossom Trip</p>
-            <p class="login-emoji">&#x1f338;</p>
+            <div class="login-emoji">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3c-1.5 2.5-1 5 .5 6.5S16.5 11 19 9.5c-2.5 1.5-3.5 4.5-2 7s4.5 3 7 1.5c-2.5.5-5-.5-6.5-2.5S16 11 18.5 9c-2.5.5-5.5-.5-7-3S10.5.5 12 3z"/><path d="M12 3c1.5 2.5 1 5-.5 6.5S7.5 11 5 9.5c2.5 1.5 3.5 4.5 2 7s-4.5 3-7 1.5c2.5.5 5-.5 6.5-2.5S8 11 5.5 9c2.5.5 5.5-.5 7-3S13.5.5 12 3z"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>
+            </div>
             <form method="post" action="{{ url_for('login') }}" aria-label="Login form">
                 {% if error %}
                 <p class="login-error" role="alert">{{ error }}</p>

@@ -2,8 +2,9 @@
 {% block title %}Reference Guide{% endblock %}
 
 {% block content %}
+{% from "icons.html" import icon_book, icon_castle, icon_hotspring, icon_shrine, icon_speech, icon_yen, icon_shield, icon_alert, icon_question, icon_chat, icon_shinkansen, icon_clipboard %}
 <header>
-    <h1>&#x1f4d6; Reference Guide</h1>
+    <h1>{{ icon_book(22) }} Reference Guide</h1>
     <input type="search" id="refSearch" placeholder="Search..."
            oninput="filterReference(this.value)">
 </header>
@@ -21,23 +22,23 @@
     'transport': 'Transportation Guide'
 } %}
 
-{% set section_icons = {
-    'cultural_tips': '&#x1f3ef;',
-    'onsen': '&#x2668;',
-    'temple_shrine': '&#x26e9;',
-    'phrases': '&#x1f5e3;',
-    'money': '&#x1f4b4;',
-    'survival': '&#x1f6e1;',
-    'emergency': '&#x1f6a8;',
-    'troubleshooting': '&#x2753;',
-    'conversation': '&#x1f4ac;',
-    'transport': '&#x1f685;'
+{% set section_icon_map = {
+    'cultural_tips': icon_castle,
+    'onsen': icon_hotspring,
+    'temple_shrine': icon_shrine,
+    'phrases': icon_speech,
+    'money': icon_yen,
+    'survival': icon_shield,
+    'emergency': icon_alert,
+    'troubleshooting': icon_question,
+    'conversation': icon_chat,
+    'transport': icon_shinkansen
 } %}
 
 {% for section_key, items in sections.items() %}
 <details class="ref-section" open>
     <summary class="ref-heading">
-        {{ section_icons.get(section_key, '&#x1f4cb;') | safe }}
+        {% if section_key in section_icon_map %}{{ section_icon_map[section_key](18) }}{% else %}{{ icon_clipboard(18) }}{% endif %}
         {{ section_labels.get(section_key, section_key | replace('_', ' ') | title) }}
     </summary>
     {% for item in items %}

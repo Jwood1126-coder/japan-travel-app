@@ -14,14 +14,18 @@
 }
 
 :root {
-    --sakura: #FFB7C5;
-    --sakura-dark: #FF8FA3;
-    --sakura-light: #FFF0F3;
-    --sakura-text: #8B2252;
-    --accent: #E91E7A;
+    --sakura: #F2B5C4;
+    --sakura-dark: #E8899E;
+    --sakura-light: #FFF5F7;
+    --sakura-text: #7A2048;
+    --accent: #D4276A;
     --jr-green: #3cb371;
     --completed-bg: #f0fdf4;
     --completed-text: #6b7280;
+    --glass-bg: rgba(255, 245, 247, 0.72);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 14px;
 }
 
 [data-theme="dark"] {
@@ -30,7 +34,8 @@
     --sakura-dark: #FF8FA3;
     --completed-bg: #1a2e1a;
     --completed-text: #6b7280;
-    --accent: #FF6B9D;
+    --accent: #F472A8;
+    --glass-bg: rgba(30, 30, 30, 0.72);
 }
 [data-theme="dark"] .bottom-nav { background: rgba(30,30,30,0.95); border-top-color: #333; }
 [data-theme="dark"] .more-menu-sheet { background: #1e1e1e; }
@@ -70,6 +75,9 @@
 body {
     padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
     -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .app-main {
@@ -1553,6 +1561,9 @@ body {
 .chat-header {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--pico-muted-border-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
 }
 
 .chat-header h1 {
@@ -1619,12 +1630,25 @@ body {
     gap: 8px;
     padding: 8px 1rem;
     border-top: 1px solid var(--pico-muted-border-color);
-    background: var(--pico-background-color, #fff);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    align-items: flex-end;
 }
 
-.chat-input-bar input {
+.chat-input-bar textarea {
     flex: 1;
     margin-bottom: 0;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px;
+    min-height: 44px;
+    line-height: 1.4;
+    padding: 10px 14px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 1px solid var(--pico-muted-border-color);
 }
 
 .chat-input-bar button {
@@ -1736,6 +1760,60 @@ body {
     color: var(--accent);
     font-style: italic;
     padding: 4px 0;
+}
+
+/* Chat header & model selector */
+.chat-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.model-selector {
+    display: flex;
+    gap: 4px;
+}
+.model-pill {
+    padding: 4px 10px;
+    border-radius: 14px;
+    border: 1px solid var(--pico-muted-border-color);
+    background: transparent;
+    font-size: 0.7rem;
+    cursor: pointer;
+    color: var(--pico-muted-color);
+    font-weight: 500;
+    white-space: nowrap;
+}
+.model-pill.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+/* Thinking indicator */
+.thinking-indicator {
+    align-self: flex-start;
+    padding: 14px 20px;
+    border-radius: 16px;
+    background: var(--pico-muted-border-color, #e2e8f0);
+    border-bottom-left-radius: 4px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+[data-theme="dark"] .thinking-indicator { background: #2d2d2d; }
+.thinking-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pico-muted-color, #718096);
+    animation: thinkPulse 1.4s ease-in-out infinite;
+}
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes thinkPulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
 }
 
 /* Accommodation Day Cards */
@@ -2464,6 +2542,35 @@ body {
 }
 [data-theme="dark"] .rain-badge { background: #1e3a5f; color: #93c5fd; }
 [data-theme="dark"] .itin-day-row.today { background: rgba(255,183,197,0.08); }
+
+/* SVG icon alignment */
+.nav-icon svg { display: block; margin: 0 auto; }
+.more-link svg { vertical-align: -4px; margin-right: 8px; }
+.slot-heading svg,
+.guide-link svg,
+.activity-url-link svg,
+.maps-link svg,
+.task-link-icon svg { vertical-align: -3px; margin-right: 3px; }
+h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
+.next-up-tip svg { vertical-align: -3px; margin-right: 4px; }
+.rain-badge svg { vertical-align: -2px; margin-right: 2px; }
+.info-bar-currency svg { vertical-align: -3px; margin-right: 3px; }
+.loc-accom-icon svg { vertical-align: -3px; }
+.accom-day-icon svg { display: block; }
+.event-icon svg { display: block; }
+.expand-arrow svg { transition: transform 0.2s; }
+.expand-arrow.expanded svg { transform: rotate(90deg); }
+.note-btn svg { display: block; }
+.attach-btn svg { display: block; margin: 0 auto; }
+#sendBtn svg { display: block; margin: 0 auto; }
+.subgroup-icon svg { vertical-align: -3px; }
+.delete-item-btn svg { display: block; }
+
+/* Glass effect for more menu */
+.more-menu-sheet {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
 
 /* Utilities */
 @media (max-width: 480px) {

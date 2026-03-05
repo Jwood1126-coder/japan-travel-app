@@ -71,7 +71,7 @@ def _build_pretip_sections(items):
         sections.append({
             'key': 'flights',
             'label': 'Flights & Transport',
-            'icon': '&#x2708;',
+            'icon': 'plane',
             'entries': flights_transport,
             'subgroups': None,
             'progress': _section_progress(flights_transport),
@@ -82,7 +82,7 @@ def _build_pretip_sections(items):
         sections.append({
             'key': 'accommodations',
             'label': 'Accommodations',
-            'icon': '&#x1f3e8;',
+            'icon': 'hotel',
             'entries': None,
             'subgroups': [{'name': name, 'entries': items_list}
                           for name, items_list in sorted_accom],
@@ -93,7 +93,7 @@ def _build_pretip_sections(items):
         sections.append({
             'key': 'preparation',
             'label': 'Preparation',
-            'icon': '&#x1f4cb;',
+            'icon': 'clipboard',
             'entries': preparation,
             'subgroups': None,
             'progress': _section_progress(preparation),
@@ -109,7 +109,7 @@ def _build_pretip_sections(items):
         sections.append({
             'key': 'packing',
             'label': 'Packing',
-            'icon': '&#x1f392;',
+            'icon': 'backpack',
             'entries': None,
             'subgroups': subgroups,
             'progress': _section_progress(all_packing),
@@ -343,7 +343,7 @@ def _build_upcoming_events():
             'title': f'{f.airline} {f.flight_number}',
             'subtitle': f'{f.route_from} \u2192 {f.route_to}',
             'status': f.booking_status or 'not_booked',
-            'icon': '&#x2708;',
+            'icon': 'plane',
             'address': None,
         })
 
@@ -364,7 +364,7 @@ def _build_upcoming_events():
             'title': f'Check in: {name}',
             'subtitle': a.location_name,
             'status': status,
-            'icon': '&#x1f3e8;',
+            'icon': 'hotel',
             'address': address,
         })
 
@@ -383,7 +383,7 @@ def _build_upcoming_events():
                 'title': f'Check out: {selected.name}',
                 'subtitle': a.location_name,
                 'status': 'info',
-                'icon': '&#x1f6ce;',
+                'icon': 'bellhop',
                 'address': selected.address,
             })
 
@@ -404,7 +404,7 @@ def _build_upcoming_events():
             'title': f'{r.route_from} \u2192 {r.route_to}',
             'subtitle': f'{r.transport_type} {r.train_name or ""}',
             'status': 'jr_covered' if r.jr_pass_covered else ('ticket_needed' if r.cost_if_not_covered else 'info'),
-            'icon': '&#x1f686;',
+            'icon': 'train',
             'address': None,
         })
 
@@ -426,7 +426,7 @@ def _build_upcoming_events():
                         'title': f'{r.route_from} \u2192 {r.route_to}',
                         'subtitle': f'{r.transport_type} {r.train_name or ""}',
                         'status': 'jr_covered' if r.jr_pass_covered else ('ticket_needed' if r.cost_if_not_covered else 'info'),
-                        'icon': '&#x1f686;',
+                        'icon': 'train',
                         'address': None,
                     })
 
@@ -441,7 +441,7 @@ def _build_upcoming_events():
                     'title': a.title,
                     'subtitle': f'Day {day.day_number} \u2022 \u00a5{int(a.cost_per_person)}/person',
                     'status': 'upcoming',
-                    'icon': '&#x1f3ab;',
+                    'icon': 'ticket',
                     'address': a.address,
                 })
 

@@ -2,6 +2,7 @@
 {% block title %}Day {{ day.day_number }} - {{ day.title }}{% endblock %}
 
 {% block content %}
+{% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes %}
 <a href="{{ url_for('itinerary.index') }}" class="back-to-overview">&larr; All Days</a>
 <header class="day-header">
     <div class="day-nav-row">
@@ -27,7 +28,7 @@
     <div class="location-row">
         <span class="location-badge">{{ day.location.name }}</span>
         {% if day.location.guide_url %}
-        <a href="{{ day.location.guide_url }}" target="_blank" rel="noopener" class="guide-link">&#x1f4d6; Travel Guide</a>
+        <a href="{{ day.location.guide_url }}" target="_blank" rel="noopener" class="guide-link">{{ icon_book(16) }} Travel Guide</a>
         {% endif %}
     </div>
     {% if day.location.vibe %}
@@ -42,20 +43,20 @@
 <!-- Accommodation check-out -->
 {% if day_checkout and checkout_option %}
 <section class="accommodation-day-card checkout">
-    <div class="accom-day-icon">&#x1f6ce;</div>
+    <div class="accom-day-icon">{{ icon_bellhop(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check out &middot; {{ day_checkout.location_name }}</div>
         <div class="accom-day-name">{{ checkout_option.name }}</div>
         {% if checkout_option.address %}
         <a href="{{ checkout_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-            &#x1f4cd; {{ checkout_option.address }}
+            {{ icon_pin(14) }}{{ checkout_option.address }}
         </a>
         {% endif %}
     </div>
 </section>
 {% elif day_checkout and checkout_options_pending %}
 <section class="accommodation-day-card checkout pending-choice">
-    <div class="accom-day-icon">&#x1f6ce;</div>
+    <div class="accom-day-icon">{{ icon_bellhop(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check out &middot; {{ day_checkout.location_name }}</div>
         <div class="accom-pending-options">
@@ -75,7 +76,7 @@
 </section>
 {% elif day_checkout %}
 <section class="accommodation-day-card checkout pending-choice">
-    <div class="accom-day-icon">&#x1f6ce;</div>
+    <div class="accom-day-icon">{{ icon_bellhop(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check out &middot; {{ day_checkout.location_name }}</div>
         <a href="{{ url_for('checklists.checklists_view') }}?tab=pre_trip" class="choose-link">Book accommodation &rarr;</a>
@@ -86,11 +87,11 @@
 <!-- Transport to this location (travel days) -->
 {% if transport_routes %}
 <section class="transport-banner">
-    <h3 class="slot-heading">&#x1f686; Getting Here</h3>
+    <h3 class="slot-heading">{{ icon_train(18) }} Getting Here</h3>
     {% for route in transport_routes %}
     <div class="transport-card">
         <div class="transport-icon">
-            {% if 'Shinkansen' in route.transport_type %}&#x1f685;{% elif 'Bus' in route.transport_type %}&#x1f68c;{% elif 'Ferry' in route.transport_type %}&#x26f4;{% else %}&#x1f686;{% endif %}
+            {% if 'Shinkansen' in route.transport_type %}{{ icon_shinkansen(20) }}{% elif 'Bus' in route.transport_type %}{{ icon_bus(20) }}{% elif 'Ferry' in route.transport_type %}{{ icon_ferry(20) }}{% else %}{{ icon_train(20) }}{% endif %}
         </div>
         <div class="transport-details">
             <div class="transport-route-text">{{ route.route_from }} &rarr; {{ route.route_to }}</div>
@@ -113,7 +114,7 @@
 <!-- Flights on this day -->
 {% if day_flights %}
 <section class="day-flights-section">
-    <h3 class="slot-heading">&#x2708; Flights Today</h3>
+    <h3 class="slot-heading">{{ icon_plane(18) }} Flights Today</h3>
     {% for flight in day_flights %}
     <div class="flight-card-tripit compact">
         <div class="flight-card-header">
@@ -145,7 +146,7 @@
 <!-- Accommodation check-in -->
 {% if day_checkin and checkin_option %}
 <section class="accommodation-day-card checkin">
-    <div class="accom-day-icon">&#x1f3e8;</div>
+    <div class="accom-day-icon">{{ icon_hotel(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check in</div>
         <div class="accom-day-name">{{ checkin_option.name }}</div>
@@ -154,7 +155,7 @@
         {% endif %}
         {% if checkin_option.address %}
         <a href="{{ checkin_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-            &#x1f4cd; {{ checkin_option.address }}
+            {{ icon_pin(14) }}{{ checkin_option.address }}
         </a>
         {% endif %}
     </div>
@@ -166,7 +167,7 @@
 </section>
 {% elif day_checkin and checkin_options_pending %}
 <section class="accommodation-day-card checkin pending-choice">
-    <div class="accom-day-icon">&#x1f3e8;</div>
+    <div class="accom-day-icon">{{ icon_hotel(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check in &middot; {{ day_checkin.location_name }}</div>
         <div class="accom-dates-sm">{{ day_checkin.num_nights }} night{{ 's' if day_checkin.num_nights != 1 }}</div>
@@ -187,7 +188,7 @@
 </section>
 {% elif day_checkin %}
 <section class="accommodation-day-card checkin pending-choice">
-    <div class="accom-day-icon">&#x1f3e8;</div>
+    <div class="accom-day-icon">{{ icon_hotel(24) }}</div>
     <div class="accom-day-info">
         <div class="accom-day-label">Check in &middot; {{ day_checkin.location_name }}</div>
         <div class="accom-dates-sm">{{ day_checkin.num_nights }} night{{ 's' if day_checkin.num_nights != 1 }}</div>
@@ -199,13 +200,13 @@
 <!-- Activities grouped by time slot -->
 {% set slots = ['morning', 'afternoon', 'evening', 'night'] %}
 {% set slot_labels = {'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening', 'night': 'Night'} %}
-{% set slot_icons = {'morning': '&#x2600;', 'afternoon': '&#x1f324;', 'evening': '&#x1f319;', 'night': '&#x1f30c;'} %}
+{% set slot_macros = {'morning': icon_sun, 'afternoon': icon_cloud_sun, 'evening': icon_moon, 'night': icon_stars} %}
 
 {% for slot in slots %}
 {% set slot_activities = day.activities | selectattr('time_slot', 'equalto', slot) | rejectattr('is_substitute') | list %}
 {% if slot_activities %}
 <section class="time-slot-section">
-    <h3 class="slot-heading">{{ slot_icons[slot] | safe }} {{ slot_labels[slot] }}</h3>
+    <h3 class="slot-heading">{{ slot_macros[slot](18) }} {{ slot_labels[slot] }}</h3>
 
     {# Major activities: has cost or JR pass #}
     {% set major = [] %}
@@ -242,12 +243,12 @@
                 </div>
                 {% if activity.address %}
                 <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-                    &#x1f4cd; {{ activity.address }}
+                    {{ icon_pin(14) }}{{ activity.address }}
                 </a>
                 {% endif %}
                 {% if activity.url %}
                 <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
-                    &#x1f3ab; Tickets / Info
+                    {{ icon_ticket(14) }} Tickets / Info
                 </a>
                 {% endif %}
                 {% if activity.cost_note %}
@@ -265,7 +266,7 @@
             </div>
         </div>
         <button class="note-btn" onclick="openNoteEditor({{ activity.id }}, this)"
-                title="Add note" aria-label="Add note to {{ activity.title }}">&#x270F;</button>
+                title="Add note" aria-label="Add note to {{ activity.title }}">{{ icon_pencil(16) }}</button>
     </div>
     {% endfor %}
 
@@ -296,12 +297,12 @@
                     </div>
                     {% if activity.address %}
                     <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-                        &#x1f4cd; {{ activity.address }}
+                        {{ icon_pin(14) }}{{ activity.address }}
                     </a>
                     {% endif %}
                     {% if activity.url %}
                     <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
-                        &#x1f3ab; Tickets / Info
+                        {{ icon_ticket(14) }} Tickets / Info
                     </a>
                     {% endif %}
                     {% if activity.description %}
@@ -316,7 +317,7 @@
                 </div>
             </div>
             <button class="note-btn" onclick="openNoteEditor({{ activity.id }}, this)"
-                    title="Add note">&#x270F;</button>
+                    title="Add note">{{ icon_pencil(16) }}</button>
         </div>
         {% endfor %}
     {% if major %}
@@ -331,7 +332,7 @@
 {% set unslotted = day.activities | rejectattr('time_slot') | rejectattr('is_substitute') | list %}
 {% if unslotted %}
 <section class="time-slot-section">
-    <h3 class="slot-heading">&#x1f4cc; Activities</h3>
+    <h3 class="slot-heading">{{ icon_pushpin(18) }} Activities</h3>
     {% for activity in unslotted %}
     <div class="activity-card {% if activity.is_completed %}completed{% endif %}"
          data-id="{{ activity.id }}">
@@ -345,7 +346,7 @@
                 <span class="activity-title">{{ activity.title }}</span>
                 {% if activity.address %}
                 <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
-                    &#x1f4cd; {{ activity.address }}
+                    {{ icon_pin(14) }}{{ activity.address }}
                 </a>
                 {% endif %}
                 {% if activity.description %}
@@ -365,7 +366,7 @@
 {% set subs = day.activities | selectattr('is_substitute') | list %}
 {% if subs %}
 <details class="substitutes-section">
-    <summary class="substitute-heading">&#x1f504; Alternative Options ({{ subs|length }})</summary>
+    <summary class="substitute-heading">{{ icon_refresh(16) }} Alternative Options ({{ subs|length }})</summary>
     {% for activity in subs %}
     <div class="activity-card substitute">
         <div class="activity-content">
@@ -378,7 +379,7 @@
             {% endif %}
             {% if activity.url %}
             <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
-                &#x1f3ab; Tickets / Info
+                {{ icon_ticket(14) }} Tickets / Info
             </a>
             {% endif %}
             {% if activity.cost_per_person %}
@@ -392,7 +393,7 @@
 
 <!-- Day notes -->
 <section class="day-notes-section">
-    <h3>&#x1f4dd; Day Notes</h3>
+    <h3>{{ icon_notes(18) }} Day Notes</h3>
     <textarea id="dayNotes" class="day-notes-input"
               placeholder="Add notes for this day..."
               onchange="saveDayNotes({{ day.id }}, this.value)">{{ day.notes or '' }}</textarea>
