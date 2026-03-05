@@ -27,20 +27,26 @@ def _build_location_groups(days):
         current_group['days'].append(day)
         current_group['end_date'] = day.date
 
+    # Batch-load all accommodations + options in 2 queries (avoids N+1)
+    all_accom = AccommodationLocation.query.all()
+    all_options = AccommodationOption.query.all()
+    options_by_loc = {}
+    for opt in all_options:
+        options_by_loc.setdefault(opt.location_id, []).append(opt)
+
     for group in location_groups:
-        accom_loc = AccommodationLocation.query.filter(
-            AccommodationLocation.location_name.contains(group['location'])
-        ).first()
+        accom_loc = next(
+            (a for a in all_accom if group['location'] in a.location_name),
+            None)
         if accom_loc:
-            selected = AccommodationOption.query.filter_by(
-                location_id=accom_loc.id, is_selected=True).first()
+            opts = options_by_loc.get(accom_loc.id, [])
+            selected = next((o for o in opts if o.is_selected), None)
             if selected:
                 group['accom_name'] = selected.name
                 group['accom_status'] = selected.booking_status
             else:
-                pending = AccommodationOption.query.filter_by(
-                    location_id=accom_loc.id, is_eliminated=False).count()
-                group['accom_pending_count'] = pending
+                group['accom_pending_count'] = sum(
+                    1 for o in opts if not o.is_eliminated)
 
     # Build brief activity summaries per day
     for group in location_groups:
@@ -57,14 +63,19 @@ def _build_location_groups(days):
 def _compute_next_up(today, trip):
     """Determine the single most urgent action item for the hero card."""
     # Priority 1: Unbooked accommodations (nearest check-in first)
+    # Batch-load all accommodations + options in 2 queries
     accom_locs = AccommodationLocation.query.order_by(
         AccommodationLocation.check_in_date).all()
+    all_options = AccommodationOption.query.all()
+    options_by_loc = {}
+    for opt in all_options:
+        options_by_loc.setdefault(opt.location_id, []).append(opt)
+
     for loc in accom_locs:
-        selected = AccommodationOption.query.filter_by(
-            location_id=loc.id, is_selected=True).first()
+        opts = options_by_loc.get(loc.id, [])
+        selected = next((o for o in opts if o.is_selected), None)
         if not selected:
-            pending = AccommodationOption.query.filter_by(
-                location_id=loc.id, is_eliminated=False).count()
+            pending = sum(1 for o in opts if not o.is_eliminated)
             return {
                 'type': 'accommodation',
                 'title': f'Choose hotel: {loc.location_name}',
@@ -181,10 +192,10 @@ def index():
     # Next Up hero card
     next_up = _compute_next_up(today, trip)
 
-    # Weather + Currency
+    # Weather + Currency (pass days_until to skip API calls when trip is far away)
     from weather import get_weather_data, get_exchange_rate
-    weather_data = get_weather_data(days, location_groups)
-    exchange_rate = get_exchange_rate()
+    weather_data = get_weather_data(days, location_groups, days_until=days_until)
+    exchange_rate = get_exchange_rate(days_until=days_until)
 
     return render_template('index.html',
                            trip=trip,
