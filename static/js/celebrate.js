@@ -1,0 +1,142 @@
+// Pikachu Booking Celebration 🎉⚡
+// Full-screen dancing Pikachu with music when a booking is confirmed
+
+const PIKACHU_SVG = `
+<svg viewBox="0 0 200 220" class="pikachu-svg" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left Ear -->
+  <path d="M55 10 L38 75 L72 65 Z" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <path d="M55 10 L48 40 L62 35 Z" fill="#333"/>
+  <!-- Right Ear -->
+  <path d="M145 10 L128 65 L162 75 Z" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <path d="M145 10 L138 35 L152 40 Z" fill="#333"/>
+  <!-- Head -->
+  <ellipse cx="100" cy="95" rx="62" ry="55" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <!-- Eyes -->
+  <ellipse cx="78" cy="85" rx="8" ry="10" fill="#333"/>
+  <ellipse cx="122" cy="85" rx="8" ry="10" fill="#333"/>
+  <ellipse cx="80" cy="82" rx="3" ry="3.5" fill="#fff"/>
+  <ellipse cx="124" cy="82" rx="3" ry="3.5" fill="#fff"/>
+  <!-- Cheeks -->
+  <ellipse cx="58" cy="102" rx="12" ry="9" fill="#E55" opacity="0.7"/>
+  <ellipse cx="142" cy="102" rx="12" ry="9" fill="#E55" opacity="0.7"/>
+  <!-- Nose -->
+  <ellipse cx="100" cy="93" rx="3" ry="2" fill="#333"/>
+  <!-- Mouth (happy!) -->
+  <path d="M85 105 Q100 120 115 105" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Body -->
+  <ellipse cx="100" cy="165" rx="50" ry="45" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <!-- Belly -->
+  <ellipse cx="100" cy="170" rx="30" ry="25" fill="#FFF8DC" opacity="0.5"/>
+  <!-- Left Arm -->
+  <path d="M55 145 Q30 155 35 175 Q40 185 55 178" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <!-- Right Arm (waving!) -->
+  <g class="pikachu-arm-wave">
+    <path d="M145 145 Q170 130 175 145 Q178 155 160 160" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  </g>
+  <!-- Left Foot -->
+  <ellipse cx="78" cy="205" rx="18" ry="10" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <!-- Right Foot -->
+  <ellipse cx="122" cy="205" rx="18" ry="10" fill="#F5D442" stroke="#333" stroke-width="2"/>
+  <!-- Tail (lightning bolt!) -->
+  <path d="M150 155 L170 130 L160 130 L178 100 L155 125 L165 125 L148 148" fill="#F5D442" stroke="#333" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Sparkle effects -->
+  <g class="sparkles">
+    <text x="20" y="50" font-size="18" class="sparkle s1">⚡</text>
+    <text x="170" y="40" font-size="16" class="sparkle s2">✨</text>
+    <text x="10" y="130" font-size="14" class="sparkle s3">⭐</text>
+    <text x="180" y="150" font-size="18" class="sparkle s4">⚡</text>
+    <text x="50" y="190" font-size="12" class="sparkle s5">✨</text>
+    <text x="155" y="200" font-size="14" class="sparkle s6">⭐</text>
+  </g>
+</svg>`;
+
+function playBookingTune() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Pikachu-inspired happy jingle
+        const notes = [
+            { freq: 523.25, start: 0,    dur: 0.15 },  // C5
+            { freq: 659.25, start: 0.15, dur: 0.15 },  // E5
+            { freq: 783.99, start: 0.30, dur: 0.15 },  // G5
+            { freq: 1046.5, start: 0.45, dur: 0.25 },  // C6
+            { freq: 783.99, start: 0.72, dur: 0.12 },  // G5
+            { freq: 1046.5, start: 0.85, dur: 0.35 },  // C6 (held)
+            // Sparkle descend
+            { freq: 1318.5, start: 1.25, dur: 0.08 },  // E6
+            { freq: 1174.7, start: 1.35, dur: 0.08 },  // D6
+            { freq: 1046.5, start: 1.45, dur: 0.08 },  // C6
+            { freq: 987.77, start: 1.55, dur: 0.08 },  // B5
+            { freq: 1046.5, start: 1.65, dur: 0.4  },  // C6 (final)
+        ];
+
+        notes.forEach(({ freq, start, dur }) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.08, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur + 0.05);
+        });
+
+        // Close context after tune finishes
+        setTimeout(() => ctx.close(), 3000);
+    } catch (e) {
+        // Audio not supported — silent celebration
+    }
+}
+
+function showBookingCelebration(hotelName) {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'celebrate-overlay';
+    overlay.innerHTML = `
+        <div class="celebrate-content">
+            ${PIKACHU_SVG}
+            <div class="celebrate-text">
+                <div class="celebrate-title">PIKA PIKA!</div>
+                <div class="celebrate-subtitle">${hotelName || 'Hotel'} is booked!</div>
+            </div>
+            <div class="confetti-container" id="confettiBox"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Spawn confetti
+    const confettiBox = overlay.querySelector('#confettiBox');
+    const colors = ['#F5D442', '#E55', '#F2B5C4', '#3cb371', '#6366f1', '#f97316', '#fff'];
+    for (let i = 0; i < 50; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.animationDelay = Math.random() * 0.8 + 's';
+        piece.style.animationDuration = (1.5 + Math.random() * 1.5) + 's';
+        piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+        confettiBox.appendChild(piece);
+    }
+
+    // Trigger entrance
+    requestAnimationFrame(() => {
+        overlay.classList.add('active');
+        playBookingTune();
+    });
+
+    // Auto dismiss after 3.5s
+    setTimeout(() => {
+        overlay.classList.add('leaving');
+        setTimeout(() => overlay.remove(), 600);
+    }, 3500);
+
+    // Tap to dismiss early
+    overlay.addEventListener('click', () => {
+        overlay.classList.add('leaving');
+        setTimeout(() => overlay.remove(), 600);
+    });
+}
+
+// Make globally available
+window.showBookingCelebration = showBookingCelebration;

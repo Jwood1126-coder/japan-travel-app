@@ -31,6 +31,14 @@ async function updateBookingStatus(optionId, status) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ booking_status: status })
         });
+        // 🎉 Pikachu celebration when booked or confirmed!
+        if (status === 'booked' || status === 'confirmed') {
+            const card = document.querySelector(`[data-option-id="${optionId}"]`);
+            const name = card ? card.querySelector('.option-name')?.textContent?.trim() : 'Hotel';
+            if (window.showBookingCelebration) {
+                showBookingCelebration(name);
+            }
+        }
     } catch (err) {
         console.error('Update status failed:', err);
     }
