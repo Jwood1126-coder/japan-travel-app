@@ -223,15 +223,15 @@
             <span class="subgroup-icon">&#x1f4cd;</span>
             {% endif %}
             <span class="subgroup-name">{{ subgroup.name }}</span>
-            <span class="subgroup-count">{{ subgroup.items | length }}</span>
+            <span class="subgroup-count">{{ subgroup.entries | length }}</span>
         </div>
-        {% for item in subgroup.items %}
+        {% for item in subgroup.entries %}
             {{ render_checklist_item(item) }}
         {% endfor %}
     </div>
     {% endfor %}
     {% else %}
-    {% for item in section.items %}
+    {% for item in section.entries %}
         {{ render_checklist_item(item) }}
     {% endfor %}
     {% endif %}

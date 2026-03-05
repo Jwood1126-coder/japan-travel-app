@@ -72,7 +72,7 @@ def _build_pretip_sections(items):
             'key': 'flights',
             'label': 'Flights & Transport',
             'icon': '&#x2708;',
-            'items': flights_transport,
+            'entries': flights_transport,
             'subgroups': None,
             'progress': _section_progress(flights_transport),
         })
@@ -83,8 +83,8 @@ def _build_pretip_sections(items):
             'key': 'accommodations',
             'label': 'Accommodations',
             'icon': '&#x1f3e8;',
-            'items': None,
-            'subgroups': [{'name': name, 'items': items_list}
+            'entries': None,
+            'subgroups': [{'name': name, 'entries': items_list}
                           for name, items_list in sorted_accom],
             'progress': _section_progress(all_accom_items),
         })
@@ -94,7 +94,7 @@ def _build_pretip_sections(items):
             'key': 'preparation',
             'label': 'Preparation',
             'icon': '&#x1f4cb;',
-            'items': preparation,
+            'entries': preparation,
             'subgroups': None,
             'progress': _section_progress(preparation),
         })
@@ -103,14 +103,14 @@ def _build_pretip_sections(items):
         all_packing = packing_essential + packing_helpful
         subgroups = []
         if packing_essential:
-            subgroups.append({'name': 'Essential', 'items': packing_essential})
+            subgroups.append({'name': 'Essential', 'entries': packing_essential})
         if packing_helpful:
-            subgroups.append({'name': 'Helpful', 'items': packing_helpful})
+            subgroups.append({'name': 'Helpful', 'entries': packing_helpful})
         sections.append({
             'key': 'packing',
             'label': 'Packing',
             'icon': '&#x1f392;',
-            'items': None,
+            'entries': None,
             'subgroups': subgroups,
             'progress': _section_progress(all_packing),
         })
