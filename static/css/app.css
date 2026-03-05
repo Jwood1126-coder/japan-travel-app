@@ -575,7 +575,8 @@ body {
 
 /* Map page */
 #trip-map {
-    height: calc(100vh - 200px);
+    height: calc(100vh - 180px);
+    height: calc(100dvh - 180px);
     min-height: 400px;
     border-radius: 12px;
     z-index: 0;
@@ -584,8 +585,13 @@ body {
 .map-controls {
     display: flex;
     gap: 6px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
 }
+.map-controls::-webkit-scrollbar { display: none; }
 
 .map-ctrl-btn {
     font-size: 0.75rem;
@@ -595,6 +601,9 @@ body {
     background: transparent;
     color: var(--pico-color);
     cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
 }
 .map-ctrl-btn.active {
     background: var(--accent);
@@ -602,6 +611,28 @@ body {
     border-color: var(--accent);
 }
 
+.map-layer-toggles {
+    gap: 6px;
+}
+.map-toggle {
+    font-size: 0.7rem;
+    padding: 3px 10px;
+    border: 1px solid var(--pico-muted-border-color, #ccc);
+    border-radius: 12px;
+    background: transparent;
+    color: var(--pico-color);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+}
+.map-toggle.active {
+    background: var(--sakura-dark);
+    color: #fff;
+    border-color: var(--sakura-dark);
+}
+
+/* City sakura pin */
 .map-pin {
     width: 16px;
     height: 16px;
@@ -611,6 +642,41 @@ body {
     box-shadow: 0 2px 6px rgba(0,0,0,0.3);
 }
 
+/* Numbered day pin */
+.day-pin {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 0.7rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.35);
+}
+
+/* Activities count pin */
+.act-pin {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    color: #fff;
+    font-size: 0.65rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    opacity: 0.85;
+}
+
+/* Accommodation pin */
+.accom-pin {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 3px solid #FF9800;
+    background: #fff;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+/* Airport pin */
 .airport-pin {
     font-size: 18px;
     text-align: center;
@@ -619,13 +685,60 @@ body {
     text-shadow: 0 1px 3px rgba(0,0,0,0.3);
 }
 
+/* Popups */
 .map-popup { font-size: 0.85rem; line-height: 1.5; }
 .map-popup strong { color: var(--accent); }
 .popup-vibe { font-style: italic; color: var(--pico-muted-color); font-size: 0.8rem; }
-.popup-dates { font-size: 0.8rem; margin: 2px 0; }
-.popup-accom { font-size: 0.8rem; }
-.popup-link { display: inline-block; font-size: 0.8rem; margin-top: 4px; }
+.popup-dates { font-size: 0.8rem; margin: 2px 0; color: var(--pico-muted-color); }
+.popup-accom { font-size: 0.8rem; margin: 2px 0; }
+.popup-link { display: inline-block; font-size: 0.8rem; margin-top: 4px; color: var(--accent); }
+.popup-links { margin-top: 4px; }
 
+/* Day chips in city popup */
+.popup-days { margin: 4px 0; display: flex; gap: 4px; flex-wrap: wrap; }
+.popup-day-chip {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-decoration: none;
+}
+.popup-day-chip:hover { opacity: 0.8; }
+
+/* Day badge on transport popup */
+.popup-day-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 4px;
+}
+
+/* Activity list in popup */
+.popup-activity {
+    padding: 2px 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.popup-activity.optional { opacity: 0.7; }
+.popup-activity.done { text-decoration: line-through; opacity: 0.5; }
+.popup-time {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    text-transform: capitalize;
+}
+.popup-gmaps {
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+.popup-gmaps:hover { opacity: 1; }
+
+/* JR badge */
 .jr-badge {
     display: inline-block;
     background: var(--jr-green);
@@ -637,11 +750,12 @@ body {
     margin-top: 2px;
 }
 
-.leaflet-control-layers-toggle { width: 30px !important; height: 30px !important; }
-.leaflet-control-layers label { font-size: 0.8rem; }
-
+/* Dark mode */
 [data-theme="dark"] .map-ctrl-btn { border-color: #555; }
+[data-theme="dark"] .map-toggle { border-color: #555; }
 [data-theme="dark"] .airport-pin { color: #64b5f6; }
+[data-theme="dark"] .accom-pin { background: #333; }
+[data-theme="dark"] .popup-activity { border-bottom-color: rgba(255,255,255,0.1); }
 
 /* Dark mode for itinerary summary */
 [data-theme="dark"] .loc-group { border-color: #333; }

@@ -377,6 +377,7 @@ SUPPLEMENTAL_COORDS = {
 @itinerary_bp.route('/map')
 def map_view():
     locations = Location.query.order_by(Location.sort_order).all()
+    days = Day.query.order_by(Day.day_number).all()
 
     # City markers from DB coordinates
     city_markers = []
@@ -385,26 +386,67 @@ def map_view():
         if loc.latitude is None:
             continue
         loc_coords[loc.name] = (loc.latitude, loc.longitude)
-
-        accom_loc = AccommodationLocation.query.filter(
-            AccommodationLocation.location_name.contains(loc.name)
-        ).first()
-        accom_name = None
-        if accom_loc:
-            selected = AccommodationOption.query.filter_by(
-                location_id=accom_loc.id, is_selected=True).first()
-            if selected:
-                accom_name = selected.name
-
         city_markers.append({
             'name': loc.name,
             'lat': loc.latitude,
             'lng': loc.longitude,
             'vibe': loc.vibe,
-            'arrival': loc.arrival_date.strftime('%b %d') if loc.arrival_date else None,
-            'departure': loc.departure_date.strftime('%b %d') if loc.departure_date else None,
-            'accom': accom_name,
             'guide_url': loc.guide_url,
+        })
+
+    # Days data — which day is at which location, with activities
+    days_data = []
+    for d in days:
+        if not d.location or d.location.latitude is None:
+            continue
+        activities = []
+        for a in d.activities:
+            if a.is_substitute:
+                continue
+            activities.append({
+                'title': a.title,
+                'time_slot': a.time_slot or '',
+                'address': a.address or '',
+                'is_optional': a.is_optional,
+                'is_completed': a.is_completed,
+                'url': a.url or '',
+            })
+        days_data.append({
+            'day_number': d.day_number,
+            'date': d.date.strftime('%b %d'),
+            'title': d.title,
+            'location_name': d.location.name,
+            'lat': d.location.latitude,
+            'lng': d.location.longitude,
+            'activities': activities,
+        })
+
+    # Accommodation markers
+    accom_markers = []
+    for accom in AccommodationLocation.query.order_by(
+            AccommodationLocation.sort_order).all():
+        # Find matching Location by first word of location_name
+        first_word = accom.location_name.split('(')[0].strip().split()[0]
+        loc = Location.query.filter(
+            Location.name.ilike(f'%{first_word}%')).first()
+        if not loc or loc.latitude is None:
+            continue
+        selected = AccommodationOption.query.filter_by(
+            location_id=accom.id, is_selected=True).first()
+        options_count = AccommodationOption.query.filter_by(
+            location_id=accom.id, is_eliminated=False).count()
+        accom_markers.append({
+            'location_name': accom.location_name,
+            'lat': loc.latitude + 0.004,
+            'lng': loc.longitude + 0.004,
+            'check_in': accom.check_in_date.strftime('%b %d'),
+            'check_out': accom.check_out_date.strftime('%b %d'),
+            'check_in_iso': accom.check_in_date.isoformat(),
+            'check_out_iso': accom.check_out_date.isoformat(),
+            'nights': accom.num_nights,
+            'selected_name': selected.name if selected else None,
+            'booking_status': selected.booking_status if selected else 'undecided',
+            'options_count': options_count,
         })
 
     # Flight legs
@@ -424,17 +466,42 @@ def map_view():
                 'airline': f.airline,
                 'flight_number': f.flight_number,
                 'direction': f.direction,
+                'depart_date': f.depart_date.strftime('%b %d'),
+                'depart_time': f.depart_time or '',
+                'arrive_time': f.arrive_time or '',
+                'booking_status': f.booking_status or 'not_booked',
+                'duration': f.duration or '',
             })
 
-    # Ground transport routes
+    # Ground transport routes — derive day_number from day sequence
     loc_coords.update(SUPPLEMENTAL_COORDS)
     transport_routes = TransportRoute.query.order_by(
         TransportRoute.sort_order).all()
+
+    # Map transport route segments to travel days.
+    # Routes are multi-hop chains; map each segment to the day it occurs on.
+    ROUTE_DAY_MAP = {
+        ('Tokyo', 'Odawara'): 5,           # Day trip to Hakone
+        ('Tokyo', 'Nagoya'): 6,            # Tokyo -> Takayama via Nagoya
+        ('Nagoya', 'Takayama'): 6,
+        ('Takayama', 'Shirakawa-go'): 8,   # Takayama -> Kanazawa via Shirakawa-go
+        ('Shirakawa-go', 'Kanazawa'): 8,
+        ('Kanazawa', 'Tsuruga'): 9,        # Kanazawa -> Kyoto via Tsuruga
+        ('Tsuruga', 'Kyoto'): 9,
+        ('Kyoto', 'Hiroshima'): 12,        # Day trip to Hiroshima/Miyajima
+        ('Hiroshima', 'Miyajima'): 12,
+        ('Kyoto', 'Osaka'): 13,            # Kyoto -> Osaka
+        ('Osaka', 'Tokyo'): 14,            # Osaka -> Tokyo (return)
+        ('Kyoto', 'Tokyo'): 14,            # Alt: Kyoto -> Tokyo
+        ('Shinagawa', 'Narita Airport'): 15,  # Departure day
+    }
+
     ground_routes = []
     for tr in transport_routes:
         fc = loc_coords.get(tr.route_from)
         tc = loc_coords.get(tr.route_to)
         if fc and tc:
+            day_num = ROUTE_DAY_MAP.get((tr.route_from, tr.route_to))
             ground_routes.append({
                 'from_name': tr.route_from,
                 'to_name': tr.route_to,
@@ -444,9 +511,12 @@ def map_view():
                 'train_name': tr.train_name or '',
                 'jr_pass': tr.jr_pass_covered,
                 'duration': tr.duration or '',
+                'day_number': day_num,
             })
 
     return render_template('map.html',
                            city_markers=city_markers,
+                           days_data=days_data,
+                           accom_markers=accom_markers,
                            flight_legs=flight_legs,
                            ground_routes=ground_routes)
