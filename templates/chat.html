@@ -11,23 +11,38 @@
         {% if not messages %}
         <div class="chat-welcome">
             <p>Ask me anything about your Japan trip!</p>
+            <p class="chat-welcome-sub">Upload screenshots of confirmations, bookings, or tickets and I'll update your itinerary automatically.</p>
             <div class="quick-prompts">
                 <button class="prompt-btn" onclick="sendQuickPrompt(this)">What should we eat tonight?</button>
                 <button class="prompt-btn" onclick="sendQuickPrompt(this)">Translate something for me</button>
                 <button class="prompt-btn" onclick="sendQuickPrompt(this)">Suggest a modification to tomorrow</button>
-                <button class="prompt-btn" onclick="sendQuickPrompt(this)">Best restaurant near us</button>
+                <button class="prompt-btn" onclick="sendQuickPrompt(this)">What's our budget status?</button>
             </div>
         </div>
         {% else %}
         {% for msg in messages %}
         <div class="chat-bubble {{ msg.role }}">
+            {% if msg.image_filename %}
+            <img src="/photos/thumbnails/thumb_{{ msg.image_filename.rsplit('.', 1)[0] }}.jpg"
+                 class="chat-image" alt="Uploaded image"
+                 onclick="window.open('/photos/originals/{{ msg.image_filename }}')">
+            {% endif %}
             <div class="bubble-content">{{ msg.content }}</div>
         </div>
         {% endfor %}
         {% endif %}
     </div>
 
+    <div id="imagePreview" class="image-preview" style="display:none">
+        <img id="previewImg" src="">
+        <button onclick="clearImage()" class="preview-remove">&times;</button>
+    </div>
+
     <div class="chat-input-bar">
+        <input type="file" id="chatImageInput" accept="image/*" capture="environment"
+               style="display:none" onchange="handleImageSelect(this)">
+        <button class="attach-btn" onclick="document.getElementById('chatImageInput').click()"
+                title="Upload photo">&#x1f4ce;</button>
         <input type="text" id="chatInput" placeholder="Ask about your trip..."
                onkeydown="if(event.key==='Enter')sendMessage()">
         <button onclick="sendMessage()" id="sendBtn">&#x27A4;</button>

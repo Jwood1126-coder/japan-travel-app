@@ -63,6 +63,12 @@
             </p>
             {% endif %}
 
+            {% if option.address %}
+            <a href="{{ option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+                &#x1f4cd; {{ option.address }}
+            </a>
+            {% endif %}
+
             <div class="option-links">
                 {% if option.booking_url %}
                 <a href="{{ option.booking_url }}" target="_blank" rel="noopener"

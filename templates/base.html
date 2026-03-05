@@ -27,9 +27,9 @@
             <span class="nav-icon">&#x1f4c5;</span>
             <span class="nav-label">Itinerary</span>
         </a>
-        <a href="{{ url_for('journal.journal_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('journal') %}active{% endif %}">
-            <span class="nav-icon">&#x1f4f7;</span>
-            <span class="nav-label">Journal</span>
+        <a href="{{ url_for('checklists.checklists_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('checklists') %}active{% endif %}">
+            <span class="nav-icon">&#x2705;</span>
+            <span class="nav-label">Checklist</span>
         </a>
         <a href="{{ url_for('chat.chat_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('chat') %}active{% endif %}">
             <span class="nav-icon">&#x1f4ac;</span>
@@ -47,7 +47,6 @@
         <div class="more-menu-sheet">
             <div class="more-menu-handle"></div>
             <a href="{{ url_for('accommodations.accommodations_view') }}" class="more-link">&#x1f3e8; Accommodations</a>
-            <a href="{{ url_for('checklists.checklists_view') }}" class="more-link">&#x2705; Checklists</a>
             <a href="{{ url_for('reference.reference_view') }}" class="more-link">&#x1f4d6; Reference Guide</a>
             <a href="#" class="more-link" onclick="toggleTheme()">&#x1f319; Toggle Dark Mode</a>
             <a href="{{ url_for('logout') }}" class="more-link">&#x1f6aa; Logout</a>

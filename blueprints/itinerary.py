@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, jsonify, request
-from models import db, Day, Activity, Trip, Location, BudgetItem, Flight, TransportRoute
+from models import db, Day, Activity, Trip, Location, BudgetItem, Flight, \
+    TransportRoute, AccommodationLocation, AccommodationOption
 from datetime import datetime, date
 
 itinerary_bp = Blueprint('itinerary', __name__)
@@ -79,10 +80,24 @@ def day_view(day_number):
         (Flight.depart_date == day.date) | (Flight.arrive_date == day.date)
     ).order_by(Flight.leg_number).all()
 
+    # Accommodation check-in/out on this day
+    day_checkin = AccommodationLocation.query.filter_by(check_in_date=day.date).first()
+    day_checkout = AccommodationLocation.query.filter_by(check_out_date=day.date).first()
+    checkin_option = None
+    checkout_option = None
+    if day_checkin:
+        checkin_option = AccommodationOption.query.filter_by(
+            location_id=day_checkin.id, is_selected=True).first()
+    if day_checkout:
+        checkout_option = AccommodationOption.query.filter_by(
+            location_id=day_checkout.id, is_selected=True).first()
+
     return render_template('day.html', day=day, prev_day=prev_day,
                            next_day=next_day, total_days=total_days,
                            transport_routes=transport_routes,
-                           day_flights=day_flights)
+                           day_flights=day_flights,
+                           day_checkin=day_checkin, checkin_option=checkin_option,
+                           day_checkout=day_checkout, checkout_option=checkout_option)
 
 
 @itinerary_bp.route('/api/activities/<int:activity_id>/toggle', methods=['POST'])

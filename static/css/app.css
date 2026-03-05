@@ -1212,6 +1212,202 @@ body {
     padding: 2rem;
 }
 
+/* Chat Image Upload */
+.attach-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.image-preview {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 1rem 0;
+    background: var(--pico-background-color, #fff);
+}
+.image-preview img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid var(--sakura);
+}
+.preview-remove {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--pico-muted-color);
+    cursor: pointer;
+    padding: 4px;
+}
+.chat-image {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+.chat-welcome-sub {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    margin-top: 4px;
+}
+.processing-indicator {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-style: italic;
+    padding: 4px 0;
+}
+
+/* Accommodation Day Cards */
+.accommodation-day-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--sakura);
+    background: linear-gradient(135deg, var(--sakura-light), transparent);
+}
+.accommodation-day-card.checkin { border-left: 4px solid var(--jr-green); }
+.accommodation-day-card.checkout { border-left: 4px solid var(--accent); }
+.accom-day-icon { font-size: 1.5rem; min-width: 36px; text-align: center; }
+.accom-day-info { flex: 1; min-width: 0; }
+.accom-day-label { font-size: 0.75rem; text-transform: uppercase; color: var(--pico-muted-color); font-weight: 600; }
+.accom-day-name { font-weight: 600; font-size: 0.95rem; }
+.accom-day-conf { font-size: 0.8rem; color: var(--pico-muted-color); }
+.accom-day-status { flex-shrink: 0; }
+
+/* Google Maps Links */
+.maps-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+.maps-link:hover { text-decoration: underline; }
+
+/* Minor/Compact Activities */
+.activity-card.compact {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+}
+.activity-card.compact .activity-title { font-size: 0.9rem; }
+.minor-activities {
+    margin-top: 4px;
+}
+.minor-activities summary {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    cursor: pointer;
+    padding: 4px 0;
+}
+
+/* Checklist Mode Tabs */
+.checklist-mode-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.5rem;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid var(--sakura);
+}
+.mode-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--sakura-text);
+    background: transparent;
+    transition: all 0.2s;
+}
+.mode-tab.active {
+    background: var(--sakura);
+    color: #fff;
+}
+
+/* Upcoming Event Cards (On-Trip) */
+.upcoming-date-heading {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    margin: 1.5rem 0 0.5rem;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+}
+.upcoming-date-heading:first-of-type { margin-top: 0.5rem; }
+
+.upcoming-event-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color);
+}
+.upcoming-event-card.flight { border-left: 3px solid #3b82f6; }
+.upcoming-event-card.checkin { border-left: 3px solid var(--jr-green); }
+.upcoming-event-card.checkout { border-left: 3px solid var(--accent); }
+.upcoming-event-card.transport { border-left: 3px solid var(--sakura-dark); }
+.upcoming-event-card.ticketed { border-left: 3px solid #f59e0b; }
+
+.event-icon { font-size: 1.3rem; min-width: 32px; text-align: center; }
+.event-info { flex: 1; min-width: 0; }
+.event-time { font-size: 0.8rem; font-weight: 700; color: var(--accent); }
+.event-title { font-weight: 600; font-size: 0.9rem; }
+.event-subtitle { font-size: 0.8rem; color: var(--pico-muted-color); }
+
+.event-status-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.event-status-badge.confirmed { background: #d1fae5; color: #065f46; }
+.event-status-badge.booked { background: #dbeafe; color: #1e40af; }
+.event-status-badge.not_booked { background: #fef3c7; color: #92400e; }
+.event-status-badge.jr_covered { background: var(--jr-green); color: #fff; }
+.event-status-badge.ticket_needed { background: #fef3c7; color: #92400e; }
+.event-status-badge.upcoming { background: #f3f4f6; color: #6b7280; }
+.event-status-badge.info { background: #e0e7ff; color: #3730a3; }
+
+/* Dark mode - new components */
+[data-theme="dark"] .attach-btn { background: var(--sakura-light); }
+[data-theme="dark"] .image-preview { background: #1e1e1e; }
+[data-theme="dark"] .image-preview img { border-color: #4a2030; }
+[data-theme="dark"] .accommodation-day-card { background: linear-gradient(135deg, var(--sakura-light), transparent); border-color: #4a2030; }
+[data-theme="dark"] .checklist-mode-tabs { border-color: #4a2030; }
+[data-theme="dark"] .mode-tab { color: var(--sakura-text); }
+[data-theme="dark"] .mode-tab.active { background: var(--accent); color: #fff; }
+[data-theme="dark"] .upcoming-event-card { border-color: #333; }
+[data-theme="dark"] .upcoming-date-heading { border-bottom-color: #333; }
+[data-theme="dark"] .event-status-badge.confirmed { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .event-status-badge.booked { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .event-status-badge.not_booked { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .event-status-badge.upcoming { background: #2d2d2d; color: #9ca3af; }
+[data-theme="dark"] .event-status-badge.info { background: #312e81; color: #a5b4fc; }
+[data-theme="dark"] .maps-link { color: var(--accent); }
+[data-theme="dark"] .minor-activities summary { color: #9ca3af; }
+
 /* Utilities */
 @media (max-width: 480px) {
     .app-main {

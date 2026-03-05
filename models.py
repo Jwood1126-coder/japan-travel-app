@@ -21,6 +21,7 @@ class Location(db.Model):
     region = db.Column(db.String(100))
     vibe = db.Column(db.Text)
     why = db.Column(db.Text)
+    address = db.Column(db.String(500))
     arrival_date = db.Column(db.Date)
     departure_date = db.Column(db.Date)
     sort_order = db.Column(db.Integer, nullable=False)
@@ -39,7 +40,6 @@ class Day(db.Model):
     notes = db.Column(db.Text)
     activities = db.relationship('Activity', backref='day', lazy=True,
                                  order_by='Activity.sort_order')
-    journal_entries = db.relationship('JournalEntry', backref='day', lazy=True)
     photos = db.relationship('Photo', backref='day', lazy=True)
 
     def completion_pct(self):
@@ -65,6 +65,7 @@ class Activity(db.Model):
     is_completed = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime)
     jr_pass_covered = db.Column(db.Boolean, default=False)
+    address = db.Column(db.String(500))
     sort_order = db.Column(db.Integer, nullable=False, default=0)
     notes = db.Column(db.Text)
 
@@ -116,6 +117,7 @@ class AccommodationOption(db.Model):
     is_selected = db.Column(db.Boolean, default=False)
     booking_status = db.Column(db.String(50), default='not_booked')
     confirmation_number = db.Column(db.String(100))
+    address = db.Column(db.String(500))
     user_notes = db.Column(db.Text)
 
     def to_dict(self):
@@ -158,6 +160,7 @@ class Flight(db.Model):
     cost_amount = db.Column(db.String(100))
     notes = db.Column(db.Text)
     booking_status = db.Column(db.String(50), default='not_booked')
+    confirmation_number = db.Column(db.String(100))
 
 
 class TransportRoute(db.Model):
@@ -206,22 +209,8 @@ class ChecklistItem(db.Model):
         }
 
 
-class JournalEntry(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    day_id = db.Column(db.Integer, db.ForeignKey('day.id'))
-    title = db.Column(db.String(200))
-    content = db.Column(db.Text)
-    mood = db.Column(db.String(50))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow,
-                           onupdate=datetime.utcnow)
-    photos = db.relationship('Photo', backref='journal_entry', lazy=True)
-
-
 class Photo(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    journal_entry_id = db.Column(db.Integer,
-                                 db.ForeignKey('journal_entry.id'))
     day_id = db.Column(db.Integer, db.ForeignKey('day.id'))
     filename = db.Column(db.String(255), nullable=False)
     original_filename = db.Column(db.String(255))
@@ -250,6 +239,7 @@ class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     role = db.Column(db.String(20), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    image_filename = db.Column(db.String(255))
     context_summary = db.Column(db.String(500))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

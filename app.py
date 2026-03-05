@@ -7,6 +7,30 @@ from models import db
 socketio = SocketIO()
 
 
+def _run_migrations(app):
+    """Add new columns to existing tables if they don't exist."""
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    if not os.path.exists(db_path):
+        return
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    migrations = [
+        ('activity', 'address', 'TEXT'),
+        ('accommodation_option', 'address', 'TEXT'),
+        ('location', 'address', 'TEXT'),
+        ('flight', 'confirmation_number', 'TEXT'),
+        ('chat_message', 'image_filename', 'TEXT'),
+    ]
+    for table, column, col_type in migrations:
+        try:
+            cursor.execute(f'ALTER TABLE {table} ADD COLUMN {column} {col_type}')
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+    conn.commit()
+    conn.close()
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -19,16 +43,22 @@ def create_app():
     from blueprints.itinerary import itinerary_bp
     from blueprints.accommodations import accommodations_bp
     from blueprints.checklists import checklists_bp
-    from blueprints.journal import journal_bp
+    from blueprints.uploads import uploads_bp
     from blueprints.chat import chat_bp
     from blueprints.reference import reference_bp
 
     app.register_blueprint(itinerary_bp)
     app.register_blueprint(accommodations_bp)
     app.register_blueprint(checklists_bp)
-    app.register_blueprint(journal_bp)
+    app.register_blueprint(uploads_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(reference_bp)
+
+    # Google Maps link filter
+    @app.template_filter('maps_link')
+    def maps_link_filter(address):
+        from urllib.parse import quote
+        return f"https://www.google.com/maps/search/?api=1&query={quote(address)}"
 
     # Auth routes
     @app.route('/login', methods=['GET', 'POST'])
@@ -48,8 +78,8 @@ def create_app():
 
     @app.before_request
     def check_auth():
-        allowed = ['login', 'static']
-        if request.endpoint and any(request.endpoint.startswith(a) for a in allowed):
+        allowed_endpoints = ['login', 'static']
+        if request.endpoint and any(request.endpoint.startswith(a) for a in allowed_endpoints):
             return
         if not session.get('authenticated'):
             return redirect(url_for('login'))
@@ -61,6 +91,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _run_migrations(app)
 
     return app
 

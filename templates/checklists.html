@@ -6,27 +6,19 @@
     <h1>&#x2705; Checklists</h1>
 </header>
 
-<!-- Category tabs -->
-<div class="checklist-tabs">
-    {% set cat_labels = {
-        'pre_departure_today': 'Do Today',
-        'pre_departure_week': 'This Week',
-        'pre_departure_miles': 'When Miles Post',
-        'pre_departure_month': '2-4 Weeks Before',
-        'packing_essential': 'Pack (Essential)',
-        'packing_helpful': 'Pack (Helpful)'
-    } %}
-    {% for cat_key, items in categories.items() %}
-    <a href="#cat-{{ cat_key }}" class="checklist-tab"
-       onclick="scrollToCategory(event, 'cat-{{ cat_key }}')">
-        {{ cat_labels.get(cat_key, cat_key) }}
-    </a>
-    {% endfor %}
+<!-- Tab switcher -->
+<div class="checklist-mode-tabs">
+    <a href="?tab=pre_trip" class="mode-tab {% if tab == 'pre_trip' %}active{% endif %}">Pre-Trip</a>
+    <a href="?tab=on_trip" class="mode-tab {% if tab == 'on_trip' %}active{% endif %}">On-Trip</a>
 </div>
 
-{% for cat_key, items in categories.items() %}
-<section class="checklist-section" id="cat-{{ cat_key }}">
-    <h2>{{ cat_labels.get(cat_key, cat_key) }}</h2>
+{% if tab == 'pre_trip' and categories %}
+<!-- Pre-Trip: static checklist items grouped -->
+{% for group_key in group_order %}
+{% if group_key in categories %}
+{% set items = categories[group_key] %}
+<section class="checklist-section" id="cat-{{ group_key }}">
+    <h2>{{ group_labels[group_key] }}</h2>
     <div class="checklist-progress">
         {% set done = items | selectattr('is_completed') | list | length %}
         {{ done }}/{{ items|length }} complete
@@ -43,7 +35,53 @@
     </div>
     {% endfor %}
 </section>
+{% endif %}
 {% endfor %}
+
+{% elif tab == 'on_trip' and upcoming %}
+<!-- On-Trip: dynamic upcoming logistics -->
+{% set current_date = [None] %}
+{% for event in upcoming %}
+
+{% if event.date != current_date[0] %}
+{% if current_date.append(event.date) %}{% endif %}
+<h3 class="upcoming-date-heading">{{ event.date.strftime('%A, %B %d') }}</h3>
+{% endif %}
+
+<div class="upcoming-event-card {{ event.type }}">
+    <div class="event-icon">{{ event.icon | safe }}</div>
+    <div class="event-info">
+        {% if event.time %}
+        <div class="event-time">{{ event.time }}</div>
+        {% endif %}
+        <div class="event-title">{{ event.title }}</div>
+        <div class="event-subtitle">{{ event.subtitle }}</div>
+        {% if event.address %}
+        <a href="{{ event.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+            &#x1f4cd; {{ event.address }}
+        </a>
+        {% endif %}
+    </div>
+    <div class="event-status-badge {{ event.status }}">
+        {% if event.status == 'confirmed' %}&#x2713; Confirmed
+        {% elif event.status == 'booked' %}Booked
+        {% elif event.status == 'not_booked' %}Not Booked
+        {% elif event.status == 'jr_covered' %}JR Pass
+        {% elif event.status == 'ticket_needed' %}Need Ticket
+        {% elif event.status == 'upcoming' %}Upcoming
+        {% elif event.status == 'info' %}&#x2139;
+        {% else %}{{ event.status }}
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% elif tab == 'on_trip' %}
+<div class="empty-state">
+    <p>No upcoming logistics to show.</p>
+    <p>Events will appear here once your trip approaches.</p>
+</div>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

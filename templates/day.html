@@ -33,6 +33,22 @@
     {% endif %}
 </header>
 
+<!-- Accommodation check-out -->
+{% if day_checkout and checkout_option %}
+<section class="accommodation-day-card checkout">
+    <div class="accom-day-icon">&#x1f6ce;</div>
+    <div class="accom-day-info">
+        <div class="accom-day-label">Check out</div>
+        <div class="accom-day-name">{{ checkout_option.name }}</div>
+        {% if checkout_option.address %}
+        <a href="{{ checkout_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+            &#x1f4cd; {{ checkout_option.address }}
+        </a>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
 <!-- Transport to this location (travel days) -->
 {% if transport_routes %}
 <section class="transport-banner">
@@ -69,6 +85,9 @@
         <div class="flight-card-header">
             <span class="flight-airline">{{ flight.airline }}</span>
             <span class="flight-number">{{ flight.flight_number }}</span>
+            {% if flight.confirmation_number %}
+            <span class="booking-badge confirmed">{{ flight.confirmation_number }}</span>
+            {% endif %}
         </div>
         <div class="flight-route-visual">
             <div class="flight-endpoint">
@@ -89,6 +108,30 @@
 </section>
 {% endif %}
 
+<!-- Accommodation check-in -->
+{% if day_checkin and checkin_option %}
+<section class="accommodation-day-card checkin">
+    <div class="accom-day-icon">&#x1f3e8;</div>
+    <div class="accom-day-info">
+        <div class="accom-day-label">Check in</div>
+        <div class="accom-day-name">{{ checkin_option.name }}</div>
+        {% if checkin_option.confirmation_number %}
+        <div class="accom-day-conf">Conf: {{ checkin_option.confirmation_number }}</div>
+        {% endif %}
+        {% if checkin_option.address %}
+        <a href="{{ checkin_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+            &#x1f4cd; {{ checkin_option.address }}
+        </a>
+        {% endif %}
+    </div>
+    <div class="accom-day-status">
+        <span class="booking-badge {{ checkin_option.booking_status }}">
+            {{ checkin_option.booking_status | replace('_', ' ') | title }}
+        </span>
+    </div>
+</section>
+{% endif %}
+
 <!-- Activities grouped by time slot -->
 {% set slots = ['morning', 'afternoon', 'evening', 'night'] %}
 {% set slot_labels = {'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening', 'night': 'Night'} %}
@@ -99,7 +142,19 @@
 {% if slot_activities %}
 <section class="time-slot-section">
     <h3 class="slot-heading">{{ slot_icons[slot] | safe }} {{ slot_labels[slot] }}</h3>
+
+    {# Major activities: has cost or JR pass #}
+    {% set major = [] %}
+    {% set minor = [] %}
     {% for activity in slot_activities %}
+        {% if activity.cost_per_person or activity.jr_pass_covered %}
+            {% if major.append(activity) %}{% endif %}
+        {% else %}
+            {% if minor.append(activity) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+
+    {% for activity in major %}
     <div class="activity-card {% if activity.is_completed %}completed{% endif %} {% if activity.is_optional %}optional{% endif %}"
          data-id="{{ activity.id }}">
         <div class="activity-main">
@@ -120,10 +175,12 @@
                     {% if activity.jr_pass_covered %}
                     <span class="jr-badge" title="Covered by JR Pass">JR</span>
                     {% endif %}
-                    {% if activity.is_optional %}
-                    <span class="optional-badge">optional</span>
-                    {% endif %}
                 </div>
+                {% if activity.address %}
+                <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+                    &#x1f4cd; {{ activity.address }}
+                </a>
+                {% endif %}
                 {% if activity.cost_note %}
                 <div class="activity-cost">{{ activity.cost_note }}</div>
                 {% endif %}
@@ -142,6 +199,56 @@
                 title="Add note">&#x270F;</button>
     </div>
     {% endfor %}
+
+    {# Minor activities: collapsed if there are also major ones #}
+    {% if minor %}
+    {% if major %}
+    <details class="minor-activities">
+        <summary>{{ minor|length }} more activit{{ 'y' if minor|length == 1 else 'ies' }}</summary>
+    {% endif %}
+        {% for activity in minor %}
+        <div class="activity-card compact {% if activity.is_completed %}completed{% endif %} {% if activity.is_optional %}optional{% endif %}"
+             data-id="{{ activity.id }}">
+            <div class="activity-main">
+                <label class="activity-check">
+                    <input type="checkbox" {% if activity.is_completed %}checked{% endif %}
+                           onchange="toggleActivity({{ activity.id }})">
+                    <span class="checkmark"></span>
+                </label>
+                <div class="activity-content">
+                    <div class="activity-title-row">
+                        {% if activity.start_time %}
+                        <span class="activity-start-time">{{ activity.start_time }}</span>
+                        {% endif %}
+                        <span class="activity-title">{{ activity.title }}</span>
+                        {% if activity.is_optional %}
+                        <span class="optional-badge">optional</span>
+                        {% endif %}
+                    </div>
+                    {% if activity.address %}
+                    <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+                        &#x1f4cd; {{ activity.address }}
+                    </a>
+                    {% endif %}
+                    {% if activity.description %}
+                    <details class="activity-details">
+                        <summary>Details</summary>
+                        <p>{{ activity.description }}</p>
+                    </details>
+                    {% endif %}
+                    {% if activity.notes %}
+                    <div class="activity-user-note">{{ activity.notes }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <button class="note-btn" onclick="openNoteEditor({{ activity.id }}, this)"
+                    title="Add note">&#x270F;</button>
+        </div>
+        {% endfor %}
+    {% if major %}
+    </details>
+    {% endif %}
+    {% endif %}
 </section>
 {% endif %}
 {% endfor %}
@@ -162,6 +269,11 @@
             </label>
             <div class="activity-content">
                 <span class="activity-title">{{ activity.title }}</span>
+                {% if activity.address %}
+                <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+                    &#x1f4cd; {{ activity.address }}
+                </a>
+                {% endif %}
                 {% if activity.description %}
                 <details class="activity-details">
                     <summary>Details</summary>
@@ -203,10 +315,6 @@
               placeholder="Add notes for this day..."
               onchange="saveDayNotes({{ day.id }}, this.value)">{{ day.notes or '' }}</textarea>
 </section>
-
-<!-- Floating journal button -->
-<a href="{{ url_for('journal.new_entry') }}?day={{ day.day_number }}"
-   class="fab" title="Journal this day">&#x1f4f7;</a>
 {% endblock %}
 
 {% block scripts %}
