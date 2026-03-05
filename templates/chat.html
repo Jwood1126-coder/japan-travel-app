@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Chat with Claude{% endblock %}
+
+{% block content %}
+<div class="chat-container">
+    <header class="chat-header">
+        <h1>&#x1f4ac; Trip Assistant</h1>
+    </header>
+
+    <div class="chat-messages" id="chatMessages">
+        {% if not messages %}
+        <div class="chat-welcome">
+            <p>Ask me anything about your Japan trip!</p>
+            <div class="quick-prompts">
+                <button class="prompt-btn" onclick="sendQuickPrompt(this)">What should we eat tonight?</button>
+                <button class="prompt-btn" onclick="sendQuickPrompt(this)">Translate something for me</button>
+                <button class="prompt-btn" onclick="sendQuickPrompt(this)">Suggest a modification to tomorrow</button>
+                <button class="prompt-btn" onclick="sendQuickPrompt(this)">Best restaurant near us</button>
+            </div>
+        </div>
+        {% else %}
+        {% for msg in messages %}
+        <div class="chat-bubble {{ msg.role }}">
+            <div class="bubble-content">{{ msg.content }}</div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="chat-input-bar">
+        <input type="text" id="chatInput" placeholder="Ask about your trip..."
+               onkeydown="if(event.key==='Enter')sendMessage()">
+        <button onclick="sendMessage()" id="sendBtn">&#x27A4;</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}

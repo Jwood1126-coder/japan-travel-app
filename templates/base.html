@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="theme-color" content="#FFB7C5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Japan Trip">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <title>{% block title %}Japan 2026{% endblock %}</title>
+</head>
+<body>
+    <main class="container app-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="bottom-nav" role="navigation">
+        <a href="{{ url_for('itinerary.index') }}" class="nav-item {% if request.endpoint == 'itinerary.index' %}active{% endif %}">
+            <span class="nav-icon">&#x1f3e0;</span>
+            <span class="nav-label">Today</span>
+        </a>
+        <a href="{{ url_for('itinerary.day_view', day_number=1) }}" class="nav-item {% if request.endpoint == 'itinerary.day_view' %}active{% endif %}">
+            <span class="nav-icon">&#x1f4c5;</span>
+            <span class="nav-label">Itinerary</span>
+        </a>
+        <a href="{{ url_for('journal.journal_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('journal') %}active{% endif %}">
+            <span class="nav-icon">&#x1f4f7;</span>
+            <span class="nav-label">Journal</span>
+        </a>
+        <a href="{{ url_for('chat.chat_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('chat') %}active{% endif %}">
+            <span class="nav-icon">&#x1f4ac;</span>
+            <span class="nav-label">Chat</span>
+        </a>
+        <a href="#" class="nav-item" onclick="toggleMore(event)">
+            <span class="nav-icon">&#x2026;</span>
+            <span class="nav-label">More</span>
+        </a>
+    </nav>
+
+    <!-- More menu slide-up -->
+    <div class="more-menu" id="moreMenu">
+        <div class="more-menu-backdrop" onclick="closeMore()"></div>
+        <div class="more-menu-sheet">
+            <div class="more-menu-handle"></div>
+            <a href="{{ url_for('accommodations.accommodations_view') }}" class="more-link">&#x1f3e8; Accommodations</a>
+            <a href="{{ url_for('checklists.checklists_view') }}" class="more-link">&#x2705; Checklists</a>
+            <a href="{{ url_for('reference.reference_view') }}" class="more-link">&#x1f4d6; Reference Guide</a>
+            <a href="#" class="more-link" onclick="toggleTheme()">&#x1f319; Toggle Dark Mode</a>
+            <a href="{{ url_for('logout') }}" class="more-link">&#x1f6aa; Logout</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

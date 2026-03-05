@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Journal{% endblock %}
+
+{% block content %}
+<header>
+    <h1>&#x1f4f7; Trip Journal</h1>
+</header>
+
+<!-- Quick photo upload -->
+<div class="quick-upload">
+    <form id="quickUploadForm" enctype="multipart/form-data">
+        <label class="upload-btn">
+            &#x1f4f7; Upload Photos
+            <input type="file" accept="image/*" multiple
+                   id="quickPhotoInput" style="display:none"
+                   onchange="quickUpload(this.files)">
+        </label>
+        <select id="quickDaySelect">
+            <option value="">No day</option>
+            {% for day in days %}
+            <option value="{{ day.id }}">Day {{ day.day_number }} - {{ day.title[:30] }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+<!-- Photo Gallery -->
+{% if photos %}
+<section class="photo-gallery">
+    <h2>Photos ({{ photos|length }})</h2>
+    <div class="gallery-grid">
+        {% for photo in photos %}
+        <div class="gallery-item" onclick="viewPhoto({{ photo.id }}, '{{ photo.filename }}')">
+            <img src="{{ url_for('journal.serve_thumbnail', filename=photo.thumbnail_filename) }}"
+                 alt="{{ photo.caption or 'Trip photo' }}" loading="lazy">
+            {% if photo.caption %}
+            <div class="photo-caption">{{ photo.caption }}</div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Journal entries -->
+<section class="entries-section">
+    <h2>Entries ({{ entries|length }})</h2>
+    {% for entry in entries %}
+    <a href="{{ url_for('journal.view_entry', entry_id=entry.id) }}" class="entry-card">
+        <div class="entry-header">
+            <strong>{{ entry.title or 'Untitled' }}</strong>
+            <span class="entry-date">{{ entry.created_at.strftime('%b %d') }}</span>
+        </div>
+        {% if entry.content %}
+        <p class="entry-preview">{{ entry.content[:120] }}{% if entry.content|length > 120 %}...{% endif %}</p>
+        {% endif %}
+    </a>
+    {% endfor %}
+    {% if not entries %}
+    <p class="empty-state">No journal entries yet. Start documenting your trip!</p>
+    {% endif %}
+</section>
+
+<!-- FAB -->
+<a href="{{ url_for('journal.new_entry') }}" class="fab" title="New entry">+</a>
+
+<!-- Fullscreen photo viewer -->
+<div class="photo-viewer" id="photoViewer" style="display:none" onclick="closePhotoViewer()">
+    <img id="photoViewerImg" src="" alt="">
+    <button class="photo-close" onclick="closePhotoViewer()">&times;</button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/journal.js') }}"></script>
+{% endblock %}

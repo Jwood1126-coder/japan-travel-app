@@ -1,0 +1,1068 @@
+/* Japan Travel Assistant - Cherry Blossom Theme */
+
+:root {
+    --sakura: #FFB7C5;
+    --sakura-dark: #FF8FA3;
+    --sakura-light: #FFF0F3;
+    --sakura-text: #8B2252;
+    --accent: #E91E7A;
+    --jr-green: #3cb371;
+    --completed-bg: #f0fdf4;
+    --completed-text: #6b7280;
+}
+
+[data-theme="dark"] {
+    --sakura-light: #2d1f24;
+    --sakura-text: #FFB7C5;
+    --completed-bg: #1a2e1a;
+}
+
+/* Global */
+body {
+    padding-bottom: 70px; /* space for bottom nav */
+    -webkit-tap-highlight-color: transparent;
+}
+
+.app-main {
+    padding: 1rem;
+    max-width: 600px;
+}
+
+/* Login Page */
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-bottom: 0;
+}
+
+.login-card {
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.login-title {
+    font-size: 2rem;
+    margin-bottom: 0;
+}
+
+.login-subtitle {
+    color: var(--sakura-dark);
+    margin-bottom: 0.5rem;
+}
+
+.login-emoji {
+    font-size: 3rem;
+    margin: 1rem 0;
+}
+
+.login-error {
+    color: #e53e3e;
+    font-size: 0.9rem;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    background: var(--pico-background-color, #fff);
+    border-top: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    padding: 6px 0 env(safe-area-inset-bottom, 8px);
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--pico-muted-color, #718096);
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+.nav-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.nav-label {
+    margin-top: 2px;
+}
+
+/* More Menu */
+.more-menu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+}
+
+.more-menu.open {
+    display: block;
+}
+
+.more-menu-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.more-menu-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--pico-background-color, #fff);
+    border-radius: 16px 16px 0 0;
+    padding: 8px 1rem 2rem;
+    transform: translateY(0);
+}
+
+.more-menu-handle {
+    width: 40px;
+    height: 4px;
+    background: #ccc;
+    border-radius: 2px;
+    margin: 0 auto 1rem;
+}
+
+.more-link {
+    display: block;
+    padding: 14px 8px;
+    text-decoration: none;
+    color: var(--pico-color);
+    font-size: 1.05rem;
+    border-bottom: 1px solid var(--pico-muted-border-color, #eee);
+}
+
+/* Dashboard */
+.dash-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.countdown {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.countdown.current {
+    color: var(--jr-green);
+}
+
+.location-badge {
+    display: inline-block;
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.buffer-badge {
+    display: inline-block;
+    background: #FEF3C7;
+    color: #92400E;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+}
+
+/* Stats Grid */
+.stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: var(--sakura-light);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--sakura-text);
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+}
+
+/* Day Overview Cards */
+.day-overview-card {
+    display: flex;
+    gap: 1rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    transition: background 0.15s;
+}
+
+.day-overview-card:hover {
+    background: var(--sakura-light);
+}
+
+.day-overview-card.today {
+    border-color: var(--accent);
+    background: var(--sakura-light);
+}
+
+.day-card-left {
+    text-align: center;
+    min-width: 44px;
+}
+
+.day-num {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.day-date {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+}
+
+.day-card-right {
+    flex: 1;
+    min-width: 0;
+}
+
+.day-card-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.day-card-location {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+}
+
+.day-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: #e2e8f0;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--jr-green);
+    border-radius: 2px;
+    transition: width 0.3s;
+}
+
+.progress-text {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    min-width: 30px;
+}
+
+/* Day View */
+.day-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.day-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.day-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 1.3rem;
+    color: var(--accent);
+    background: var(--sakura-light);
+}
+
+.day-nav-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.day-header-center h1 {
+    margin-bottom: 0;
+}
+
+.day-date-line {
+    color: var(--pico-muted-color);
+    margin: 0;
+}
+
+.day-title {
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+}
+
+/* Time Slot Sections */
+.time-slot-section {
+    margin-bottom: 1.5rem;
+}
+
+.slot-heading {
+    font-size: 0.95rem;
+    color: var(--sakura-text);
+    border-bottom: 2px solid var(--sakura);
+    padding-bottom: 4px;
+    margin-bottom: 0.75rem;
+}
+
+/* Activity Cards */
+.activity-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    transition: all 0.2s;
+}
+
+.activity-card.completed {
+    background: var(--completed-bg);
+    opacity: 0.7;
+}
+
+.activity-card.completed .activity-title {
+    text-decoration: line-through;
+    color: var(--completed-text);
+}
+
+.activity-card.substitute {
+    border-style: dashed;
+    opacity: 0.8;
+}
+
+.activity-main {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.activity-check input[type="checkbox"] {
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 2px;
+    accent-color: var(--jr-green);
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.activity-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.jr-badge {
+    display: inline-block;
+    background: var(--jr-green);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.optional-badge {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    font-style: italic;
+}
+
+.time-badge {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    background: var(--sakura-light);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.activity-cost {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    margin-top: 2px;
+}
+
+.activity-details {
+    margin-top: 4px;
+    font-size: 0.85rem;
+}
+
+.activity-details summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+.activity-details p {
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.activity-user-note {
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: #fef9c3;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.note-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--pico-muted-color);
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.sub-for {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    display: block;
+}
+
+/* Substitutes */
+.substitutes-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    border: 1px dashed var(--pico-muted-border-color);
+    border-radius: 10px;
+}
+
+.substitute-heading {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--pico-muted-color);
+}
+
+/* Day Notes */
+.day-notes-section {
+    margin-top: 1.5rem;
+}
+
+.day-notes-input {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Floating Action Button */
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(233, 30, 122, 0.4);
+    z-index: 100;
+}
+
+/* Flights */
+.flight-card {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color);
+}
+
+.flight-direction {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--pico-muted-color);
+    letter-spacing: 0.05em;
+}
+
+.flight-route {
+    font-size: 1.1rem;
+}
+
+.flight-detail {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+}
+
+/* Accommodations */
+.location-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.location-tab {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.accom-section {
+    margin-bottom: 2rem;
+    scroll-margin-top: 1rem;
+}
+
+.accom-dates {
+    color: var(--pico-muted-color);
+    font-size: 0.85rem;
+}
+
+.option-card {
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.option-card.selected {
+    border-color: var(--accent);
+    background: var(--sakura-light);
+}
+
+.option-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    cursor: pointer;
+}
+
+.option-rank {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 24px;
+}
+
+.option-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.option-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.option-type {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+}
+
+.option-price {
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.option-details {
+    padding: 0 0.75rem 0.75rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.option-standout {
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+}
+
+.option-badges {
+    display: flex;
+    gap: 6px;
+    margin: 0.5rem 0;
+}
+
+.badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+}
+
+.badge.breakfast {
+    background: #FEF3C7;
+    color: #92400E;
+}
+
+.badge.onsen {
+    background: #DBEAFE;
+    color: #1E40AF;
+}
+
+.option-total {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+}
+
+.option-links {
+    display: flex;
+    gap: 8px;
+    margin: 0.5rem 0;
+}
+
+.book-link {
+    padding: 6px 14px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.book-link.alt {
+    background: var(--pico-muted-color);
+}
+
+.select-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.select-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.booking-tracker {
+    display: flex;
+    gap: 8px;
+    margin-top: 0.5rem;
+}
+
+.status-select, .confirmation-input {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 6px;
+}
+
+.option-notes {
+    width: 100%;
+    min-height: 40px;
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    resize: vertical;
+}
+
+/* Checklists */
+.checklist-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.checklist-tab {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    text-decoration: none;
+    font-size: 0.8rem;
+}
+
+.checklist-section {
+    margin-bottom: 1.5rem;
+    scroll-margin-top: 1rem;
+}
+
+.checklist-progress {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    margin-bottom: 0.5rem;
+}
+
+.checklist-item {
+    padding: 10px;
+    border-bottom: 1px solid var(--pico-muted-border-color, #eee);
+}
+
+.checklist-item.completed .check-text {
+    text-decoration: line-through;
+    color: var(--completed-text);
+}
+
+.check-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.check-label input[type="checkbox"] {
+    min-width: 20px;
+    min-height: 20px;
+    accent-color: var(--jr-green);
+}
+
+/* Journal */
+.quick-upload {
+    margin-bottom: 1rem;
+}
+
+.upload-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+}
+
+.gallery-item {
+    position: relative;
+    aspect-ratio: 1;
+    overflow: hidden;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.gallery-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.photo-caption {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 4px 8px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.6));
+    color: #fff;
+    font-size: 0.75rem;
+}
+
+.entry-card {
+    display: block;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color);
+    text-decoration: none;
+    color: inherit;
+}
+
+.entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.entry-date {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+}
+
+.entry-preview {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    margin-top: 4px;
+}
+
+.photo-viewer {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.95);
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.photo-viewer img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.photo-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 2rem;
+    cursor: pointer;
+}
+
+.mood-picker {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.mood-option {
+    cursor: pointer;
+}
+
+.mood-option input {
+    display: none;
+}
+
+.mood-option span {
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--sakura-light);
+    font-size: 0.85rem;
+}
+
+.mood-option input:checked + span {
+    background: var(--accent);
+    color: #fff;
+}
+
+.thumb-preview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 6px;
+    margin: 4px;
+}
+
+/* Chat */
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 70px);
+    max-height: calc(100dvh - 70px);
+    margin: -1rem;
+}
+
+.chat-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.chat-header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.chat-welcome {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.quick-prompts {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 1rem;
+}
+
+.prompt-btn {
+    padding: 10px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--sakura);
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.chat-bubble.user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.assistant {
+    align-self: flex-start;
+    background: var(--pico-muted-border-color, #e2e8f0);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 1rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+    background: var(--pico-background-color, #fff);
+}
+
+.chat-input-bar input {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.chat-input-bar button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Reference */
+.ref-section {
+    margin-bottom: 1rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ref-heading {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.ref-item {
+    padding: 0.5rem 1rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.ref-item h3 {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.ref-content {
+    font-size: 0.85rem;
+    line-height: 1.5;
+}
+
+/* Budget */
+.budget-calc {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: var(--sakura-light);
+    border-radius: 12px;
+}
+
+/* Empty states */
+.empty-state {
+    text-align: center;
+    color: var(--pico-muted-color);
+    padding: 2rem;
+}
+
+/* Utilities */
+@media (max-width: 480px) {
+    .app-main {
+        padding: 0.75rem;
+    }
+}

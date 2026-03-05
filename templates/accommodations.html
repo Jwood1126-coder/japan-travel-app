@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Accommodations{% endblock %}
+
+{% block content %}
+<header>
+    <h1>&#x1f3e8; Accommodations</h1>
+    <p>Pick one option per location. Track your bookings.</p>
+</header>
+
+<!-- Location tabs -->
+<div class="location-tabs" id="locationTabs">
+    {% for loc in locations %}
+    <a href="#loc-{{ loc.id }}" class="location-tab"
+       onclick="scrollToLocation(event, 'loc-{{ loc.id }}')">
+        {{ loc.location_name.split('(')[0].split('|')[0].strip()[:12] }}
+    </a>
+    {% endfor %}
+</div>
+
+{% for loc in locations %}
+<section class="accom-section" id="loc-{{ loc.id }}">
+    <h2>{{ loc.location_name }}</h2>
+    <p class="accom-dates">
+        {{ loc.check_in_date.strftime('%b %d') }} &ndash;
+        {{ loc.check_out_date.strftime('%b %d') }}
+        ({{ loc.num_nights }} night{{ 's' if loc.num_nights != 1 }})
+    </p>
+    {% if loc.quick_notes %}
+    <p class="accom-notes">{{ loc.quick_notes }}</p>
+    {% endif %}
+
+    {% for option in loc.options %}
+    <div class="option-card {% if option.is_selected %}selected{% endif %}"
+         data-option-id="{{ option.id }}">
+        <div class="option-header" onclick="toggleOptionDetails(this)">
+            <div class="option-rank">#{{ option.rank }}</div>
+            <div class="option-info">
+                <div class="option-name">{{ option.name }}</div>
+                <div class="option-type">{{ option.property_type or '' }}</div>
+            </div>
+            <div class="option-price">
+                ${{ option.price_low|int }}&ndash;{{ option.price_high|int }}/nt
+            </div>
+        </div>
+
+        <div class="option-details" style="display:none;">
+            {% if option.standout %}
+            <p class="option-standout">{{ option.standout }}</p>
+            {% endif %}
+
+            <div class="option-badges">
+                {% if option.breakfast_included %}
+                <span class="badge breakfast">Breakfast</span>
+                {% endif %}
+                {% if option.has_onsen %}
+                <span class="badge onsen">Onsen</span>
+                {% endif %}
+            </div>
+
+            {% if option.total_low and option.total_high %}
+            <p class="option-total">
+                Total: ${{ option.total_low|int }}&ndash;${{ option.total_high|int }}
+            </p>
+            {% endif %}
+
+            <div class="option-links">
+                {% if option.booking_url %}
+                <a href="{{ option.booking_url }}" target="_blank" rel="noopener"
+                   class="book-link">Book &rarr;</a>
+                {% endif %}
+                {% if option.alt_booking_url %}
+                <a href="{{ option.alt_booking_url }}" target="_blank" rel="noopener"
+                   class="book-link alt">Alt link</a>
+                {% endif %}
+            </div>
+
+            <div class="option-actions">
+                <button class="select-btn {% if option.is_selected %}active{% endif %}"
+                        onclick="selectOption({{ option.id }})">
+                    {% if option.is_selected %}&#x2713; Selected{% else %}Select This{% endif %}
+                </button>
+            </div>
+
+            <div class="booking-tracker">
+                <select class="status-select" onchange="updateBookingStatus({{ option.id }}, this.value)">
+                    <option value="not_booked" {% if option.booking_status == 'not_booked' %}selected{% endif %}>Not Booked</option>
+                    <option value="booked" {% if option.booking_status == 'booked' %}selected{% endif %}>Booked</option>
+                    <option value="confirmed" {% if option.booking_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+                </select>
+                <input type="text" class="confirmation-input"
+                       placeholder="Confirmation #"
+                       value="{{ option.confirmation_number or '' }}"
+                       onchange="updateConfirmation({{ option.id }}, this.value)">
+            </div>
+
+            <textarea class="option-notes" placeholder="Notes..."
+                      onchange="updateOptionNotes({{ option.id }}, this.value)">{{ option.user_notes or '' }}</textarea>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+{% endfor %}
+
+<!-- Budget calculator -->
+<section class="budget-calc">
+    <h2>&#x1f4b0; Accommodation Budget</h2>
+    <div id="budgetTotal">Select options above to calculate total</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/accommodations.js') }}"></script>
+{% endblock %}

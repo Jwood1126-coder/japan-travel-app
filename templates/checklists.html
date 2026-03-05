@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Checklists{% endblock %}
+
+{% block content %}
+<header>
+    <h1>&#x2705; Checklists</h1>
+</header>
+
+<!-- Category tabs -->
+<div class="checklist-tabs">
+    {% set cat_labels = {
+        'pre_departure_today': 'Do Today',
+        'pre_departure_week': 'This Week',
+        'pre_departure_miles': 'When Miles Post',
+        'pre_departure_month': '2-4 Weeks Before',
+        'packing_essential': 'Pack (Essential)',
+        'packing_helpful': 'Pack (Helpful)'
+    } %}
+    {% for cat_key, items in categories.items() %}
+    <a href="#cat-{{ cat_key }}" class="checklist-tab"
+       onclick="scrollToCategory(event, 'cat-{{ cat_key }}')">
+        {{ cat_labels.get(cat_key, cat_key) }}
+    </a>
+    {% endfor %}
+</div>
+
+{% for cat_key, items in categories.items() %}
+<section class="checklist-section" id="cat-{{ cat_key }}">
+    <h2>{{ cat_labels.get(cat_key, cat_key) }}</h2>
+    <div class="checklist-progress">
+        {% set done = items | selectattr('is_completed') | list | length %}
+        {{ done }}/{{ items|length }} complete
+    </div>
+    {% for item in items %}
+    <div class="checklist-item {% if item.is_completed %}completed{% endif %}"
+         data-id="{{ item.id }}">
+        <label class="check-label">
+            <input type="checkbox" {% if item.is_completed %}checked{% endif %}
+                   onchange="toggleChecklist({{ item.id }})">
+            <span class="checkmark"></span>
+            <span class="check-text">{{ item.title }}</span>
+        </label>
+    </div>
+    {% endfor %}
+</section>
+{% endfor %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/checklists.js') }}"></script>
+{% endblock %}

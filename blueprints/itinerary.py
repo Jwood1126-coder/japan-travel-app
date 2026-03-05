@@ -1,0 +1,127 @@
+from flask import Blueprint, render_template, jsonify, request
+from models import db, Day, Activity, Trip, Location, BudgetItem, Flight
+from datetime import datetime, date
+
+itinerary_bp = Blueprint('itinerary', __name__)
+
+
+@itinerary_bp.route('/')
+def index():
+    trip = Trip.query.first()
+    days = Day.query.order_by(Day.day_number).all()
+    flights = Flight.query.order_by(Flight.direction, Flight.leg_number).all()
+
+    # Figure out "today" relative to trip
+    today = date.today()
+    current_day = None
+    trip_started = False
+    trip_ended = False
+    days_until = None
+
+    if trip:
+        if today < trip.start_date:
+            days_until = (trip.start_date - today).days
+        elif today > trip.end_date:
+            trip_ended = True
+        else:
+            trip_started = True
+            current_day = Day.query.filter(Day.date == today).first()
+
+    # Stats
+    total_activities = Activity.query.filter_by(is_substitute=False).count()
+    completed_activities = Activity.query.filter_by(
+        is_substitute=False, is_completed=True).count()
+
+    from models import AccommodationOption
+    booked_accommodations = AccommodationOption.query.filter(
+        AccommodationOption.booking_status != 'not_booked').count()
+    total_locations = 8  # hardcoded for simplicity
+
+    return render_template('index.html',
+                           trip=trip,
+                           days=days,
+                           flights=flights,
+                           current_day=current_day,
+                           trip_started=trip_started,
+                           trip_ended=trip_ended,
+                           days_until=days_until,
+                           total_activities=total_activities,
+                           completed_activities=completed_activities,
+                           booked_accommodations=booked_accommodations,
+                           total_locations=total_locations)
+
+
+@itinerary_bp.route('/day/<int:day_number>')
+def day_view(day_number):
+    day = Day.query.filter_by(day_number=day_number).first_or_404()
+    total_days = Day.query.count()
+    prev_day = day_number - 1 if day_number > 1 else None
+    next_day = day_number + 1 if day_number < total_days else None
+    return render_template('day.html', day=day, prev_day=prev_day,
+                           next_day=next_day, total_days=total_days)
+
+
+@itinerary_bp.route('/api/activities/<int:activity_id>/toggle', methods=['POST'])
+def toggle_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    activity.is_completed = not activity.is_completed
+    activity.completed_at = datetime.utcnow() if activity.is_completed else None
+    db.session.commit()
+
+    # Broadcast via socketio
+    from app import socketio
+    socketio.emit('activity_toggled', {
+        'id': activity.id,
+        'is_completed': activity.is_completed,
+        'day_id': activity.day_id,
+    })
+
+    return jsonify({'ok': True, 'is_completed': activity.is_completed})
+
+
+@itinerary_bp.route('/api/activities/<int:activity_id>/notes', methods=['PUT'])
+def update_activity_notes(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    data = request.get_json()
+    activity.notes = data.get('notes', '')
+    db.session.commit()
+
+    from app import socketio
+    socketio.emit('notes_updated', {
+        'type': 'activity',
+        'id': activity.id,
+        'notes': activity.notes,
+    })
+
+    return jsonify({'ok': True})
+
+
+@itinerary_bp.route('/api/days/<int:day_id>/notes', methods=['PUT'])
+def update_day_notes(day_id):
+    day = Day.query.get_or_404(day_id)
+    data = request.get_json()
+    day.notes = data.get('notes', '')
+    db.session.commit()
+
+    from app import socketio
+    socketio.emit('notes_updated', {
+        'type': 'day',
+        'id': day.id,
+        'notes': day.notes,
+    })
+
+    return jsonify({'ok': True})
+
+
+@itinerary_bp.route('/api/budget')
+def get_budget():
+    items = BudgetItem.query.order_by(BudgetItem.sort_order).all()
+    return jsonify([{
+        'id': i.id,
+        'category': i.category,
+        'description': i.description,
+        'estimated_low': i.estimated_low,
+        'estimated_high': i.estimated_high,
+        'actual_amount': i.actual_amount,
+        'notes': i.notes,
+    } for i in items])

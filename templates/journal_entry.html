@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{% if entry %}Edit Entry{% else %}New Entry{% endif %}{% endblock %}
+
+{% block content %}
+<header>
+    <h1>{% if entry %}Edit Entry{% else %}New Journal Entry{% endif %}</h1>
+</header>
+
+<form id="entryForm" method="post" enctype="multipart/form-data"
+      action="{{ url_for('journal.new_entry') }}">
+    <label for="day_id">Day</label>
+    <select name="day_id" id="day_id">
+        <option value="">-- Select day --</option>
+        {% for day in days %}
+        <option value="{{ day.id }}"
+                {% if entry and entry.day_id == day.id %}selected{% endif %}
+                {% if request.args.get('day') == day.day_number|string %}selected{% endif %}>
+            Day {{ day.day_number }} - {{ day.title[:40] }}
+        </option>
+        {% endfor %}
+    </select>
+
+    <label for="title">Title</label>
+    <input type="text" name="title" id="title"
+           value="{{ entry.title or '' }}" placeholder="What happened today?">
+
+    <label for="content">Notes</label>
+    <textarea name="content" id="content" rows="6"
+              placeholder="Write about your day...">{{ entry.content or '' }}</textarea>
+
+    <label for="mood">Mood</label>
+    <div class="mood-picker">
+        {% for mood in ['great', 'good', 'ok', 'tired', 'amazing'] %}
+        <label class="mood-option">
+            <input type="radio" name="mood" value="{{ mood }}"
+                   {% if entry and entry.mood == mood %}checked{% endif %}>
+            <span>{{ mood }}</span>
+        </label>
+        {% endfor %}
+    </div>
+
+    <label>Photos</label>
+    <input type="file" name="photos" accept="image/*" multiple>
+    {% if entry and entry.photos %}
+    <div class="existing-photos">
+        {% for photo in entry.photos %}
+        <img src="{{ url_for('journal.serve_thumbnail', filename=photo.thumbnail_filename) }}"
+             alt="{{ photo.caption or '' }}" class="thumb-preview">
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <button type="submit">{% if entry %}Update{% else %}Save Entry{% endif %}</button>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('entryForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const form = new FormData(this);
+    const resp = await fetch(this.action, {method: 'POST', body: form});
+    const data = await resp.json();
+    if (data.ok) {
+        window.location.href = '/journal';
+    }
+});
+</script>
+{% endblock %}

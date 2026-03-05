@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Reference Guide{% endblock %}
+
+{% block content %}
+<header>
+    <h1>&#x1f4d6; Reference Guide</h1>
+    <input type="search" id="refSearch" placeholder="Search..."
+           oninput="filterReference(this.value)">
+</header>
+
+{% set section_labels = {
+    'cultural_tips': 'Cultural Tips & Etiquette',
+    'onsen': 'Onsen Etiquette',
+    'temple_shrine': 'Temple & Shrine Guide',
+    'phrases': 'Key Japanese Phrases',
+    'money': 'Money & Payment',
+    'survival': 'Practical Survival Guide',
+    'emergency': 'Emergency Info',
+    'troubleshooting': 'What To Do If...',
+    'conversation': 'Conversation Cheat Sheet',
+    'transport': 'Transportation Guide'
+} %}
+
+{% set section_icons = {
+    'cultural_tips': '&#x1f3ef;',
+    'onsen': '&#x2668;',
+    'temple_shrine': '&#x26e9;',
+    'phrases': '&#x1f5e3;',
+    'money': '&#x1f4b4;',
+    'survival': '&#x1f6e1;',
+    'emergency': '&#x1f6a8;',
+    'troubleshooting': '&#x2753;',
+    'conversation': '&#x1f4ac;',
+    'transport': '&#x1f685;'
+} %}
+
+{% for section_key, items in sections.items() %}
+<details class="ref-section" open>
+    <summary class="ref-heading">
+        {{ section_icons.get(section_key, '&#x1f4cb;') | safe }}
+        {{ section_labels.get(section_key, section_key | replace('_', ' ') | title) }}
+    </summary>
+    {% for item in items %}
+    <div class="ref-item" data-search="{{ item.title | lower }} {{ item.content | lower }}">
+        <h3>{{ item.title }}</h3>
+        <div class="ref-content">{{ item.content | safe }}</div>
+    </div>
+    {% endfor %}
+</details>
+{% endfor %}
+
+{% if not sections %}
+<p class="empty-state">Reference content will appear here after importing your travel plan.</p>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterReference(query) {
+    const q = query.toLowerCase();
+    document.querySelectorAll('.ref-item').forEach(item => {
+        const text = item.dataset.search || '';
+        item.style.display = text.includes(q) ? '' : 'none';
+    });
+}
+</script>
+{% endblock %}

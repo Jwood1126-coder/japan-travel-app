@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Day {{ day.day_number }} - {{ day.title }}{% endblock %}
+
+{% block content %}
+<header class="day-header">
+    <div class="day-nav-row">
+        {% if prev_day %}
+        <a href="{{ url_for('itinerary.day_view', day_number=prev_day) }}" class="day-nav-btn">&larr;</a>
+        {% else %}
+        <span class="day-nav-btn disabled">&larr;</span>
+        {% endif %}
+
+        <div class="day-header-center">
+            <h1>Day {{ day.day_number }}</h1>
+            <p class="day-date-line">{{ day.date.strftime('%A, %B %d') }}</p>
+        </div>
+
+        {% if next_day %}
+        <a href="{{ url_for('itinerary.day_view', day_number=next_day) }}" class="day-nav-btn">&rarr;</a>
+        {% else %}
+        <span class="day-nav-btn disabled">&rarr;</span>
+        {% endif %}
+    </div>
+    <h2 class="day-title">{{ day.title }}</h2>
+    {% if day.location %}
+    <span class="location-badge">{{ day.location.name }}</span>
+    {% endif %}
+    {% if day.is_buffer_day %}
+    <span class="buffer-badge">Buffer Day</span>
+    {% endif %}
+</header>
+
+<!-- Activities grouped by time slot -->
+{% set slots = ['morning', 'afternoon', 'evening', 'night'] %}
+{% set slot_labels = {'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening', 'night': 'Night'} %}
+{% set slot_icons = {'morning': '&#x2600;', 'afternoon': '&#x1f324;', 'evening': '&#x1f319;', 'night': '&#x1f30c;'} %}
+
+{% for slot in slots %}
+{% set slot_activities = day.activities | selectattr('time_slot', 'equalto', slot) | rejectattr('is_substitute') | list %}
+{% if slot_activities %}
+<section class="time-slot-section">
+    <h3 class="slot-heading">{{ slot_icons[slot] | safe }} {{ slot_labels[slot] }}</h3>
+    {% for activity in slot_activities %}
+    <div class="activity-card {% if activity.is_completed %}completed{% endif %} {% if activity.is_optional %}optional{% endif %}"
+         data-id="{{ activity.id }}">
+        <div class="activity-main">
+            <label class="activity-check">
+                <input type="checkbox" {% if activity.is_completed %}checked{% endif %}
+                       onchange="toggleActivity({{ activity.id }})">
+                <span class="checkmark"></span>
+            </label>
+            <div class="activity-content">
+                <div class="activity-title-row">
+                    <span class="activity-title">{{ activity.title }}</span>
+                    {% if activity.jr_pass_covered %}
+                    <span class="jr-badge" title="Covered by JR Pass">JR</span>
+                    {% endif %}
+                    {% if activity.is_optional %}
+                    <span class="optional-badge">optional</span>
+                    {% endif %}
+                </div>
+                {% if activity.cost_note %}
+                <div class="activity-cost">{{ activity.cost_note }}</div>
+                {% endif %}
+                {% if activity.description %}
+                <details class="activity-details">
+                    <summary>Details</summary>
+                    <p>{{ activity.description }}</p>
+                </details>
+                {% endif %}
+                {% if activity.notes %}
+                <div class="activity-user-note">{{ activity.notes }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <button class="note-btn" onclick="openNoteEditor({{ activity.id }}, this)"
+                title="Add note">&#x270F;</button>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+{% endfor %}
+
+<!-- Activities without a time slot -->
+{% set unslotted = day.activities | rejectattr('time_slot') | rejectattr('is_substitute') | list %}
+{% if unslotted %}
+<section class="time-slot-section">
+    <h3 class="slot-heading">&#x1f4cc; Activities</h3>
+    {% for activity in unslotted %}
+    <div class="activity-card {% if activity.is_completed %}completed{% endif %}"
+         data-id="{{ activity.id }}">
+        <div class="activity-main">
+            <label class="activity-check">
+                <input type="checkbox" {% if activity.is_completed %}checked{% endif %}
+                       onchange="toggleActivity({{ activity.id }})">
+                <span class="checkmark"></span>
+            </label>
+            <div class="activity-content">
+                <span class="activity-title">{{ activity.title }}</span>
+                {% if activity.description %}
+                <details class="activity-details">
+                    <summary>Details</summary>
+                    <p>{{ activity.description }}</p>
+                </details>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<!-- Substitutes (collapsed) -->
+{% set subs = day.activities | selectattr('is_substitute') | list %}
+{% if subs %}
+<details class="substitutes-section">
+    <summary class="substitute-heading">&#x1f504; Alternative Options ({{ subs|length }})</summary>
+    {% for activity in subs %}
+    <div class="activity-card substitute">
+        <div class="activity-content">
+            <span class="activity-title">{{ activity.title }}</span>
+            {% if activity.substitute_for %}
+            <span class="sub-for">Instead of {{ activity.substitute_for }}</span>
+            {% endif %}
+            {% if activity.description %}
+            <p class="activity-desc">{{ activity.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</details>
+{% endif %}
+
+<!-- Day notes -->
+<section class="day-notes-section">
+    <h3>&#x1f4dd; Day Notes</h3>
+    <textarea id="dayNotes" class="day-notes-input"
+              placeholder="Add notes for this day..."
+              onchange="saveDayNotes({{ day.id }}, this.value)">{{ day.notes or '' }}</textarea>
+</section>
+
+<!-- Floating journal button -->
+<a href="{{ url_for('journal.new_entry') }}?day={{ day.day_number }}"
+   class="fab" title="Journal this day">&#x1f4f7;</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/itinerary.js') }}"></script>
+{% endblock %}

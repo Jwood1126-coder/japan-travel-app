@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Japan 2026 - Dashboard{% endblock %}
+
+{% block content %}
+<header class="dash-header">
+    <h1>Japan 2026 &#x1f338;</h1>
+    {% if days_until is not none and days_until > 0 %}
+        <p class="countdown">{{ days_until }} days to go!</p>
+    {% elif trip_started and current_day %}
+        <p class="countdown current">Day {{ current_day.day_number }} of 15</p>
+        <p class="location-badge">{{ current_day.title }}</p>
+    {% elif trip_ended %}
+        <p class="countdown ended">Trip complete!</p>
+    {% else %}
+        <p class="countdown">April 4 - 18, 2026</p>
+    {% endif %}
+</header>
+
+<!-- Quick Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ completed_activities }}/{{ total_activities }}</div>
+        <div class="stat-label">Activities done</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">{{ booked_accommodations }}/{{ total_locations }}</div>
+        <div class="stat-label">Booked</div>
+    </div>
+</div>
+
+<!-- Today's Activities (or next upcoming day) -->
+{% if current_day %}
+<section class="today-section">
+    <h2>Today - Day {{ current_day.day_number }}</h2>
+    {% for activity in current_day.activities if not activity.is_substitute %}
+    <div class="activity-card {% if activity.is_completed %}completed{% endif %}"
+         data-id="{{ activity.id }}">
+        <label class="activity-check">
+            <input type="checkbox" {% if activity.is_completed %}checked{% endif %}
+                   onchange="toggleActivity({{ activity.id }})">
+            <span class="activity-title">{{ activity.title }}</span>
+        </label>
+        {% if activity.time_slot %}
+        <span class="time-badge">{{ activity.time_slot }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+
+<!-- Day Overview Cards -->
+<section class="days-overview">
+    <h2>Itinerary Overview</h2>
+    {% for day in days %}
+    <a href="{{ url_for('itinerary.day_view', day_number=day.day_number) }}"
+       class="day-overview-card {% if current_day and day.id == current_day.id %}today{% endif %}">
+        <div class="day-card-left">
+            <div class="day-num">{{ day.day_number }}</div>
+            <div class="day-date">{{ day.date.strftime('%b %d') }}</div>
+        </div>
+        <div class="day-card-right">
+            <div class="day-card-title">{{ day.title }}</div>
+            {% if day.location %}
+            <div class="day-card-location">{{ day.location.name }}</div>
+            {% endif %}
+            <div class="day-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: {{ day.completion_pct() }}%"></div>
+                </div>
+                <span class="progress-text">{{ day.completion_pct() }}%</span>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</section>
+
+<!-- Flights -->
+{% if flights %}
+<section class="flights-section">
+    <h2>Flights</h2>
+    {% for flight in flights %}
+    <div class="flight-card">
+        <div class="flight-direction">{{ flight.direction | capitalize }}</div>
+        <div class="flight-route">
+            <strong>{{ flight.route_from }}</strong> &rarr; <strong>{{ flight.route_to }}</strong>
+        </div>
+        <div class="flight-detail">{{ flight.flight_number }} &middot; {{ flight.airline }}</div>
+        <div class="flight-detail">{{ flight.depart_date.strftime('%b %d') }} {{ flight.depart_time or '' }}</div>
+    </div>
+    {% endfor %}
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/itinerary.js') }}"></script>
+{% endblock %}
