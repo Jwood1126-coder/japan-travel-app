@@ -91,50 +91,82 @@ document.addEventListener('touchend', function(e) {
 
 // Pull-to-refresh
 (function() {
-    let pullStartY = 0;
+    let startY = 0;
+    let currentY = 0;
     let pulling = false;
-    const THRESHOLD = 80;
+    let refreshing = false;
+    const THRESHOLD = 70;
+    const MAX_PULL = 90;
 
-    // Create indicator element
-    const indicator = document.createElement('div');
-    indicator.className = 'pull-refresh-indicator';
-    indicator.innerHTML = '&#x21BB;';
-    document.body.prepend(indicator);
+    // Create indicator bar at top of page
+    const ptr = document.createElement('div');
+    ptr.className = 'ptr';
+    ptr.innerHTML = '<div class="ptr-spinner"></div><span class="ptr-text">Pull to refresh</span>';
+    document.body.prepend(ptr);
+
+    const spinner = ptr.querySelector('.ptr-spinner');
+    const text = ptr.querySelector('.ptr-text');
+
+    function isAtTop() {
+        return window.scrollY <= 0 &&
+               document.documentElement.scrollTop <= 0;
+    }
 
     document.addEventListener('touchstart', function(e) {
-        if (window.scrollY === 0) {
-            pullStartY = e.touches[0].clientY;
+        if (refreshing) return;
+        if (isAtTop()) {
+            startY = e.touches[0].clientY;
             pulling = true;
+            ptr.classList.remove('ptr-reset');
         }
     }, { passive: true });
 
     document.addEventListener('touchmove', function(e) {
-        if (!pulling) return;
-        const pullDistance = e.touches[0].clientY - pullStartY;
-        if (pullDistance > 0 && window.scrollY === 0) {
-            const progress = Math.min(pullDistance / THRESHOLD, 1);
-            indicator.style.transform = `translateY(${Math.min(pullDistance * 0.4, 50)}px)`;
-            indicator.style.opacity = progress;
+        if (!pulling || refreshing) return;
+        currentY = e.touches[0].clientY;
+        const dist = currentY - startY;
+
+        if (dist > 0 && isAtTop()) {
+            // Dampen the pull distance
+            const pullPx = Math.min(dist * 0.45, MAX_PULL);
+            ptr.style.height = pullPx + 'px';
+            ptr.classList.add('ptr-visible');
+
+            const progress = Math.min(dist / THRESHOLD, 1);
+            spinner.style.transform = `rotate(${progress * 360}deg)`;
+            spinner.style.opacity = progress;
+
             if (progress >= 1) {
-                indicator.classList.add('ready');
+                ptr.classList.add('ptr-ready');
+                text.textContent = 'Release to refresh';
             } else {
-                indicator.classList.remove('ready');
+                ptr.classList.remove('ptr-ready');
+                text.textContent = 'Pull to refresh';
             }
+        } else if (dist <= 0) {
+            pulling = false;
+            ptr.style.height = '0';
+            ptr.classList.remove('ptr-visible', 'ptr-ready');
         }
     }, { passive: true });
 
     document.addEventListener('touchend', function() {
-        if (!pulling) return;
+        if (!pulling || refreshing) return;
         pulling = false;
-        if (indicator.classList.contains('ready')) {
-            indicator.textContent = 'Refreshing...';
-            indicator.style.transform = 'translateY(40px)';
-            setTimeout(() => location.reload(), 200);
+
+        if (ptr.classList.contains('ptr-ready')) {
+            refreshing = true;
+            ptr.style.height = '44px';
+            ptr.classList.add('ptr-refreshing');
+            ptr.classList.remove('ptr-ready');
+            text.textContent = 'Refreshing…';
+            spinner.style.opacity = '1';
+            setTimeout(() => location.reload(), 300);
         } else {
-            indicator.style.transform = 'translateY(-40px)';
-            indicator.style.opacity = '0';
+            ptr.classList.add('ptr-reset');
+            ptr.style.height = '0';
+            ptr.classList.remove('ptr-visible', 'ptr-ready');
         }
-        indicator.classList.remove('ready');
     }, { passive: true });
 })();
 
