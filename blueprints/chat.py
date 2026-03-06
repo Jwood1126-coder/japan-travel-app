@@ -43,7 +43,12 @@ explain clearly what to add, remove, or move.
 
 You can add items to the trip checklist (pre_trip, packing, on_trip categories). \
 If someone asks you to add a task, booking reminder, or checklist item, use the \
-add_checklist_item tool."""
+add_checklist_item tool. You can also toggle checklist items complete/incomplete \
+and delete them.
+
+You can delete accommodations, activities, and checklist items when asked. \
+You can update day-level notes for any day. You have full parity with \
+everything available in the UI — if the user asks you to do something, do it."""
 
 TOOLS = [
     {
@@ -199,6 +204,64 @@ TOOLS = [
                 "url": {"type": "string", "description": "Optional booking or reference URL"},
             },
             "required": ["title", "category"]
+        }
+    },
+    {
+        "name": "toggle_checklist_item",
+        "description": "Mark a checklist item as completed or not completed.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Checklist item title (partial match ok)"},
+                "completed": {"type": "boolean", "description": "True to mark done, false to unmark"},
+            },
+            "required": ["title", "completed"]
+        }
+    },
+    {
+        "name": "delete_checklist_item",
+        "description": "Delete a checklist item permanently.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "title": {"type": "string", "description": "Checklist item title (partial match ok)"},
+            },
+            "required": ["title"]
+        }
+    },
+    {
+        "name": "delete_accommodation",
+        "description": "Permanently delete an accommodation option.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name": {"type": "string", "description": "Hotel name (partial match ok)"},
+            },
+            "required": ["name"]
+        }
+    },
+    {
+        "name": "delete_activity",
+        "description": "Permanently delete an activity from a day.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "day_number": {"type": "integer", "description": "Day number (1-15)"},
+                "title": {"type": "string", "description": "Activity title (partial match ok)"},
+            },
+            "required": ["day_number", "title"]
+        }
+    },
+    {
+        "name": "update_day_notes",
+        "description": "Update or set the notes for a specific day.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "day_number": {"type": "integer", "description": "Day number (1-15)"},
+                "notes": {"type": "string", "description": "The notes text (replaces existing)"},
+            },
+            "required": ["day_number", "notes"]
         }
     }
 ]
@@ -404,6 +467,71 @@ def _execute_tool(tool_name, tool_input):
             db.session.add(item)
             db.session.commit()
             return {"success": True, "message": f"Added '{item.title}' to {item.category} checklist"}
+
+        elif tool_name == "toggle_checklist_item":
+            item = ChecklistItem.query.filter(
+                ChecklistItem.title.ilike(f"%{tool_input['title']}%")
+            ).first()
+            if not item:
+                return {"success": False, "error": f"Checklist item '{tool_input['title']}' not found"}
+            item.is_completed = tool_input['completed']
+            item.completed_at = datetime.utcnow() if item.is_completed else None
+            db.session.commit()
+            status = "completed" if item.is_completed else "not completed"
+            return {"success": True, "message": f"Marked '{item.title}' as {status}"}
+
+        elif tool_name == "delete_checklist_item":
+            item = ChecklistItem.query.filter(
+                ChecklistItem.title.ilike(f"%{tool_input['title']}%")
+            ).first()
+            if not item:
+                return {"success": False, "error": f"Checklist item '{tool_input['title']}' not found"}
+            title = item.title
+            db.session.delete(item)
+            db.session.commit()
+            return {"success": True, "message": f"Deleted checklist item '{title}'"}
+
+        elif tool_name == "delete_accommodation":
+            name = tool_input['name']
+            option = AccommodationOption.query.filter(
+                AccommodationOption.name.ilike(f"%{name}%")
+            ).first()
+            if not option:
+                return {"success": False, "error": f"Accommodation '{name}' not found"}
+            loc = AccommodationLocation.query.get(option.location_id)
+            opt_name = option.name
+            loc_id = option.location_id
+            db.session.delete(option)
+            # Re-rank remaining options
+            remaining = AccommodationOption.query.filter_by(
+                location_id=loc_id).order_by(AccommodationOption.rank).all()
+            for i, opt in enumerate(remaining, 1):
+                opt.rank = i
+            db.session.commit()
+            return {"success": True, "message": f"Deleted '{opt_name}' from {loc.location_name}"}
+
+        elif tool_name == "delete_activity":
+            day = Day.query.filter_by(day_number=tool_input['day_number']).first()
+            if not day:
+                return {"success": False, "error": f"Day {tool_input['day_number']} not found"}
+            activity = Activity.query.filter(
+                Activity.day_id == day.id,
+                Activity.title.ilike(f"%{tool_input['title']}%")
+            ).first()
+            if not activity:
+                return {"success": False, "error": f"Activity '{tool_input['title']}' not found on Day {day.day_number}"}
+            title = activity.title
+            db.session.delete(activity)
+            db.session.commit()
+            return {"success": True, "message": f"Deleted '{title}' from Day {day.day_number}"}
+
+        elif tool_name == "update_day_notes":
+            day = Day.query.filter_by(day_number=tool_input['day_number']).first()
+            if not day:
+                return {"success": False, "error": f"Day {tool_input['day_number']} not found"}
+            day.notes = tool_input['notes']
+            db.session.commit()
+            return {"success": True, "message": f"Updated notes for Day {day.day_number}"}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
