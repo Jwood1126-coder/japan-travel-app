@@ -84,6 +84,7 @@ ACCOMMODATION INTELLIGENCE:
 - Flag if a check-in date doesn't match the location's dates
 
 TOOLS AVAILABLE:
+- web_search: Search the internet for current info (prices, hours, reviews, directions, etc.)
 - update_flight: Update flight booking status, confirmation, times
 - update_accommodation: Update hotel booking status, confirmation, address, prices, check-in/out
 - add_accommodation_option: Add new hotel option to a location
@@ -100,6 +101,13 @@ TOOLS AVAILABLE:
 - delete_checklist_item: Remove a to-do
 - update_budget: Record actual costs
 - flag_conflict: Alert about scheduling issues
+
+WEB SEARCH: You can search the web to find current information. Use this for:
+- Looking up restaurant recommendations, opening hours, menus
+- Checking transit routes and schedules
+- Finding current prices, availability, reviews
+- Researching attractions, events, or cultural info
+- Any question where current/real-time info would help
 
 WHEN UNCERTAIN: Ask a short, specific clarifying question rather than guessing wrong. \
 "Which Kyoto hotel — the 3-night stay or the machiya?" is better than updating the wrong one."""
@@ -334,6 +342,11 @@ TOOLS = [
             "required": ["day_number", "notes"]
         }
     }
+]
+
+# Server-side tools — Anthropic executes these automatically, no client-side handler needed
+SERVER_TOOLS = [
+    {"type": "web_search_20250305", "name": "web_search"},
 ]
 
 
@@ -770,9 +783,11 @@ def send_message():
             system = SYSTEM_PROMPT + '\n\n' + context
             full_response = ''
 
-            # Configure thinking for balanced/deep modes
+            # Configure thinking for balanced/deep modes (adaptive for 4.6 models)
             use_thinking = model_choice in ('balanced', 'deep')
-            thinking_budget = 10000 if model_choice == 'deep' else 5000
+
+            # Combine user-defined and server-side tools
+            all_tools = TOOLS + SERVER_TOOLS
 
             # First call: non-streaming to detect tool use
             api_kwargs = dict(
@@ -780,19 +795,19 @@ def send_message():
                 max_tokens=max_tokens,
                 system=system,
                 messages=messages,
-                tools=TOOLS,
+                tools=all_tools,
             )
             if use_thinking:
-                api_kwargs['thinking'] = {
-                    "type": "enabled",
-                    "budget_tokens": thinking_budget,
-                }
+                api_kwargs['thinking'] = {"type": "adaptive"}
 
             response = client.messages.create(**api_kwargs)
 
-            # Process response blocks — extract text and execute tools
+            # Process response blocks — extract text and execute client-side tools
+            # Server-side tools (web_search) are executed by Anthropic automatically;
+            # their results appear inline and don't need client-side handling.
             tool_results = []
             text_parts = []
+            has_server_tool = False
             for block in response.content:
                 if block.type == 'tool_use':
                     yield f"data: {json.dumps({'processing': f'Updating: {block.name}...'})}\n\n"
@@ -803,15 +818,16 @@ def send_message():
                         "tool_use_id": block.id,
                         "content": json.dumps(result),
                     })
+                elif block.type == 'server_tool_use':
+                    has_server_tool = True
+                    yield f"data: {json.dumps({'processing': f'Searching the web...'})}\n\n"
                 elif block.type == 'text':
                     text_parts.append(block.text)
                 elif block.type == 'thinking':
-                    # Extended thinking block — skip (internal reasoning)
                     yield f"data: {json.dumps({'processing': 'Thinking...'})}\n\n"
 
             if tool_results:
-                # Follow-up call: stream the final response after tool execution
-                # Convert SDK content blocks to dicts for the messages array
+                # Follow-up call: stream the final response after client tool execution
                 assistant_content = []
                 for block in response.content:
                     if block.type == 'text':
@@ -836,12 +852,10 @@ def send_message():
                     max_tokens=max_tokens,
                     system=system,
                     messages=messages,
+                    tools=all_tools,
                 )
                 if use_thinking:
-                    followup_kwargs['thinking'] = {
-                        "type": "enabled",
-                        "budget_tokens": thinking_budget,
-                    }
+                    followup_kwargs['thinking'] = {"type": "adaptive"}
                 with client.messages.stream(**followup_kwargs) as stream:
                     for text in stream.text_stream:
                         full_response += text
