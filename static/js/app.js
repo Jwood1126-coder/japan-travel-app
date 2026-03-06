@@ -18,7 +18,7 @@ function hardRefresh() {
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js?v=37')
+    navigator.serviceWorker.register('/static/sw.js?v=41')
         .then(reg => {
             console.log('SW registered, scope:', reg.scope);
             reg.addEventListener('updatefound', () => {
@@ -238,10 +238,14 @@ socket.on('checklist_option_updated', function(data) {
     }
 });
 
+// Track when we're making our own accommodation edits
+window._accomEditActive = false;
+
 socket.on('accommodation_updated', function(data) {
-    // Skip reload if a celebration is showing (we triggered this update ourselves)
+    // Skip reload if we triggered this update ourselves (editing fields, celebration, etc.)
+    if (window._accomEditActive) return;
     if (document.querySelector('.pika-celebrate')) return;
-    // Refresh if on accommodations, checklists, or home page
+    // Refresh if on accommodations, checklists, or home page (another device made a change)
     if (window.location.pathname === '/accommodations' ||
         window.location.pathname === '/checklists' ||
         window.location.pathname === '/') {

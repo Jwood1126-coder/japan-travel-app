@@ -799,6 +799,7 @@ def send_message():
                         assistant_content.append({
                             "type": "thinking",
                             "thinking": block.thinking,
+                            "signature": block.signature,
                         })
                 messages.append({"role": "assistant", "content": assistant_content})
                 messages.append({"role": "user", "content": tool_results})

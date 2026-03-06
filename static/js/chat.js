@@ -29,6 +29,15 @@ function autoGrow(el) {
     el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
+// Persist draft message across tab switches
+chatInput.addEventListener('input', () => {
+    sessionStorage.setItem('chatDraft', chatInput.value);
+});
+(function() {
+    const draft = sessionStorage.getItem('chatDraft');
+    if (draft) { chatInput.value = draft; autoGrow(chatInput); }
+})();
+
 function handleChatKeydown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -110,6 +119,7 @@ async function sendMessage() {
     if (!text && selectedImages.length === 0) return;
 
     chatInput.value = '';
+    sessionStorage.removeItem('chatDraft');
     chatInput.style.height = 'auto';
     chatInput.disabled = true;
     document.getElementById('sendBtn').disabled = true;

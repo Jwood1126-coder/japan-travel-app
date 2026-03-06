@@ -1,5 +1,13 @@
 // Accommodations JS
 
+// Suppress SocketIO self-reload during our own edits
+function accomFetch(url, opts) {
+    window._accomEditActive = true;
+    return fetch(url, opts).finally(() => {
+        setTimeout(() => { window._accomEditActive = false; }, 500);
+    });
+}
+
 function toggleOptionDetails(header, e) {
     // Don't toggle if we just did a drag
     if (header.closest('.drag-clone')) return;
@@ -52,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Save new order via batch reorder endpoint
 async function saveReorder(locationId, optionIds) {
     try {
-        const resp = await fetch('/api/accommodations/reorder-batch', {
+        const resp = await accomFetch('/api/accommodations/reorder-batch', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ location_id: locationId, order: optionIds })
@@ -96,7 +104,7 @@ async function selectOption(optionId) {
 
 async function updateBookingStatus(optionId, status) {
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ booking_status: status })
@@ -116,7 +124,7 @@ async function updateBookingStatus(optionId, status) {
 
 async function updateConfirmation(optionId, value) {
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ confirmation_number: value })
@@ -128,7 +136,7 @@ async function updateConfirmation(optionId, value) {
 
 async function updateOptionNotes(optionId, value) {
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ user_notes: value })
@@ -141,7 +149,7 @@ async function updateOptionNotes(optionId, value) {
 async function updateOptionUrl(optionId) {
     const input = document.getElementById(`url-${optionId}`);
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ booking_url: input.value })
@@ -155,7 +163,7 @@ async function updateOptionUrl(optionId) {
 async function updateOptionAddress(optionId) {
     const input = document.getElementById(`addr-${optionId}`);
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address: input.value })
@@ -169,7 +177,7 @@ async function updateOptionAddress(optionId) {
 async function updateOptionMapsUrl(optionId) {
     const input = document.getElementById(`maps-${optionId}`);
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ maps_url: input.value })
@@ -182,12 +190,15 @@ async function updateOptionMapsUrl(optionId) {
 
 async function updatePrice(optionId) {
     const low = document.getElementById(`priceLow-${optionId}`).value;
-    const high = document.getElementById(`priceHigh-${optionId}`).value;
+    const highInput = document.getElementById(`priceHigh-${optionId}`);
+    const high = highInput.value;
+    // Single price: set both low and high to the same value
+    const effectiveHigh = high || low;
     try {
-        const res = await fetch(`/api/accommodations/${optionId}/status`, {
+        const res = await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ price_low: low || null, price_high: high || null })
+            body: JSON.stringify({ price_low: low || null, price_high: effectiveHigh || null })
         });
         const data = await res.json();
         showToast('Price updated');
@@ -195,16 +206,26 @@ async function updatePrice(optionId) {
         const card = document.querySelector(`[data-option-id="${optionId}"]`);
         if (card && low) {
             const priceEl = card.querySelector('.option-price');
-            if (priceEl) priceEl.textContent = `$${parseInt(low)}–${parseInt(high || low)}/nt`;
+            const isRange = high && parseInt(high) !== parseInt(low);
+            if (priceEl) {
+                priceEl.textContent = isRange
+                    ? `$${parseInt(low)}–${parseInt(high)}/nt`
+                    : `$${parseInt(low)}/nt`;
+            }
         }
-        // Reload to get recalculated totals
+        // Update totals inline
         const totalEl = document.getElementById(`total-${optionId}`);
         if (totalEl && low) {
             const numNights = parseInt(card.closest('.accom-section')
                 .querySelector('.accom-dates').textContent.match(/(\d+) night/)?.[1] || 1);
             const tLow = parseInt(low) * numNights;
-            const tHigh = parseInt(high || low) * numNights;
-            totalEl.textContent = `Total: $${tLow}–$${tHigh}`;
+            const isRange = high && parseInt(high) !== parseInt(low);
+            if (isRange) {
+                const tHigh = parseInt(high) * numNights;
+                totalEl.textContent = `Total: $${tLow}–$${tHigh}`;
+            } else {
+                totalEl.textContent = `Total: $${tLow}`;
+            }
         }
     } catch (err) {
         console.error('Update price failed:', err);
@@ -213,7 +234,7 @@ async function updatePrice(optionId) {
 
 async function updateCheckinInfo(optionId, field, value) {
     try {
-        await fetch(`/api/accommodations/${optionId}/status`, {
+        await accomFetch(`/api/accommodations/${optionId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ [field]: value })
@@ -232,7 +253,7 @@ async function uploadBookingImage(optionId, input) {
     formData.append('image', file);
 
     try {
-        const resp = await fetch(`/api/accommodations/${optionId}/upload-image`, {
+        const resp = await accomFetch(`/api/accommodations/${optionId}/upload-image`, {
             method: 'POST',
             body: formData
         });
@@ -266,7 +287,7 @@ async function uploadBookingImage(optionId, input) {
 async function removeBookingImage(optionId) {
     if (!confirm('Remove booking image?')) return;
     try {
-        const resp = await fetch(`/api/accommodations/${optionId}/delete-image`, {
+        const resp = await accomFetch(`/api/accommodations/${optionId}/delete-image`, {
             method: 'DELETE'
         });
         const data = await resp.json();
@@ -374,7 +395,7 @@ async function saveNewOption(locationId) {
 
 async function eliminateOption(optionId) {
     try {
-        const resp = await fetch(`/api/accommodations/${optionId}/eliminate`, {
+        const resp = await accomFetch(`/api/accommodations/${optionId}/eliminate`, {
             method: 'POST'
         });
         const data = await resp.json();

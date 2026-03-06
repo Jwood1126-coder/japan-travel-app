@@ -59,7 +59,11 @@
                 <div class="option-type">{{ option.property_type or '' }}</div>
             </div>
             <div class="option-price">
+                {% if option.price_low and option.price_high and option.price_low|int != option.price_high|int %}
                 ${{ option.price_low|int }}&ndash;{{ option.price_high|int }}/nt
+                {% elif option.price_low %}
+                ${{ option.price_low|int }}/nt
+                {% endif %}
             </div>
             {% if option.booking_status in ('booked', 'confirmed') %}
             <span class="option-booked-badge">{{ icon_check(12) }}</span>
@@ -88,21 +92,23 @@
                 {% endif %}
             </div>
 
+            {% set is_range = option.price_low and option.price_high and (option.price_low|int != option.price_high|int) %}
             <div class="price-edit-row">
                 <label>$/night:</label>
-                <input type="number" placeholder="Low"
+                <input type="number" placeholder="Price"
                        value="{{ option.price_low|int if option.price_low else '' }}"
                        id="priceLow-{{ option.id }}"
                        onchange="updatePrice({{ option.id }})">
-                <span>&ndash;</span>
+                <span class="price-range-sep {% if not is_range %}hidden{% endif %}" id="priceSep-{{ option.id }}">&ndash;</span>
                 <input type="number" placeholder="High"
-                       value="{{ option.price_high|int if option.price_high else '' }}"
+                       value="{{ option.price_high|int if option.price_high and is_range else '' }}"
                        id="priceHigh-{{ option.id }}"
+                       class="{% if not is_range %}hidden{% endif %}"
                        onchange="updatePrice({{ option.id }})">
             </div>
-            {% if option.total_low and option.total_high %}
+            {% if option.total_low %}
             <p class="option-total" id="total-{{ option.id }}">
-                Total: ${{ option.total_low|int }}&ndash;${{ option.total_high|int }}
+                Total: {% if is_range %}${{ option.total_low|int }}&ndash;${{ option.total_high|int }}{% else %}${{ option.total_low|int }}{% endif %}
             </p>
             {% else %}
             <p class="option-total" id="total-{{ option.id }}"></p>
