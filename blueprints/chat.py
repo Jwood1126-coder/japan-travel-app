@@ -88,6 +88,10 @@ TOOLS = [
                 "confirmation_number": {"type": "string"},
                 "address": {"type": "string"},
                 "user_notes": {"type": "string"},
+                "check_in_info": {"type": "string", "description": "Check-in time/info (e.g. '3:00 PM')"},
+                "check_out_info": {"type": "string", "description": "Check-out time/info (e.g. '11:00 AM')"},
+                "price_low": {"type": "number", "description": "Per-night price low end in USD"},
+                "price_high": {"type": "number", "description": "Per-night price high end in USD"},
             },
             "required": ["name"]
         }
@@ -307,9 +311,22 @@ def _execute_tool(tool_name, tool_input):
             ).first()
             if not option:
                 return {"success": False, "error": f"Accommodation '{name}' not found"}
-            for field in ['booking_status', 'confirmation_number', 'address', 'user_notes']:
+            for field in ['booking_status', 'confirmation_number', 'address', 'user_notes',
+                          'check_in_info', 'check_out_info']:
                 if tool_input.get(field):
                     setattr(option, field, tool_input[field])
+            # Handle price updates
+            if tool_input.get('price_low') is not None:
+                option.price_low = tool_input['price_low']
+            if tool_input.get('price_high') is not None:
+                option.price_high = tool_input['price_high']
+            # Recalculate totals if prices changed
+            if option.price_low and option.location_id:
+                loc = AccommodationLocation.query.get(option.location_id)
+                if loc:
+                    option.total_low = option.price_low * loc.num_nights
+                    if option.price_high:
+                        option.total_high = option.price_high * loc.num_nights
             db.session.commit()
             loc = AccommodationLocation.query.get(option.location_id)
             return {"success": True, "message": f"Updated {option.name} at {loc.location_name}"}
@@ -833,7 +850,11 @@ def _build_context():
                          f"{loc.check_out_date.strftime('%b %d')}, {loc.num_nights} nights):")
             if selected:
                 conf = f" [Conf: {selected.confirmation_number}]" if selected.confirmation_number else ""
-                parts.append(f"    SELECTED: {selected.name} ({selected.booking_status}){conf}")
+                price = f" ${selected.price_low:.0f}-{selected.price_high:.0f}/nt" if selected.price_low else ""
+                total = f" Total: ${selected.total_low:.0f}-${selected.total_high:.0f}" if selected.total_low else ""
+                checkin = f" Check-in: {selected.check_in_info}" if getattr(selected, 'check_in_info', None) else ""
+                checkout = f" Check-out: {selected.check_out_info}" if getattr(selected, 'check_out_info', None) else ""
+                parts.append(f"    SELECTED: {selected.name}{price}{total} ({selected.booking_status}){conf}{checkin}{checkout}")
             for o in active:
                 if o == selected:
                     continue

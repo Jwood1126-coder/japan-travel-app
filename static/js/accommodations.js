@@ -173,6 +173,19 @@ async function updateOptionMapsUrl(optionId) {
     }
 }
 
+async function updateCheckinInfo(optionId, field, value) {
+    try {
+        await fetch(`/api/accommodations/${optionId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ [field]: value })
+        });
+        showToast('Saved');
+    } catch (err) {
+        console.error('Update check-in/out failed:', err);
+    }
+}
+
 async function uploadBookingImage(optionId, input) {
     const file = input.files[0];
     if (!file) return;

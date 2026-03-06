@@ -148,6 +148,17 @@
                        onchange="updateConfirmation({{ option.id }}, this.value)">
             </div>
 
+            <div class="checkin-checkout-row">
+                <input type="text" placeholder="Check-in (e.g. 3:00 PM)"
+                       value="{{ option.check_in_info or '' }}"
+                       id="checkin-{{ option.id }}"
+                       onchange="updateCheckinInfo({{ option.id }}, 'check_in_info', this.value)">
+                <input type="text" placeholder="Check-out (e.g. 11:00 AM)"
+                       value="{{ option.check_out_info or '' }}"
+                       id="checkout-{{ option.id }}"
+                       onchange="updateCheckinInfo({{ option.id }}, 'check_out_info', this.value)">
+            </div>
+
             {# Booking image attachment #}
             <div class="booking-image-section" id="bookingImg-{{ option.id }}">
                 {% if option.booking_image %}

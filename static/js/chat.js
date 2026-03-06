@@ -284,3 +284,16 @@ if (sessionHistory.length > 0) {
 
 // Scroll to bottom on load
 scrollToBottom();
+
+// Handle mobile keyboard resize — keep input bar docked
+if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+        document.querySelector('.chat-container').style.height =
+            window.visualViewport.height + 'px';
+        scrollToBottom();
+    });
+    window.visualViewport.addEventListener('scroll', () => {
+        document.querySelector('.chat-input-bar').style.transform =
+            `translateY(${window.visualViewport.offsetTop}px)`;
+    });
+}

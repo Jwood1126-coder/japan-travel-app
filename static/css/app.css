@@ -1175,6 +1175,7 @@ body {
 .option-details {
     padding: 0 0.75rem 0.75rem;
     border-top: 1px solid var(--pico-muted-border-color);
+    overflow: visible;
 }
 
 .option-standout {
@@ -1407,6 +1408,9 @@ body {
     margin-top: 0.5rem;
     font-size: 0.85rem;
     resize: vertical;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 
 /* Checklists */
@@ -1640,8 +1644,10 @@ body {
     display: flex;
     flex-direction: column;
     height: calc(100vh - 70px);
-    max-height: calc(100dvh - 70px);
+    height: calc(100dvh - 70px);
     margin: -1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .chat-header {
@@ -1715,11 +1721,13 @@ body {
     display: flex;
     gap: 8px;
     padding: 8px 1rem;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
     border-top: 1px solid var(--pico-muted-border-color);
     background: var(--glass-bg);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     align-items: flex-end;
+    flex-shrink: 0;
 }
 
 .chat-input-bar textarea {
@@ -1814,6 +1822,7 @@ body {
     padding: 8px 1rem 0;
     background: var(--pico-background-color, #fff);
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 .preview-thumb {
     position: relative;
@@ -2309,6 +2318,9 @@ body {
     resize: vertical;
     margin-top: 0.4rem;
     background: var(--pico-background-color);
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
 }
 .add-option-btn {
     width: 100%;
@@ -2839,6 +2851,20 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
 [data-theme="dark"] .doc-card { border-bottom-color: rgba(255,255,255,0.06); }
 [data-theme="dark"] .confirmation-input { background: #1e1e1e; border-color: #4a2030; color: #fff; }
 [data-theme="dark"] .status-select { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+[data-theme="dark"] .checkin-checkout-row input { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+
+.checkin-checkout-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 0.4rem;
+}
+.checkin-checkout-row input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--sakura);
+    border-radius: 8px;
+    font-size: 0.85rem;
+}
 
 /* --- Activities Browse Page --- */
 .act-location-group {

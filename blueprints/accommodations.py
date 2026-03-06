@@ -287,6 +287,10 @@ def update_status(option_id):
         option.address = data['address'] or None
     if 'maps_url' in data:
         option.maps_url = data['maps_url'] or None
+    if 'check_in_info' in data:
+        option.check_in_info = data['check_in_info'] or None
+    if 'check_out_info' in data:
+        option.check_out_info = data['check_out_info'] or None
 
     # Sync booking status to linked checklist item
     if new_status is not None:

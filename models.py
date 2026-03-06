@@ -127,6 +127,8 @@ class AccommodationOption(db.Model):
     address = db.Column(db.String(500))
     maps_url = db.Column(db.String(500))  # direct Google Maps link
     booking_image = db.Column(db.String(255))  # filename of booking screenshot/confirmation
+    check_in_info = db.Column(db.String(200))   # e.g. "3:00 PM" or "after 3pm, front desk"
+    check_out_info = db.Column(db.String(200))  # e.g. "11:00 AM"
     user_notes = db.Column(db.Text)
 
     @property
@@ -158,6 +160,8 @@ class AccommodationOption(db.Model):
             'is_selected': self.is_selected,
             'booking_status': self.booking_status,
             'confirmation_number': self.confirmation_number,
+            'check_in_info': self.check_in_info,
+            'check_out_info': self.check_out_info,
             'user_notes': self.user_notes,
         }
 
