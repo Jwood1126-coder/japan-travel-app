@@ -51,8 +51,31 @@
             <a href="{{ url_for('activities.activities_view') }}" class="more-link">{{ icon_lightbulb(18) }} Activities</a>
             <a href="{{ url_for('reference.reference_view') }}" class="more-link">{{ icon_book(18) }} Reference Guide</a>
             <a href="#" class="more-link" onclick="toggleTheme()">{{ icon_moon(18) }} Toggle Dark Mode</a>
+            <a href="#" class="more-link" onclick="showBackupPanel(event)">&#x1f4be; Backup / Restore</a>
             <a href="#" class="more-link" onclick="hardRefresh()">&#x21bb; Refresh App</a>
             <a href="{{ url_for('logout') }}" class="more-link">{{ icon_logout(18) }} Logout</a>
+        </div>
+    </div>
+
+    <!-- Backup/Restore panel -->
+    <div class="backup-panel" id="backupPanel" style="display:none;">
+        <div class="more-menu-backdrop" onclick="closeBackupPanel()"></div>
+        <div class="more-menu-sheet" style="max-height:80vh; overflow-y:auto;">
+            <div class="more-menu-handle"></div>
+            <h3 style="margin:0 0 12px; font-size:1.1rem;">Backup / Restore</h3>
+            <a href="/api/backup/download" class="more-link" style="color:var(--accent);">&#x2B07; Download Current Database</a>
+            <div style="padding:8px 16px;">
+                <label class="more-link" style="cursor:pointer; display:block;">
+                    &#x2B06; Restore from File
+                    <input type="file" accept=".db" id="restoreFileInput"
+                           onchange="restoreFromFile(this)" style="display:none;">
+                </label>
+            </div>
+            <hr style="margin:8px 16px;">
+            <div id="serverBackups" style="padding:0 16px 12px;">
+                <p style="font-size:0.85rem; color:var(--pico-muted-color);">Loading server backups...</p>
+            </div>
+            <a href="#" class="more-link" onclick="closeBackupPanel()" style="text-align:center;">Close</a>
         </div>
     </div>
 

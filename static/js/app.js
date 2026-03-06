@@ -18,7 +18,7 @@ function hardRefresh() {
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js?v=44')
+    navigator.serviceWorker.register('/static/sw.js?v=45')
         .then(reg => {
             console.log('SW registered, scope:', reg.scope);
             reg.addEventListener('updatefound', () => {
@@ -255,6 +255,72 @@ socket.on('accommodation_updated', function(data) {
         location.reload();
     }
 });
+
+// Backup / Restore
+function showBackupPanel(e) {
+    if (e) e.preventDefault();
+    closeMore();
+    document.getElementById('backupPanel').style.display = '';
+    // Load server backups list
+    fetch('/api/backup/list').then(r => r.json()).then(data => {
+        const el = document.getElementById('serverBackups');
+        if (!data.ok || !data.backups.length) {
+            el.innerHTML = '<p style="font-size:0.85rem; color:var(--pico-muted-color);">No server backups available.</p>';
+            return;
+        }
+        el.innerHTML = '<p style="font-size:0.8rem; font-weight:600; margin-bottom:6px;">Server Auto-Backups:</p>' +
+            data.backups.map(b =>
+                `<div style="display:flex; justify-content:space-between; align-items:center; padding:4px 0; font-size:0.8rem;">
+                    <span>${b.name.replace('japan_trip_', '').replace('.db', '')} (${b.size_kb}KB)</span>
+                    <button onclick="restoreServerBackup('${b.name}')" style="font-size:0.75rem; padding:2px 8px; cursor:pointer;">Restore</button>
+                </div>`
+            ).join('');
+    });
+}
+
+function closeBackupPanel() {
+    document.getElementById('backupPanel').style.display = 'none';
+}
+
+async function restoreFromFile(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!confirm(`Restore database from "${file.name}"? Current data will be backed up first.`)) {
+        input.value = '';
+        return;
+    }
+    const form = new FormData();
+    form.append('backup', file);
+    try {
+        const resp = await fetch('/api/backup/restore', { method: 'POST', body: form });
+        const data = await resp.json();
+        if (data.ok) {
+            showToast('Database restored! Reloading...');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Restore failed', 'error');
+        }
+    } catch (err) {
+        showToast('Restore failed', 'error');
+    }
+    input.value = '';
+}
+
+async function restoreServerBackup(name) {
+    if (!confirm(`Restore from backup "${name}"? Current data will be backed up first.`)) return;
+    try {
+        const resp = await fetch(`/api/backup/restore-server/${name}`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.ok) {
+            showToast('Restored! Reloading...');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Restore failed', 'error');
+        }
+    } catch (err) {
+        showToast('Restore failed', 'error');
+    }
+}
 
 // Currency converter
 function toggleCurrencyConverter() {

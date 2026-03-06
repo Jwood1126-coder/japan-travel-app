@@ -295,11 +295,18 @@ if (sessionHistory.length > 0) {
 // Scroll to bottom on load
 scrollToBottom();
 
-// Handle mobile keyboard resize — shrink body to visible viewport
+// Handle mobile keyboard resize — pin body to visible viewport
 if (window.visualViewport) {
     function adjustForKeyboard() {
-        // Resize body to match visible area so flex layout reflows naturally
-        document.body.style.height = window.visualViewport.height + 'px';
+        const vv = window.visualViewport;
+        // Size body to visible area so flex layout fills above the keyboard
+        document.body.style.height = vv.height + 'px';
+        // Prevent browser from scrolling the page up behind the keyboard
+        // (which is what causes the input to appear at the "top of screen")
+        document.body.style.position = 'fixed';
+        document.body.style.top = vv.offsetTop + 'px';
+        document.body.style.left = '0';
+        document.body.style.right = '0';
         scrollToBottom();
     }
 
@@ -310,6 +317,10 @@ if (window.visualViewport) {
     chatInput.addEventListener('blur', () => {
         setTimeout(() => {
             document.body.style.height = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.right = '';
             scrollToBottom();
         }, 100);
     });
