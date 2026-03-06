@@ -49,11 +49,13 @@ function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-function addBubble(role, text, imageUrl) {
+function addBubble(role, text, imageUrls) {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${role}`;
 
-    if (imageUrl) {
+    // Support single URL string or array of URLs
+    const urls = imageUrls ? (Array.isArray(imageUrls) ? imageUrls : [imageUrls]) : [];
+    for (const imageUrl of urls) {
         const img = document.createElement('img');
         img.src = imageUrl;
         img.className = 'chat-image';
@@ -128,10 +130,9 @@ async function sendMessage() {
     const welcome = document.querySelector('.chat-welcome');
     if (welcome) welcome.remove();
 
-    // Add user bubble with first image preview if any
-    const previewUrl = selectedImages.length > 0 ? URL.createObjectURL(selectedImages[0]) : null;
-    const imageCount = selectedImages.length > 1 ? ` [${selectedImages.length} images]` : '';
-    addBubble('user', (text || 'Analyzing document...') + imageCount, previewUrl);
+    // Add user bubble with all image previews
+    const previewUrls = selectedImages.map(f => URL.createObjectURL(f));
+    addBubble('user', text || 'Analyzing document...', previewUrls.length > 0 ? previewUrls : null);
 
     // Hide image preview
     if (selectedImages.length > 0) {
