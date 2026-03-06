@@ -653,8 +653,8 @@ def send_message():
     session_history_raw = []
 
     MODEL_MAP = {
-        'fast': 'claude-haiku-4-5-20250929',
-        'balanced': 'claude-sonnet-4-5-20250929',
+        'fast': 'claude-haiku-4-5-20251001',
+        'balanced': 'claude-sonnet-4-5-20250514',
         'deep': 'claude-opus-4-6-20250929',
     }
 
@@ -753,7 +753,7 @@ def send_message():
     user_content.append({"type": "text", "text": user_message})
     messages.append({"role": "user", "content": user_content})
 
-    model_id = MODEL_MAP.get(model_choice, 'claude-sonnet-4-5-20250929')
+    model_id = MODEL_MAP.get(model_choice, 'claude-sonnet-4-5-20250514')
     # Token budgets per tier
     if model_choice == 'deep':
         max_tokens = 16384
