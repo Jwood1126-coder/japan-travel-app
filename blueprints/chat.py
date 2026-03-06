@@ -652,10 +652,12 @@ def send_message():
     image_filename = None  # first image filename for DB record
     session_history_raw = []
 
+    # Anthropic API model IDs — must include date suffix.
+    # Opus does not reliably support vision; use Sonnet for image tasks.
     MODEL_MAP = {
         'fast': 'claude-haiku-4-5-20251001',
         'balanced': 'claude-sonnet-4-5-20250514',
-        'deep': 'claude-opus-4-6-20250929',
+        'deep': 'claude-sonnet-4-5-20250514',
     }
 
     if request.content_type and 'multipart/form-data' in request.content_type:
