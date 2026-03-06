@@ -62,18 +62,17 @@ function playBookingTune() {
     try {
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const notes = [
-            { freq: 523.25, start: 0,    dur: 0.15 },  // C5
-            { freq: 659.25, start: 0.15, dur: 0.15 },  // E5
-            { freq: 783.99, start: 0.30, dur: 0.15 },  // G5
-            { freq: 1046.5, start: 0.45, dur: 0.25 },  // C6
-            { freq: 783.99, start: 0.72, dur: 0.12 },  // G5
-            { freq: 1046.5, start: 0.85, dur: 0.35 },  // C6 (held)
-            // Sparkle descend
-            { freq: 1318.5, start: 1.25, dur: 0.08 },  // E6
-            { freq: 1174.7, start: 1.35, dur: 0.08 },  // D6
-            { freq: 1046.5, start: 1.45, dur: 0.08 },  // C6
-            { freq: 987.77, start: 1.55, dur: 0.08 },  // B5
-            { freq: 1046.5, start: 1.65, dur: 0.4  },  // C6 (final)
+            { freq: 523.25, start: 0,    dur: 0.15 },
+            { freq: 659.25, start: 0.15, dur: 0.15 },
+            { freq: 783.99, start: 0.30, dur: 0.15 },
+            { freq: 1046.5, start: 0.45, dur: 0.25 },
+            { freq: 783.99, start: 0.72, dur: 0.12 },
+            { freq: 1046.5, start: 0.85, dur: 0.35 },
+            { freq: 1318.5, start: 1.25, dur: 0.08 },
+            { freq: 1174.7, start: 1.35, dur: 0.08 },
+            { freq: 1046.5, start: 1.45, dur: 0.08 },
+            { freq: 987.77, start: 1.55, dur: 0.08 },
+            { freq: 1046.5, start: 1.65, dur: 0.4  },
         ];
 
         notes.forEach(({ freq, start, dur }) => {
@@ -96,7 +95,9 @@ function playBookingTune() {
 }
 
 function showBookingCelebration(hotelName) {
-    // Floating container — no background overlay, app stays visible
+    // Remove any existing celebration first
+    document.querySelectorAll('.celebrate-float').forEach(el => el.remove());
+
     const container = document.createElement('div');
     container.className = 'celebrate-float';
     container.innerHTML = `
@@ -106,11 +107,18 @@ function showBookingCelebration(hotelName) {
                 <div class="celebrate-title">PIKA PIKA!</div>
                 <div class="celebrate-subtitle">${hotelName || 'Hotel'} is booked!</div>
             </div>
+            <button class="celebrate-close" aria-label="Close">&times;</button>
         </div>
     `;
+
+    // Block ALL events on the container from reaching the page underneath
+    container.addEventListener('mousedown', e => e.stopPropagation(), true);
+    container.addEventListener('touchstart', e => e.stopPropagation(), true);
+    container.addEventListener('click', e => e.stopPropagation(), true);
+
     document.body.appendChild(container);
 
-    // Trigger slide-in + dance
+    // Trigger slide-in after browser paints initial offscreen state
     requestAnimationFrame(() => {
         requestAnimationFrame(() => {
             container.classList.add('active');
@@ -118,12 +126,8 @@ function showBookingCelebration(hotelName) {
         });
     });
 
-    // Auto dismiss after 4s
-    const dismissTimer = setTimeout(dismiss, 4000);
-
-    // Tap to dismiss (with guard against immediate phantom tap)
-    let canDismiss = false;
-    setTimeout(() => { canDismiss = true; }, 800);
+    // Auto dismiss after 4.5s
+    const dismissTimer = setTimeout(dismiss, 4500);
 
     function dismiss() {
         if (container.classList.contains('leaving')) return;
@@ -132,14 +136,16 @@ function showBookingCelebration(hotelName) {
         setTimeout(() => container.remove(), 700);
     }
 
-    container.addEventListener('click', () => {
-        if (canDismiss) dismiss();
+    // Only the close button dismisses — no phantom events possible
+    const closeBtn = container.querySelector('.celebrate-close');
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismiss();
     });
-    container.addEventListener('touchend', (e) => {
-        if (canDismiss) {
-            e.preventDefault();
-            dismiss();
-        }
+    closeBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dismiss();
     });
 }
 
