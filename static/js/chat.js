@@ -2,7 +2,7 @@
 
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
-let selectedImage = null;
+let selectedImages = [];
 let selectedModel = localStorage.getItem('chatModel') || 'balanced';
 
 // Session history — persists across page navigations, clears on New Chat or tab close
@@ -67,27 +67,47 @@ function sendQuickPrompt(btn) {
 }
 
 function handleImageSelect(input) {
-    if (input.files && input.files[0]) {
-        selectedImage = input.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            document.getElementById('previewImg').src = e.target.result;
-            document.getElementById('imagePreview').style.display = 'flex';
-        };
-        reader.readAsDataURL(selectedImage);
+    if (!input.files) return;
+    for (const file of input.files) {
+        selectedImages.push(file);
     }
+    updateImagePreview();
+}
+
+function updateImagePreview() {
+    const container = document.getElementById('imagePreview');
+    if (selectedImages.length === 0) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+    }
+    container.style.display = 'flex';
+    container.innerHTML = '';
+    selectedImages.forEach((file, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'preview-thumb';
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'preview-remove';
+        removeBtn.textContent = '\u00d7';
+        removeBtn.onclick = () => { selectedImages.splice(idx, 1); updateImagePreview(); };
+        wrapper.appendChild(img);
+        wrapper.appendChild(removeBtn);
+        container.appendChild(wrapper);
+    });
 }
 
 function clearImage() {
-    selectedImage = null;
+    selectedImages = [];
     document.getElementById('chatImageInput').value = '';
     document.getElementById('imagePreview').style.display = 'none';
-    document.getElementById('previewImg').src = '';
+    document.getElementById('imagePreview').innerHTML = '';
 }
 
 async function sendMessage() {
     const text = chatInput.value.trim();
-    if (!text && !selectedImage) return;
+    if (!text && selectedImages.length === 0) return;
 
     chatInput.value = '';
     chatInput.style.height = 'auto';
@@ -98,13 +118,15 @@ async function sendMessage() {
     const welcome = document.querySelector('.chat-welcome');
     if (welcome) welcome.remove();
 
-    // Add user bubble with optional image preview
-    const imagePreviewUrl = selectedImage ? document.getElementById('previewImg').src : null;
-    addBubble('user', text || 'Analyzing document...', imagePreviewUrl);
+    // Add user bubble with first image preview if any
+    const previewUrl = selectedImages.length > 0 ? URL.createObjectURL(selectedImages[0]) : null;
+    const imageCount = selectedImages.length > 1 ? ` [${selectedImages.length} images]` : '';
+    addBubble('user', (text || 'Analyzing document...') + imageCount, previewUrl);
 
     // Hide image preview
-    if (selectedImage) {
+    if (selectedImages.length > 0) {
         document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('imagePreview').innerHTML = '';
     }
 
     // Show thinking indicator
@@ -131,13 +153,15 @@ async function sendMessage() {
     try {
         let response;
 
-        if (selectedImage) {
+        if (selectedImages.length > 0) {
             const formData = new FormData();
             formData.append('message', text);
-            formData.append('image', selectedImage);
+            for (const img of selectedImages) {
+                formData.append('images', img);
+            }
             formData.append('model', selectedModel);
             formData.append('session_history', JSON.stringify(sessionHistory));
-            selectedImage = null;
+            selectedImages = [];
             document.getElementById('chatImageInput').value = '';
 
             response = await fetch('/api/chat/send', {

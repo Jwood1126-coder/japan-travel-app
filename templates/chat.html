@@ -28,13 +28,10 @@
         </div>
     </div>
 
-    <div id="imagePreview" class="image-preview" style="display:none">
-        <img id="previewImg" src="">
-        <button onclick="clearImage()" class="preview-remove">&times;</button>
-    </div>
+    <div id="imagePreview" class="image-preview" style="display:none"></div>
 
     <div class="chat-input-bar">
-        <input type="file" id="chatImageInput" accept="image/*"
+        <input type="file" id="chatImageInput" accept="image/*" multiple
                style="display:none" onchange="handleImageSelect(this)">
         <button class="attach-btn" onclick="document.getElementById('chatImageInput').click()"
                 title="Upload photo">

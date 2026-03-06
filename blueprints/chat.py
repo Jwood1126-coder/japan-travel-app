@@ -14,13 +14,17 @@ SYSTEM_PROMPT = """You are a Japan travel assistant and digital travel agent for
 and his wife (both 33, from Cleveland, OH) on a 15-day cherry blossom trip, \
 April 4-18, 2026.
 
-When users share images of travel documents (flight confirmations, hotel bookings, \
-train tickets, receipts, etc.), you should:
-1. Read and extract ALL relevant data (dates, times, confirmation numbers, costs, addresses)
-2. Use the available tools to update the trip database automatically
-3. Check for any scheduling conflicts with existing plans
-4. Note budget impact if costs are included
-5. Confirm what you updated in your response
+When users share images (hotel info, flight confirmations, booking screenshots, \
+train tickets, receipts, maps, etc.), you MUST:
+1. Read and extract ALL relevant data (name, dates, times, confirmation numbers, costs, addresses)
+2. MATCH the image to existing entries in the trip data. The ACCOMMODATIONS and FLIGHTS \
+   sections in your context list everything currently in the database. Look for matching \
+   hotel names, dates, cities, or flight numbers. If a hotel in the image matches an \
+   existing accommodation option, UPDATE that entry (use update_accommodation) — don't \
+   create a duplicate.
+3. If no existing entry matches, ADD it as a new option to the right location
+4. Use the tools to update the database — don't just describe what you see
+5. Tell the user exactly what you updated and which entry it matched
 
 ACCOMMODATION MANAGEMENT:
 - Use add_accommodation_option to add a new hotel/hostel option to a location
@@ -556,9 +560,9 @@ def send_message():
                         'Set ANTHROPIC_API_KEY in .env'}), 400
 
     # Handle both JSON and multipart form data
-    image_data = None
-    media_type = None
-    image_filename = None
+    images = []  # list of {data, media_type, filename}
+    image_filename = None  # first image filename for DB record
+    session_history_raw = []
 
     MODEL_MAP = {
         'fast': 'claude-haiku-4-5-20250929',
@@ -569,44 +573,59 @@ def send_message():
     if request.content_type and 'multipart/form-data' in request.content_type:
         user_message = request.form.get('message', '').strip()
         model_choice = request.form.get('model', 'balanced')
-        image_file = request.files.get('image')
-        if image_file and image_file.filename:
-            from blueprints.uploads import save_chat_image
-            image_filename, original_path = save_chat_image(image_file)
-            if image_filename and original_path:
-                with open(original_path, 'rb') as f:
-                    raw = f.read()
-                # Resize if over 4MB for API limits
-                if len(raw) > 4 * 1024 * 1024:
-                    try:
-                        from PIL import Image
-                        import io
-                        img = Image.open(io.BytesIO(raw))
-                        img.thumbnail((2048, 2048))
-                        buf = io.BytesIO()
-                        img.save(buf, format='JPEG', quality=85)
-                        raw = buf.getvalue()
-                        media_type = 'image/jpeg'
-                    except Exception:
-                        pass
-                image_data = base64.b64encode(raw).decode('utf-8')
-                ext = image_filename.rsplit('.', 1)[-1].lower()
-                if not media_type:
-                    media_type = {
-                        'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
-                        'png': 'image/png', 'gif': 'image/gif',
-                        'webp': 'image/webp',
-                    }.get(ext, 'image/jpeg')
+        session_history_raw = request.form.get('session_history', '[]')
+
+        # Support multiple images
+        image_files = request.files.getlist('images') or []
+        # Also check legacy single 'image' field
+        single = request.files.get('image')
+        if single and single.filename:
+            image_files.append(single)
+
+        from blueprints.uploads import save_chat_image
+        for image_file in image_files:
+            if not image_file or not image_file.filename:
+                continue
+            fname, original_path = save_chat_image(image_file)
+            if not fname or not original_path:
+                continue
+            if not image_filename:
+                image_filename = fname  # store first for DB
+            with open(original_path, 'rb') as f:
+                raw = f.read()
+            img_media_type = None
+            if len(raw) > 4 * 1024 * 1024:
+                try:
+                    from PIL import Image
+                    import io
+                    img = Image.open(io.BytesIO(raw))
+                    img.thumbnail((2048, 2048))
+                    buf = io.BytesIO()
+                    img.save(buf, format='JPEG', quality=85)
+                    raw = buf.getvalue()
+                    img_media_type = 'image/jpeg'
+                except Exception:
+                    pass
+            encoded = base64.b64encode(raw).decode('utf-8')
+            ext = fname.rsplit('.', 1)[-1].lower()
+            if not img_media_type:
+                img_media_type = {
+                    'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+                    'png': 'image/png', 'gif': 'image/gif',
+                    'webp': 'image/webp',
+                }.get(ext, 'image/jpeg')
+            images.append({'data': encoded, 'media_type': img_media_type, 'filename': fname})
     else:
-        data = request.get_json()
+        data = request.get_json() or {}
         user_message = data.get('message', '').strip()
         model_choice = data.get('model', 'balanced')
+        session_history_raw = data.get('session_history', [])
 
-    if not user_message and not image_data:
+    if not user_message and not images:
         return jsonify({'error': 'Empty message'}), 400
 
-    if not user_message and image_data:
-        user_message = "Please analyze this travel document and extract any useful information."
+    if not user_message and images:
+        user_message = "Please analyze this travel document and extract any useful information. Match it to existing accommodations, flights, or activities if possible."
 
     # Save user message
     user_msg = ChatMessage(
@@ -620,13 +639,7 @@ def send_message():
     # Build context
     context = _build_context()
 
-    # Build messages from client-sent session history (fresh per page load)
-    # Falls back to empty if not provided — each page visit starts a new conversation
-    if request.content_type and 'multipart/form-data' in request.content_type:
-        session_history_raw = request.form.get('session_history', '[]')
-    else:
-        session_history_raw = (data if 'data' in dir() else {}).get('session_history', [])
-
+    # Build messages from client-sent session history
     messages = []
     if isinstance(session_history_raw, str):
         try:
@@ -638,21 +651,21 @@ def send_message():
         if isinstance(m, dict) and m.get('role') and m.get('content'):
             messages.append({'role': m['role'], 'content': m['content']})
 
-    # Build current user message with optional image
+    # Build current user message with optional images
     user_content = []
-    if image_data:
+    for img in images:
         user_content.append({
             "type": "image",
             "source": {
                 "type": "base64",
-                "media_type": media_type,
-                "data": image_data,
+                "media_type": img['media_type'],
+                "data": img['data'],
             }
         })
     user_content.append({"type": "text", "text": user_message})
     messages.append({"role": "user", "content": user_content})
 
-    max_tokens = 2048 if image_data else 1024
+    max_tokens = 2048 if images else 1024
     model_id = MODEL_MAP.get(model_choice, 'claude-sonnet-4-5-20250929')
     app = current_app._get_current_object()
 
