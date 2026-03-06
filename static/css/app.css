@@ -1079,8 +1079,16 @@ body {
 }
 
 .tab-check {
-    color: var(--jr-green);
-    margin-left: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--jr-green);
+    color: #fff;
+    margin-left: 3px;
+    flex-shrink: 0;
 }
 
 .tab-warn {
@@ -1376,6 +1384,15 @@ body {
     display: flex;
     gap: 8px;
     margin-top: 0.5rem;
+}
+
+.compact-tracker {
+    margin: 6px 0 0 0;
+    padding: 0 8px;
+}
+
+.compact-tracker .status-select {
+    max-width: 160px;
 }
 
 .status-select, .confirmation-input {

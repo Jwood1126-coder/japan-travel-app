@@ -66,6 +66,14 @@
             {% endif %}
         </div>
 
+        <div class="booking-tracker compact-tracker">
+            <select class="status-select" onchange="updateBookingStatus({{ option.id }}, this.value)">
+                <option value="not_booked" {% if option.booking_status == 'not_booked' %}selected{% endif %}>Not Booked</option>
+                <option value="booked" {% if option.booking_status == 'booked' %}selected{% endif %}>Booked</option>
+                <option value="confirmed" {% if option.booking_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
+            </select>
+        </div>
+
         <div class="option-details" style="display:none;">
             {% if option.standout %}
             <p class="option-standout">{{ option.standout }}</p>
@@ -99,7 +107,7 @@
             <div class="option-links">
                 {% if option.booking_url %}
                 <a href="{{ option.booking_url }}" target="_blank" rel="noopener"
-                   class="book-link">Book &rarr;</a>
+                   class="book-link">Website</a>
                 <a href="{{ option.booking_url | translate_link }}" target="_blank" rel="noopener"
                    class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
                 {% endif %}
@@ -141,11 +149,6 @@
             </div>
 
             <div class="booking-tracker">
-                <select class="status-select" onchange="updateBookingStatus({{ option.id }}, this.value)">
-                    <option value="not_booked" {% if option.booking_status == 'not_booked' %}selected{% endif %}>Not Booked</option>
-                    <option value="booked" {% if option.booking_status == 'booked' %}selected{% endif %}>Booked</option>
-                    <option value="confirmed" {% if option.booking_status == 'confirmed' %}selected{% endif %}>Confirmed</option>
-                </select>
                 <input type="text" class="confirmation-input"
                        placeholder="Confirmation #"
                        value="{{ option.confirmation_number or '' }}"
