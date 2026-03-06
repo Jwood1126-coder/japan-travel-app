@@ -1,5 +1,8 @@
 import os
+import json
 import uuid
+import requests
+from bs4 import BeautifulSoup
 from flask import Blueprint, render_template, jsonify, request, current_app
 from models import db, AccommodationLocation, AccommodationOption, ChecklistItem
 
@@ -145,6 +148,121 @@ def add_option(location_id):
     from app import socketio
     socketio.emit('accommodation_updated', {'location_id': location_id})
     return jsonify({'ok': True, 'id': option.id})
+
+
+@accommodations_bp.route('/api/accommodations/fetch-url', methods=['POST'])
+def fetch_url_info():
+    """Fetch a booking URL, extract text, and use Claude to parse property info."""
+    data = request.get_json()
+    url = (data.get('url') or '').strip()
+    if not url:
+        return jsonify({'ok': False, 'error': 'No URL provided'}), 400
+
+    # Fetch the page
+    try:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                          '(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'en-US,en;q=0.9',
+        }
+        resp = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
+        resp.raise_for_status()
+    except Exception as e:
+        return jsonify({'ok': False, 'error': f'Could not fetch URL: {str(e)}'}), 400
+
+    # Extract useful text from page
+    soup = BeautifulSoup(resp.text, 'html.parser')
+
+    # Remove scripts, styles, etc.
+    for tag in soup(['script', 'style', 'noscript', 'iframe', 'svg']):
+        tag.decompose()
+
+    # Grab OpenGraph and meta tags
+    meta_info = {}
+    for meta in soup.find_all('meta'):
+        prop = meta.get('property', '') or meta.get('name', '')
+        content = meta.get('content', '')
+        if prop and content:
+            meta_info[prop] = content[:500]
+
+    # Grab JSON-LD structured data
+    json_ld = []
+    for script in soup.find_all('script', type='application/ld+json'):
+        try:
+            json_ld.append(script.string[:2000])
+        except Exception:
+            pass
+
+    # Get page title and trimmed body text
+    title = soup.title.string.strip() if soup.title and soup.title.string else ''
+    body_text = soup.get_text(separator=' ', strip=True)[:4000]
+
+    # Build context for Claude
+    page_context = f"Page title: {title}\n\n"
+    if meta_info:
+        page_context += "Meta tags:\n"
+        for k, v in list(meta_info.items())[:20]:
+            page_context += f"  {k}: {v}\n"
+        page_context += "\n"
+    if json_ld:
+        page_context += "Structured data (JSON-LD):\n"
+        for ld in json_ld[:3]:
+            page_context += f"  {ld}\n"
+        page_context += "\n"
+    page_context += f"Page text (trimmed):\n{body_text}"
+
+    # Ask Claude to extract property info
+    api_key = current_app.config.get('ANTHROPIC_API_KEY')
+    if not api_key:
+        # Fallback: just use title from meta/page
+        return jsonify({
+            'ok': True,
+            'data': {
+                'name': meta_info.get('og:title', title).split('|')[0].split('-')[0].strip(),
+                'property_type': '',
+                'price_low': None,
+                'price_high': None,
+            }
+        })
+
+    try:
+        import anthropic
+        client = anthropic.Anthropic(api_key=api_key)
+        msg = client.messages.create(
+            model='claude-haiku-4-5-20251001',
+            max_tokens=500,
+            messages=[{
+                'role': 'user',
+                'content': f"""Extract accommodation info from this booking page. Return ONLY valid JSON with these fields:
+- name: property name (string, clean — no site name like "Booking.com")
+- property_type: e.g. Hotel, Ryokan, Hostel, Guesthouse, Apartment (string, best guess)
+- price_low: lowest nightly price in USD if visible (number or null)
+- price_high: highest nightly price in USD if visible (number or null)
+- address: property address if visible (string or null)
+
+{page_context}"""
+            }],
+        )
+        result_text = msg.content[0].text.strip()
+        # Extract JSON from response (handle markdown code blocks)
+        if '```' in result_text:
+            result_text = result_text.split('```')[1]
+            if result_text.startswith('json'):
+                result_text = result_text[4:]
+            result_text = result_text.strip()
+        parsed = json.loads(result_text)
+        return jsonify({'ok': True, 'data': parsed})
+    except Exception as e:
+        # Fallback to basic meta extraction
+        return jsonify({
+            'ok': True,
+            'data': {
+                'name': meta_info.get('og:title', title).split('|')[0].split('-')[0].strip(),
+                'property_type': '',
+                'price_low': None,
+                'price_high': None,
+            }
+        })
 
 
 VALID_BOOKING_STATUSES = {'not_booked', 'researching', 'booked', 'confirmed', 'cancelled'}

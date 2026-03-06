@@ -246,6 +246,49 @@ function toggleAddForm(locationId) {
     form.style.display = form.style.display === 'none' ? '' : 'none';
 }
 
+async function onBookingUrlPaste(locationId, input) {
+    // Small delay to let paste value populate
+    setTimeout(async () => {
+        const url = input.value.trim();
+        if (!url || !url.startsWith('http')) return;
+
+        const status = document.getElementById(`fetchStatus-${locationId}`);
+        status.textContent = 'Fetching property info...';
+        status.style.display = '';
+
+        try {
+            const resp = await fetch('/api/accommodations/fetch-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+            });
+            const result = await resp.json();
+            if (result.ok && result.data) {
+                const d = result.data;
+                const nameInput = document.getElementById(`addName-${locationId}`);
+                const typeInput = document.getElementById(`addType-${locationId}`);
+                const lowInput = document.getElementById(`addPriceLow-${locationId}`);
+                const highInput = document.getElementById(`addPriceHigh-${locationId}`);
+
+                if (d.name && !nameInput.value) nameInput.value = d.name;
+                if (d.property_type && !typeInput.value) typeInput.value = d.property_type;
+                if (d.price_low && !lowInput.value) lowInput.value = d.price_low;
+                if (d.price_high && !highInput.value) highInput.value = d.price_high;
+
+                status.textContent = 'Auto-filled from URL';
+                setTimeout(() => { status.style.display = 'none'; }, 3000);
+            } else {
+                status.textContent = result.error || 'Could not extract info';
+                setTimeout(() => { status.style.display = 'none'; }, 3000);
+            }
+        } catch (err) {
+            console.error('Fetch URL info failed:', err);
+            status.textContent = 'Fetch failed';
+            setTimeout(() => { status.style.display = 'none'; }, 3000);
+        }
+    }, 100);
+}
+
 async function saveNewOption(locationId) {
     const name = document.getElementById(`addName-${locationId}`).value.trim();
     if (!name) {
