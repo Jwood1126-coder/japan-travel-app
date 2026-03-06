@@ -1,54 +1,95 @@
 // Pikachu Booking Celebration — fully self-contained (no external CSS dependency)
 
 const PIKACHU_SVG = `
-<svg viewBox="0 0 200 220" class="pika-svg" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 240 280" class="pika-svg" xmlns="http://www.w3.org/2000/svg">
   <style>
     .pika-svg { animation: pikaBounce 0.4s ease-in-out infinite alternate; }
     @keyframes pikaBounce { 0%{transform:translateY(0) rotate(-2deg)} 100%{transform:translateY(-10px) rotate(2deg)} }
-    .pika-foot-l { transform-origin:78px 205px; animation: footL 0.3s ease-in-out infinite alternate; }
-    .pika-foot-r { transform-origin:122px 205px; animation: footR 0.3s ease-in-out infinite alternate; }
-    @keyframes footL { 0%{transform:translateY(0) rotate(0)} 100%{transform:translateY(-4px) rotate(-5deg)} }
-    @keyframes footR { 0%{transform:translateY(-4px) rotate(5deg)} 100%{transform:translateY(0) rotate(0)} }
-    .pika-arm-r { transform-origin:145px 145px; animation: armWave 0.35s ease-in-out infinite alternate; }
-    .pika-arm-l { transform-origin:55px 145px; animation: armSwL 0.4s ease-in-out infinite alternate; }
-    @keyframes armWave { 0%{transform:rotate(0)} 100%{transform:rotate(-25deg)} }
-    @keyframes armSwL { 0%{transform:rotate(0)} 100%{transform:rotate(8deg)} }
-    .pika-tail { transform-origin:150px 155px; animation: tailWag 0.3s ease-in-out infinite alternate; }
-    @keyframes tailWag { 0%{transform:rotate(-5deg)} 100%{transform:rotate(5deg)} }
+    .pika-foot-l { transform-origin:90px 255px; animation: footL 0.3s ease-in-out infinite alternate; }
+    .pika-foot-r { transform-origin:150px 255px; animation: footR 0.3s ease-in-out infinite alternate-reverse; }
+    @keyframes footL { 0%{transform:translateY(0) rotate(0)} 100%{transform:translateY(-5px) rotate(-6deg)} }
+    @keyframes footR { 0%{transform:translateY(-5px) rotate(6deg)} 100%{transform:translateY(0) rotate(0)} }
+    .pika-arm-r { transform-origin:172px 165px; animation: armWave 0.35s ease-in-out infinite alternate; }
+    .pika-arm-l { transform-origin:68px 165px; animation: armSwL 0.4s ease-in-out infinite alternate; }
+    @keyframes armWave { 0%{transform:rotate(0)} 100%{transform:rotate(-30deg)} }
+    @keyframes armSwL { 0%{transform:rotate(0)} 100%{transform:rotate(10deg)} }
+    .pika-tail { transform-origin:185px 180px; animation: tailWag 0.3s ease-in-out infinite alternate; }
+    @keyframes tailWag { 0%{transform:rotate(-8deg)} 100%{transform:rotate(8deg)} }
     .pika-cheek { animation: cheekGlow 0.8s ease-in-out infinite alternate; }
-    @keyframes cheekGlow { 0%{opacity:0.5} 100%{opacity:0.85} }
+    @keyframes cheekGlow { 0%{opacity:0.6} 100%{opacity:0.9} }
     .pika-sparkle { animation: sparkle 1.2s ease-in-out infinite alternate; }
     .s1{animation-delay:0s} .s2{animation-delay:.2s} .s3{animation-delay:.4s}
     .s4{animation-delay:.15s} .s5{animation-delay:.35s} .s6{animation-delay:.55s}
     @keyframes sparkle { 0%{opacity:.3;transform:translateY(0) scale(.8)} 100%{opacity:1;transform:translateY(-8px) scale(1.3)} }
   </style>
-  <path d="M55 10 L38 75 L72 65 Z" fill="#F5D442" stroke="#333" stroke-width="2"/>
-  <path d="M55 10 L48 40 L62 35 Z" fill="#333"/>
-  <path d="M145 10 L128 65 L162 75 Z" fill="#F5D442" stroke="#333" stroke-width="2"/>
-  <path d="M145 10 L138 35 L152 40 Z" fill="#333"/>
-  <ellipse cx="100" cy="95" rx="62" ry="55" fill="#F5D442" stroke="#333" stroke-width="2"/>
-  <ellipse cx="78" cy="85" rx="8" ry="10" fill="#333"/>
-  <ellipse cx="122" cy="85" rx="8" ry="10" fill="#333"/>
-  <ellipse cx="80" cy="82" rx="3" ry="3.5" fill="#fff"/>
-  <ellipse cx="124" cy="82" rx="3" ry="3.5" fill="#fff"/>
-  <ellipse class="pika-cheek" cx="58" cy="102" rx="12" ry="9" fill="#E55" opacity="0.7"/>
-  <ellipse class="pika-cheek" cx="142" cy="102" rx="12" ry="9" fill="#E55" opacity="0.7"/>
-  <ellipse cx="100" cy="93" rx="3" ry="2" fill="#333"/>
-  <path d="M85 105 Q100 120 115 105" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
-  <ellipse cx="100" cy="165" rx="50" ry="45" fill="#F5D442" stroke="#333" stroke-width="2"/>
-  <ellipse cx="100" cy="170" rx="30" ry="25" fill="#FFF8DC" opacity="0.5"/>
-  <g class="pika-arm-l"><path d="M55 145 Q30 155 35 175 Q40 185 55 178" fill="#F5D442" stroke="#333" stroke-width="2"/></g>
-  <g class="pika-arm-r"><path d="M145 145 Q170 130 175 145 Q178 155 160 160" fill="#F5D442" stroke="#333" stroke-width="2"/></g>
-  <g class="pika-foot-l"><ellipse cx="78" cy="205" rx="18" ry="10" fill="#F5D442" stroke="#333" stroke-width="2"/></g>
-  <g class="pika-foot-r"><ellipse cx="122" cy="205" rx="18" ry="10" fill="#F5D442" stroke="#333" stroke-width="2"/></g>
-  <g class="pika-tail"><path d="M150 155 L170 130 L160 130 L178 100 L155 125 L165 125 L148 148" fill="#F5D442" stroke="#333" stroke-width="2" stroke-linejoin="round"/></g>
+  <!-- Tail (behind body) — proper lightning bolt shape -->
+  <g class="pika-tail">
+    <polygon points="185,180 210,140 198,140 220,95 195,95 218,48 175,120 192,120 172,165"
+             fill="#F5D442" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+    <!-- Brown base of tail -->
+    <polygon points="185,180 172,165 178,172" fill="#8B6914" stroke="#333" stroke-width="1.5"/>
+  </g>
+  <!-- Body — rounder, chubbier -->
+  <ellipse cx="120" cy="195" rx="58" ry="55" fill="#F5D442" stroke="#333" stroke-width="2.5"/>
+  <!-- Belly lighter patch -->
+  <ellipse cx="120" cy="205" rx="34" ry="30" fill="#FFF3B0" opacity="0.5"/>
+  <!-- Left arm -->
+  <g class="pika-arm-l">
+    <path d="M68 165 Q42 170 40 190 Q38 200 50 200 Q58 198 68 185" fill="#F5D442" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+  </g>
+  <!-- Right arm (waving!) -->
+  <g class="pika-arm-r">
+    <path d="M172 165 Q198 150 202 165 Q206 178 192 182 Q180 183 172 175" fill="#F5D442" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+  </g>
+  <!-- Left foot -->
+  <g class="pika-foot-l">
+    <ellipse cx="90" cy="248" rx="22" ry="12" fill="#F5D442" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="90" cy="250" rx="22" ry="10" fill="#F5D442"/>
+  </g>
+  <!-- Right foot -->
+  <g class="pika-foot-r">
+    <ellipse cx="150" cy="248" rx="22" ry="12" fill="#F5D442" stroke="#333" stroke-width="2.5"/>
+    <ellipse cx="150" cy="250" rx="22" ry="10" fill="#F5D442"/>
+  </g>
+  <!-- Head — wider, rounder, Pikachu-shaped -->
+  <ellipse cx="120" cy="105" rx="68" ry="60" fill="#F5D442" stroke="#333" stroke-width="2.5"/>
+  <!-- Brown back stripes on head -->
+  <path d="M82 68 Q90 80 82 90" fill="none" stroke="#8B6914" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <path d="M158 68 Q150 80 158 90" fill="none" stroke="#8B6914" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+  <!-- Left ear — long, pointed, with black tip -->
+  <path d="M65 75 L40 8 L82 58" fill="#F5D442" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M40 8 L52 30 L64 24" fill="#333"/>
+  <!-- Right ear — long, pointed, with black tip -->
+  <path d="M175 75 L200 8 L158 58" fill="#F5D442" stroke="#333" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M200 8 L188 30 L176 24" fill="#333"/>
+  <!-- Eyes — large, round, expressive -->
+  <ellipse cx="95" cy="98" rx="11" ry="14" fill="#333"/>
+  <ellipse cx="145" cy="98" rx="11" ry="14" fill="#333"/>
+  <!-- Eye highlights — big gleam -->
+  <ellipse cx="99" cy="92" rx="5" ry="6" fill="#fff"/>
+  <ellipse cx="149" cy="92" rx="5" ry="6" fill="#fff"/>
+  <!-- Small lower eye highlight -->
+  <ellipse cx="92" cy="102" rx="2.5" ry="2.5" fill="#fff" opacity="0.6"/>
+  <ellipse cx="142" cy="102" rx="2.5" ry="2.5" fill="#fff" opacity="0.6"/>
+  <!-- Red cheeks — round circles -->
+  <circle class="pika-cheek" cx="62" cy="115" r="14" fill="#E44" opacity="0.75"/>
+  <circle class="pika-cheek" cx="178" cy="115" r="14" fill="#E44" opacity="0.75"/>
+  <!-- Nose — tiny triangle -->
+  <path d="M117 108 L123 108 L120 112 Z" fill="#333"/>
+  <!-- Mouth — happy wide smile -->
+  <path d="M100 120 Q110 134 120 128 Q130 134 140 120" fill="none" stroke="#333" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Open happy mouth interior -->
+  <path d="M105 122 Q120 138 135 122" fill="#A03030" stroke="none"/>
+  <!-- Tongue -->
+  <ellipse cx="120" cy="130" rx="8" ry="5" fill="#E07070"/>
+  <!-- Sparkles around -->
   <g>
-    <text x="20" y="50" font-size="18" class="pika-sparkle s1">&#x26A1;</text>
-    <text x="170" y="40" font-size="16" class="pika-sparkle s2">&#x2728;</text>
-    <text x="10" y="130" font-size="14" class="pika-sparkle s3">&#x2B50;</text>
-    <text x="180" y="150" font-size="18" class="pika-sparkle s4">&#x26A1;</text>
-    <text x="50" y="190" font-size="12" class="pika-sparkle s5">&#x2728;</text>
-    <text x="155" y="200" font-size="14" class="pika-sparkle s6">&#x2B50;</text>
+    <text x="15" y="45" font-size="20" class="pika-sparkle s1">&#x26A1;</text>
+    <text x="210" y="35" font-size="18" class="pika-sparkle s2">&#x2728;</text>
+    <text x="5" y="150" font-size="16" class="pika-sparkle s3">&#x2B50;</text>
+    <text x="220" y="170" font-size="20" class="pika-sparkle s4">&#x26A1;</text>
+    <text x="30" y="240" font-size="14" class="pika-sparkle s5">&#x2728;</text>
+    <text x="200" y="250" font-size="16" class="pika-sparkle s6">&#x2B50;</text>
   </g>
 </svg>`;
 
