@@ -56,6 +56,7 @@ def _run_migrations(app):
         ('accommodation_option', 'check_in_info', 'TEXT'),
         ('accommodation_option', 'check_out_info', 'TEXT'),
         ('activity', 'is_eliminated', 'BOOLEAN DEFAULT 0'),
+        ('chat_message', 'context_summary', 'TEXT'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -1594,6 +1595,53 @@ def _migrate_add_addresses_and_cleanup_transport(app):
     print("Migration complete: hotel addresses added, transport routes cleaned up.")
 
 
+def _migrate_data_cleanup(app):
+    """Fix stale data: Takayama nights, location_ids, Kanazawa refs. Idempotent."""
+    import sqlite3
+    from models import AccommodationLocation
+
+    accom = AccommodationLocation.query.filter_by(location_name='Takayama').first()
+    if accom and '3 nights' in (accom.quick_notes or ''):
+        return  # Already applied
+
+    print("Running data migration: cleanup stale data...")
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # Fix Takayama quick_notes: 2 nights -> 3 nights
+    c.execute("""UPDATE accommodation_location SET
+                 quick_notes='Central Takayama, 3 nights. Mix of ryokan and budget options.'
+                 WHERE location_name='Takayama'""")
+
+    # Fix Day 1 (travel day): clear orphaned location_id
+    c.execute("UPDATE day SET location_id=NULL WHERE day_number=1 AND location_id IS NOT NULL")
+
+    # Fix Day 14 (departure from Osaka): set to Osaka location
+    c.execute("""UPDATE day SET location_id=(SELECT id FROM location WHERE name='Osaka')
+                 WHERE day_number=14""")
+
+    # Remove Kanazawa location if no days reference it
+    c.execute("SELECT COUNT(*) FROM day WHERE location_id=(SELECT id FROM location WHERE name='Kanazawa')")
+    if c.fetchone()[0] == 0:
+        c.execute("DELETE FROM location WHERE name='Kanazawa'")
+
+    # Fix activity descriptions mentioning Kanazawa
+    c.execute("SELECT id, title, description FROM activity WHERE title LIKE '%Kanazawa%' OR description LIKE '%Kanazawa%'")
+    for aid, title, desc in c.fetchall():
+        if desc and 'Kanazawa' in desc:
+            new_desc = desc.replace('Takayama/Kanazawa = 3 nights', 'Takayama = 3 nights').replace('Kanazawa', 'Kyoto')
+            c.execute("UPDATE activity SET description=? WHERE id=?", (new_desc, aid))
+        if title and 'Kanazawa' in title:
+            new_title = title.replace('Kanazawa', 'Kyoto')
+            c.execute("UPDATE activity SET title=? WHERE id=?", (new_title, aid))
+
+    conn.commit()
+    conn.close()
+    db.session.expire_all()
+    print("Migration complete: stale data cleaned up.")
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -1687,6 +1735,7 @@ def create_app():
         _migrate_14day_restructure(app)
         _migrate_consolidate_kyoto(app)
         _migrate_add_addresses_and_cleanup_transport(app)
+        _migrate_data_cleanup(app)
 
     return app
 

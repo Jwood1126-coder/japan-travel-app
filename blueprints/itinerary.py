@@ -198,6 +198,7 @@ def index():
                            trip_started=trip_started,
                            trip_ended=trip_ended,
                            days_until=days_until,
+                           total_days=len(days),
                            total_activities=total_activities,
                            completed_activities=completed_activities,
                            overall_pct=overall_pct,

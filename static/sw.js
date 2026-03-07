@@ -1,5 +1,5 @@
 // Service Worker for offline support
-const CACHE_NAME = 'japan-trip-v54';
+const CACHE_NAME = 'japan-trip-v55';
 const STATIC_ASSETS = [
     '/static/css/app.css',
     '/static/js/app.js',
@@ -8,6 +8,10 @@ const STATIC_ASSETS = [
     '/static/js/touch.js',
     '/static/js/celebrate.js',
     '/static/js/accommodations.js',
+    '/static/js/documents.js',
+    '/static/manifest.json',
+    '/static/icons/icon-192.png',
+    '/static/icons/icon-512.png',
     'https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css',
 ];
 
