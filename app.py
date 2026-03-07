@@ -1532,6 +1532,7 @@ def create_app():
     from blueprints.documents import documents_bp
     from blueprints.activities import activities_bp
     from blueprints.backup import backup_bp
+    from blueprints.export import export_bp
 
     app.register_blueprint(itinerary_bp)
     app.register_blueprint(accommodations_bp)
@@ -1542,6 +1543,7 @@ def create_app():
     app.register_blueprint(documents_bp)
     app.register_blueprint(activities_bp)
     app.register_blueprint(backup_bp)
+    app.register_blueprint(export_bp)
 
     # Google Maps link filter
     @app.template_filter('maps_link')

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Japan 2026 - Trip Summary</title>
+<style>
+    :root {
+        --accent: #D14D72;
+        --muted: #888;
+        --border: #e0e0e0;
+        --bg-section: #fafafa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        font-size: 11pt;
+        line-height: 1.5;
+        color: #222;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    h1 { font-size: 20pt; color: var(--accent); margin-bottom: 2px; }
+    h2 { font-size: 14pt; color: var(--accent); margin: 18px 0 8px; padding-bottom: 4px; border-bottom: 2px solid var(--accent); }
+    h3 { font-size: 11pt; margin: 10px 0 4px; }
+
+    .subtitle { color: var(--muted); font-size: 10pt; margin-bottom: 16px; }
+
+    .toolbar {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        background: var(--accent);
+        color: white;
+        padding: 10px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 100;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .toolbar a { color: white; text-decoration: none; font-weight: 600; }
+    .toolbar button {
+        background: white;
+        color: var(--accent);
+        border: none;
+        padding: 8px 20px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 10pt;
+        cursor: pointer;
+    }
+    body { padding-top: 60px; }
+
+    /* Flight cards */
+    .flight-leg {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 12px;
+        background: var(--bg-section);
+        border-radius: 6px;
+        margin-bottom: 6px;
+        font-size: 10pt;
+    }
+    .flight-leg .route { font-weight: 700; min-width: 90px; }
+    .flight-leg .detail { color: var(--muted); }
+    .flight-leg .confirm { color: var(--accent); font-weight: 700; }
+
+    /* Accommodation table */
+    .accom-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 8px; }
+    .accom-table th { text-align: left; padding: 6px 8px; background: var(--bg-section); border-bottom: 1px solid var(--border); font-weight: 600; }
+    .accom-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .accom-table .loc-name { font-weight: 700; }
+    .accom-table .hotel-name { color: var(--accent); }
+
+    /* Day section */
+    .day-section { margin-bottom: 14px; page-break-inside: avoid; }
+    .day-header {
+        background: var(--bg-section);
+        padding: 6px 10px;
+        border-radius: 6px;
+        border-left: 3px solid var(--accent);
+        margin-bottom: 4px;
+    }
+    .day-header .day-num { font-weight: 800; color: var(--accent); }
+    .day-header .day-date { color: var(--muted); font-size: 9pt; margin-left: 8px; }
+    .day-header .day-title { font-weight: 600; }
+
+    .activity-list { list-style: none; padding-left: 14px; }
+    .activity-list li {
+        padding: 2px 0;
+        font-size: 10pt;
+        position: relative;
+    }
+    .activity-list li::before {
+        content: '';
+        position: absolute;
+        left: -10px;
+        top: 9px;
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background: var(--muted);
+    }
+    .activity-list .time-slot {
+        display: inline-block;
+        font-size: 8pt;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 600;
+        width: 65px;
+    }
+    .activity-list .act-desc {
+        color: var(--muted);
+        font-size: 9pt;
+        margin-left: 65px;
+        display: block;
+    }
+    .jr-badge {
+        display: inline-block;
+        font-size: 7pt;
+        background: #2d8a4e;
+        color: white;
+        padding: 0 4px;
+        border-radius: 3px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+
+    /* Transport */
+    .transport-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+    .transport-table th { text-align: left; padding: 4px 8px; background: var(--bg-section); border-bottom: 1px solid var(--border); }
+    .transport-table td { padding: 4px 8px; border-bottom: 1px solid var(--border); }
+
+    /* Emergency info */
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        font-size: 9pt;
+    }
+    .info-grid dt { font-weight: 600; }
+    .info-grid dd { color: var(--muted); margin-bottom: 4px; }
+
+    /* Print styles */
+    @media print {
+        .toolbar { display: none; }
+        body { padding-top: 0; font-size: 9pt; }
+        h1 { font-size: 16pt; }
+        h2 { font-size: 12pt; margin-top: 12px; }
+        .day-section { page-break-inside: avoid; }
+        .flight-leg, .accom-table td, .activity-list li { font-size: 9pt; }
+        @page { margin: 15mm; }
+    }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+    <a href="/">&larr; Back to app</a>
+    <button onclick="window.print()">Save as PDF</button>
+</div>
+
+<!-- Header -->
+<h1>{{ trip.name if trip else 'Japan 2026' }}</h1>
+<p class="subtitle">
+    {{ trip.start_date.strftime('%B %d') if trip }} &ndash; {{ trip.end_date.strftime('%B %d, %Y') if trip }}
+    &nbsp;&middot;&nbsp; {{ day_data|length }} days
+    &nbsp;&middot;&nbsp; {{ trip.num_people }} travelers
+</p>
+
+<!-- ===== FLIGHTS ===== -->
+<h2>Flights</h2>
+{% for f in flights %}
+<div class="flight-leg">
+    <span class="route">{{ f.route_from }} &rarr; {{ f.route_to }}</span>
+    <span>{{ f.airline }} {{ f.flight_number }}</span>
+    <span>{{ f.depart_date.strftime('%b %d') if f.depart_date else '' }}</span>
+    <span>{{ f.depart_time or '' }}{% if f.arrive_time %} &rarr; {{ f.arrive_time }}{% endif %}</span>
+    {% if f.confirmation_number %}<span class="confirm">{{ f.confirmation_number }}</span>{% endif %}
+</div>
+{% if f.notes %}<div style="font-size:9pt;color:#888;margin:-2px 0 6px 12px;">{{ f.notes }}</div>{% endif %}
+{% endfor %}
+
+<!-- ===== ACCOMMODATIONS ===== -->
+<h2>Accommodations</h2>
+<table class="accom-table">
+<thead>
+    <tr><th>Location</th><th>Dates</th><th>Hotel</th><th>Confirmation</th></tr>
+</thead>
+<tbody>
+{% for a in accommodations %}
+<tr>
+    <td class="loc-name">{{ a.location.location_name }}</td>
+    <td>{{ a.location.check_in_date.strftime('%b %d') }} &ndash; {{ a.location.check_out_date.strftime('%b %d') }} ({{ a.location.num_nights }}N)</td>
+    <td class="hotel-name">{{ a.selected.name if a.selected else 'Not booked' }}</td>
+    <td>
+        {% if a.selected and a.selected.confirmation_number %}
+            <strong>{{ a.selected.confirmation_number }}</strong>
+        {% elif a.selected and a.selected.booking_status == 'booked' %}
+            Booked
+        {% else %}
+            &mdash;
+        {% endif %}
+    </td>
+</tr>
+{% if a.selected and a.selected.address %}
+<tr><td colspan="4" style="font-size:9pt;color:#888;padding-top:0;">&#x1f4cd; {{ a.selected.address }}</td></tr>
+{% endif %}
+{% endfor %}
+</tbody>
+</table>
+
+<!-- ===== DAY-BY-DAY ITINERARY ===== -->
+<h2>Day-by-Day Itinerary</h2>
+{% for dd in day_data %}
+<div class="day-section">
+    <div class="day-header">
+        <span class="day-num">Day {{ dd.day.day_number }}</span>
+        <span class="day-date">{{ dd.day.date.strftime('%A, %b %d') if dd.day.date else '' }}</span>
+        <br><span class="day-title">{{ dd.day.title }}</span>
+    </div>
+    {% if dd.activities %}
+    <ul class="activity-list">
+        {% for act in dd.activities %}
+        <li>
+            <span class="time-slot">{{ act.time_slot or '' }}</span>
+            {{ act.title }}
+            {% if act.jr_pass_covered %}<span class="jr-badge">JR</span>{% endif %}
+            {% if act.description %}<span class="act-desc">{{ act.description }}</span>{% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endfor %}
+
+<!-- ===== TRANSPORT ===== -->
+<h2>Key Transport Routes</h2>
+<table class="transport-table">
+<thead>
+    <tr><th>Route</th><th>Type</th><th>Duration</th><th>JR Pass</th></tr>
+</thead>
+<tbody>
+{% for t in transport %}
+<tr>
+    <td><strong>{{ t.route_from }}</strong> &rarr; <strong>{{ t.route_to }}</strong></td>
+    <td>{{ t.transport_type }}{% if t.train_name %} ({{ t.train_name }}){% endif %}</td>
+    <td>{{ t.duration or '—' }}</td>
+    <td>{% if t.jr_pass_covered %}&#x2705;{% else %}{{ t.cost_if_not_covered or '&#x274c;' }}{% endif %}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+
+<!-- ===== QUICK REFERENCE ===== -->
+<h2>Quick Reference</h2>
+<div class="info-grid">
+    <dl>
+        <dt>Emergency</dt>
+        <dd>Police: 110 &nbsp;|&nbsp; Fire/Ambulance: 119</dd>
+        <dt>Embassy</dt>
+        <dd>US Embassy Tokyo: 03-3224-5000</dd>
+        <dt>JR Pass</dt>
+        <dd>14-day pass &mdash; covers all JR trains including shinkansen (except Nozomi/Mizuho)</dd>
+    </dl>
+    <dl>
+        <dt>Currency</dt>
+        <dd>Japanese Yen (JPY) &mdash; ~150 JPY per USD</dd>
+        <dt>ATMs</dt>
+        <dd>7-Eleven &amp; Japan Post ATMs accept foreign cards</dd>
+        <dt>Transit Card</dt>
+        <dd>Suica/Pasmo IC card &mdash; tap for trains, buses, konbini</dd>
+    </dl>
+</div>
+
+<p style="text-align:center;color:#ccc;margin-top:24px;font-size:8pt;">
+    Generated from Japan Travel App &middot; {{ trip.start_date.strftime('%Y') if trip else '2026' }}
+</p>
+
+</body>
+</html>
