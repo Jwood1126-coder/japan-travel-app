@@ -63,6 +63,9 @@ def _run_migrations(app):
         ('chat_message', 'context_summary', 'TEXT'),
         ('activity', 'category', 'TEXT'),
         ('activity', 'why', 'TEXT'),
+        ('activity', 'book_ahead', 'BOOLEAN DEFAULT 0'),
+        ('activity', 'book_ahead_note', 'TEXT'),
+        ('activity', 'getting_there', 'TEXT'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -1973,6 +1976,265 @@ def _migrate_enrich_activities(app):
     print("Migration complete: activities enriched with addresses, categories, and reasoning.")
 
 
+def _migrate_sumo_bookahead_transit(app):
+    """Add sumo event, book_ahead flags, getting_there transit tips, and logistical fixes.
+    Idempotent — checks if sumo activity already exists."""
+    import sqlite3
+    from models import Activity, Day
+
+    # Guard: if sumo activity already exists, skip
+    sumo = Activity.query.filter(Activity.title.contains('Sumo')).first()
+    if sumo:
+        return
+
+    print("Running migration: sumo event, book-ahead flags, transit tips...")
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # === 1. Add Sumo Morning Practice on Day 3 (April 7, full Tokyo day) ===
+    c.execute("SELECT id FROM day WHERE day_number=3")
+    day3 = c.fetchone()
+    if day3:
+        # Shift existing activities' sort_order up by 2 to make room at the start
+        c.execute("UPDATE activity SET sort_order = sort_order + 2 WHERE day_id=? AND sort_order <= 5", (day3[0],))
+        # Add sumo morning practice as the very first activity
+        c.execute("""INSERT INTO activity (day_id, title, description, time_slot, start_time,
+                     sort_order, category, address, url, book_ahead, book_ahead_note,
+                     getting_there, why, is_optional, is_substitute, is_completed, is_eliminated)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  (day3[0],
+                   'Sumo Morning Practice at Arashio Stable',
+                   'Watch real sumo wrestlers train through large street-facing windows. Free, no reservation needed. Arrive by 6:45 AM for a good spot. No flash photography. Wrestlers sometimes come outside after practice for photos.',
+                   'morning', '6:45 AM', 1, 'culture',
+                   'Hama-cho, Nihombashi, Chuo-ku, Tokyo',
+                   'https://arashio.net/tour_e.html',
+                   1, 'Call the stable 4-8 PM the day before to confirm practice (see arashio.net). Free admission.',
+                   'Toei Shinjuku Line to Hamacho Station (1 min walk). ~20 min from Asakusa.',
+                   'Unique chance to see real sumo training up close. April is an active training month between March and May tournaments. Free and authentic -- much better than tourist shows.',
+                   0, 0, 0, 0))
+        # Add Sumo Museum as optional activity
+        c.execute("""INSERT INTO activity (day_id, title, description, time_slot,
+                     sort_order, category, address, url, is_optional,
+                     getting_there, why, is_substitute, is_completed, is_eliminated)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                  (day3[0],
+                   'Sumo Museum at Ryogoku Kokugikan',
+                   'Small free museum inside the sumo stadium with rotating exhibitions about sumo history. Open weekdays 10:30 AM-4:00 PM. Closed weekends.',
+                   'morning', 2, 'culture',
+                   '1-3-28 Yokoami, Sumida-ku, Tokyo',
+                   'https://www.sumo.or.jp/EnSumoMuseum/',
+                   1,
+                   'JR Sobu Line to Ryogoku Station (west exit, 2 min walk). ~15 min from Hamacho.',
+                   'Quick free stop if you want more sumo culture. Only 30-45 min needed. Combine with Arashio Stable for a sumo morning.',
+                   0, 0, 0))
+
+    # === 2. Set book_ahead flags on activities that need advance tickets ===
+    book_ahead_activities = [
+        # (title_pattern, book_ahead_note)
+        ('Hakone Free Pass', 'Buy at Odawara Station HIS counter or online at odakyu.jp. Available day-of but lines can be long.'),
+        ('Hakone Open-Air Museum', 'Buy tickets online at hakone-oam.or.jp to skip the line. ~¥1,600/person.'),
+        ('Fushimi Inari', 'No tickets needed -- free and open 24 hours. Just go early (6:30 AM) to avoid crowds.'),
+        ('Kinkaku-ji', 'No advance booking needed. ¥500 admission at the gate. Arrive by 9 AM to beat tour buses.'),
+        ('Bamboo Grove', 'Free, no tickets. Go early morning (before 8 AM) or late afternoon to avoid crowds.'),
+        ('Tenryu-ji', 'No advance booking needed. ¥500 garden, ¥800 with temple hall. Opens 8:30 AM.'),
+        ('Hiroshima Peace Memorial', 'Buy museum tickets online at hpmmuseum.jp to skip the line. ¥200/person. Opens 8:30 AM.'),
+        ('Itsukushima', 'Ferry is free with JR Pass. Shrine: ¥300 at gate. No advance booking needed.'),
+        ('TeamLab', 'MUST book 2-3 weeks ahead at teamlab.art. Sells out fast, especially weekends. ~¥3,800/person.'),
+        ('Osaka Castle', 'No advance booking needed. ¥600 at gate. Opens 9 AM.'),
+        ('Spa World', 'No advance booking. ¥1,500 entry (weekday). Open 10 AM-8:45 AM next day.'),
+        ('Umeda Sky Building', 'No advance tickets needed. ¥1,500 at gate. Best at sunset/night.'),
+        ('Todai-ji', 'No advance booking needed. ¥600 at gate. Nara deer park is free.'),
+        ('Hida Folk Village', 'No advance booking. ¥700 at gate. Opens 8:30 AM.'),
+        ('Takayama Festival Floats', 'No advance booking needed. ¥1,000 at gate.'),
+        ('Kiyomizu-dera', 'No advance booking needed. ¥400 at gate. Best early morning or late afternoon.'),
+        ('Tenzan Tohji-kyo', 'No reservation needed for day-use. ¥1,300 entry. Bring own towel or rent (¥200).'),
+        ('JR Pass', 'Order online at japanrailpass.net 2-4 weeks before trip. Exchange voucher at JR counter on arrival.'),
+        ('Nohi Bus', 'Reserve online at nouhibus.co.jp 1-2 weeks ahead. ¥3,390/person. Limited seats.'),
+        ('Sumo Morning Practice', 'Call stable 4-8 PM day before to confirm practice schedule. See arashio.net.'),
+    ]
+
+    for title_pattern, note in book_ahead_activities:
+        c.execute("UPDATE activity SET book_ahead=1, book_ahead_note=? WHERE title LIKE ? AND book_ahead IS NOT 1",
+                  (note, f'%{title_pattern}%'))
+
+    # === 3. Add getting_there transit tips between activities ===
+    # Day 3 - Tokyo Full Day
+    transit_tips_day3 = [
+        ('Senso-ji Temple', 'morning', 'Already in Asakusa (hotel area). 5 min walk from Dormy Inn.'),
+        ('Meiji Shrine', 'Walk to Ginza Line at Asakusa → Omotesando (25 min). Or JR to Harajuku Station.'),
+        ('Harajuku', 'Right next to Meiji Shrine. Walk through the shrine forest to Takeshita Street (5 min).'),
+        ('Shibuya Crossing', 'Walk south from Harajuku (15 min) or JR Yamanote Line one stop to Shibuya.'),
+        ('Golden Gai', 'JR Yamanote Line: Shibuya → Shinjuku (5 min). Golden Gai is 5 min walk from east exit.'),
+        ('Omoide Yokocho', 'Right next to Shinjuku Station west exit. 2 min walk from Golden Gai area.'),
+    ]
+    if day3:
+        for title_pattern, *rest in transit_tips_day3:
+            if len(rest) == 2:
+                tip = rest[1]
+            else:
+                tip = rest[0]
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day3[0], f'%{title_pattern}%'))
+
+    # Day 4 - Hakone
+    c.execute("SELECT id FROM day WHERE day_number=4")
+    day4 = c.fetchone()
+    if day4:
+        hakone_tips = [
+            ('Switchback Train', 'From Hakone-Yumoto Station (take Odakyu Romance Car or local train from Odawara).'),
+            ('Cable Car to Owakudani', 'Direct connection from Gora Station (end of switchback train line).'),
+            ('Ropeway over mountains', 'Continues from Owakudani. Stay on the ropeway system.'),
+            ('Lake Ashi Pirate Ship', 'Ropeway ends at Togendai port. Board the pirate ship there.'),
+            ('Open-Air Museum', 'Bus or walk from Hakone-Yumoto/Gora. Best visited between train and cable car.'),
+            ('Tenzan Tohji-kyo', 'Bus from Hakone-Yumoto Station (~5 min). Or 15 min walk from station.'),
+        ]
+        for title_pattern, tip in hakone_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day4[0], f'%{title_pattern}%'))
+
+    # Day 5 - Takayama arrival
+    c.execute("SELECT id FROM day WHERE day_number=5")
+    day5 = c.fetchone()
+    if day5:
+        takayama_tips = [
+            ('Sanmachi Suji', '10 min walk from Takayama Station. Cross the Miyagawa River bridge.'),
+            ('Sake brewery', 'In Sanmachi Suji area. Walk between them (Funasaka, Kawashiri, Harada).'),
+            ('Takayama Jinya', '5 min walk south of Sanmachi Suji along the river.'),
+        ]
+        for title_pattern, tip in takayama_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day5[0], f'%{title_pattern}%'))
+
+    # Day 6 - Takayama full day
+    c.execute("SELECT id FROM day WHERE day_number=6")
+    day6 = c.fetchone()
+    if day6:
+        taka2_tips = [
+            ('Miyagawa Morning Market', '10 min walk from station along Miyagawa River east bank.'),
+            ('Hida Folk Village', 'Nohi Bus from Takayama Bus Center (~10 min) or 30 min walk west.'),
+            ('Hida beef sushi', 'Back in Sanmachi Suji area. Look for Sakaguchiya or Kokorobi (street stalls).'),
+            ('Festival Floats Museum', '15 min walk northeast of old town. Near Sakurayama Shrine.'),
+        ]
+        for title_pattern, tip in taka2_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day6[0], f'%{title_pattern}%'))
+
+    # Day 8 - Shirakawa-go to Kyoto
+    c.execute("SELECT id FROM day WHERE day_number=8")
+    day8 = c.fetchone()
+    if day8:
+        d8_tips = [
+            ('Shirakawa-go UNESCO', 'Nohi Bus drops you at the village bus terminal. 2 min walk to village center.'),
+            ('Wada House', 'In the village center. 5 min walk from bus stop.'),
+            ('Shiroyama observation', '15-20 min uphill walk from the village. Follow signs to "observation deck."'),
+            ('Pontocho Alley', 'From Kyoto Station: Karasuma Line to Shijo (10 min) then 5 min walk east to the river.'),
+            ('Kamo River', 'Right next to Pontocho Alley. Walk to the riverbank.'),
+        ]
+        for title_pattern, tip in d8_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day8[0], f'%{title_pattern}%'))
+
+    # Day 9 - Kyoto Eastern Temples
+    c.execute("SELECT id FROM day WHERE day_number=9")
+    day9 = c.fetchone()
+    if day9:
+        d9_tips = [
+            ('Fushimi Inari', 'JR Nara Line from Kyoto Station to Inari Station (5 min, 2 stops). Shrine is right at the station exit.'),
+            ('Hanamikoji', 'Keihan Line from Fushimi-Inari to Gion-Shijo (10 min). Walk south on Hanamikoji Street.'),
+            ('Kamo River', 'Walk west from Gion to the river (5 min). Beautiful lit-up bridges at night.'),
+        ]
+        for title_pattern, tip in d9_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day9[0], f'%{title_pattern}%'))
+
+    # Day 10 - Kyoto Western
+    c.execute("SELECT id FROM day WHERE day_number=10")
+    day10 = c.fetchone()
+    if day10:
+        d10_tips = [
+            ('Kinkaku-ji', 'Bus #205 from Kyoto Station to Kinkaku-ji-michi (40 min). Or taxi (~¥2,000).'),
+            ('Bamboo Grove', 'Bus #205 from Kinkaku-ji to Arashiyama (25 min). Or JR Sagano Line.'),
+            ('Tenryu-ji', 'At the south end of Bamboo Grove. 2 min walk.'),
+            ('Togetsukyo Bridge', '5 min walk south from Tenryu-ji through the shopping street.'),
+            ('Nishiki Market', 'JR Sagano Line from Saga-Arashiyama to central Kyoto. Market is near Shijo-Karasuma.'),
+            ('Kiyomizu-dera', 'Bus #207 from Shijo to Kiyomizu-michi (15 min) then 10 min uphill walk.'),
+        ]
+        for title_pattern, tip in d10_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day10[0], f'%{title_pattern}%'))
+
+    # Day 11 - Hiroshima day trip
+    c.execute("SELECT id FROM day WHERE day_number=11")
+    day11 = c.fetchone()
+    if day11:
+        d11_tips = [
+            ('Peace Memorial', 'Hiroshima streetcar (tram) from JR Hiroshima Station to Genbaku-Dome mae (15 min). ¥220.'),
+            ('A-Bomb Dome', 'Right across the river from Peace Memorial Park. 3 min walk.'),
+            ('okonomiyaki', 'Walk to Okonomimura building near Peace Park (5 min). Multiple floors of okonomiyaki stalls.'),
+            ('JR train to Miyajimaguchi', 'JR Sanyo Line from Hiroshima to Miyajimaguchi (25 min). JR Pass covered.'),
+            ('Floating.*Torii', 'JR Ferry from Miyajimaguchi pier to Miyajima Island (10 min). JR Pass covered.'),
+            ('Itsukushima Shrine', '10 min walk from Miyajima ferry terminal along the waterfront.'),
+        ]
+        for title_pattern, tip in d11_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day11[0], f'%{title_pattern}%'))
+
+    # Day 12 - Osaka
+    c.execute("SELECT id FROM day WHERE day_number=12")
+    day12 = c.fetchone()
+    if day12:
+        d12_tips = [
+            ('Osaka Castle', 'JR Loop Line to Osakajo-koen Station (2 min walk to park entrance). Or Tanimachi Line to Tanimachi 4-chome.'),
+            ('Kuromon Market', 'Osaka Metro Sakaisuji Line to Nipponbashi Station (exit 10). 2 min walk.'),
+            ('Shinsekai', 'Walk south from Kuromon Market (15 min) or Osaka Metro to Dobutsuen-mae Station.'),
+            ('Spa World', 'In Shinsekai district. 3 min walk from Tsutenkaku Tower.'),
+            ('Den Den Town', 'Walk north from Shinsekai (10 min) or Osaka Metro to Ebisucho Station.'),
+            ('Dotonbori', 'Osaka Metro Midosuji Line to Namba Station (exit 14). Walk north to canal.'),
+            ('Takoyaki crawl', 'All along Dotonbori canal. Wanaka, Kukuru, and Aizuya are within 200m of each other.'),
+            ('Hozenji Yokocho', 'Tiny alley just south of Dotonbori. Look for the moss-covered Fudo statue.'),
+            ('Ura-Namba', 'South side of Namba Station. Walk south from Dotonbori (5 min).'),
+            ('Amerikamura', '10 min walk west from Dotonbori. Cross Mido-suji boulevard.'),
+        ]
+        for title_pattern, tip in d12_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day12[0], f'%{title_pattern}%'))
+
+    # Day 13 - Osaka Day 2
+    c.execute("SELECT id FROM day WHERE day_number=13")
+    day13 = c.fetchone()
+    if day13:
+        d13_tips = [
+            ('Nara', 'JR Yamatoji Rapid from Osaka-Namba or JR Osaka to JR Nara (45-50 min). JR Pass covered.'),
+            ('Amerikamura', 'JR back to Osaka, then Midosuji Line to Shinsaibashi. Walk west to Amerikamura.'),
+            ('Shinsaibashi', 'Connected to Amerikamura. Walk east along Shinsaibashi-suji arcade.'),
+            ('Dotonbori round 2', 'Walk south from Shinsaibashi (5 min). Same canal area as Day 12.'),
+            ('Umeda Sky Building', 'Midosuji Line to Umeda/Osaka Station. 10 min walk northwest. Best at sunset.'),
+        ]
+        for title_pattern, tip in d13_tips:
+            c.execute("UPDATE activity SET getting_there=? WHERE day_id=? AND title LIKE ? AND getting_there IS NULL",
+                      (tip, day13[0], f'%{title_pattern}%'))
+
+    # === 4. Logistical fixes: move Monkey Park from Day 11 to Day 10 ===
+    # Monkey Park Iwatayama is in Arashiyama (Kyoto), NOT Hiroshima.
+    # It's listed on Day 11 (Hiroshima day trip) but belongs on Day 10 (Arashiyama day).
+    if day10 and day11:
+        c.execute("""UPDATE activity SET day_id=?, time_slot='afternoon', sort_order=6,
+                     getting_there='Cross Togetsukyo Bridge to the south side. Entrance is a 5 min walk up the hill.'
+                     WHERE title LIKE '%Monkey Park%' AND day_id=?""",
+                  (day10[0], day11[0]))
+
+    # === 5. Fix Ueno Zoo placement: it's on Day 3 but sort_order=91. Also optional. ===
+    if day3:
+        c.execute("UPDATE activity SET is_optional=1, sort_order=90, getting_there='JR Yamanote or Ginza Line to Ueno Station (park exit). Zoo is inside Ueno Park.' WHERE title LIKE '%Ueno Zoo%' AND day_id=?",
+                  (day3[0],))
+
+    conn.commit()
+    conn.close()
+    db.session.expire_all()
+    print("Migration complete: sumo event added, book-ahead flags set, transit tips added.")
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -1992,6 +2254,7 @@ def create_app():
     from blueprints.activities import activities_bp
     from blueprints.backup import backup_bp
     from blueprints.export import export_bp
+    from blueprints.bookahead import bookahead_bp
 
     app.register_blueprint(itinerary_bp)
     app.register_blueprint(accommodations_bp)
@@ -2003,6 +2266,7 @@ def create_app():
     app.register_blueprint(activities_bp)
     app.register_blueprint(backup_bp)
     app.register_blueprint(export_bp)
+    app.register_blueprint(bookahead_bp)
 
     # Google Maps link filter
     @app.template_filter('maps_link')
@@ -2069,6 +2333,7 @@ def create_app():
         _migrate_add_addresses_and_cleanup_transport(app)
         _migrate_data_cleanup(app)
         _migrate_enrich_activities(app)
+        _migrate_sumo_bookahead_transit(app)
 
     return app
 

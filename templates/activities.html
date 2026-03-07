@@ -72,6 +72,7 @@
             {% if a.category %}
             <span class="cat-badge cat-{{ a.category }}">{{ category_labels.get(a.category, a.category) }}</span>
             {% endif %}
+            {% if a.book_ahead %}<span class="book-ahead-badge">Book Ahead</span>{% endif %}
             {% if a.is_optional %}<span class="optional-badge">Optional</span>{% endif %}
             {% if a.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}
             {% if a.is_eliminated %}<span class="ruled-out-badge">Ruled Out</span>{% endif %}
@@ -91,6 +92,12 @@
             {{ icon_lightbulb(14) }}
             <span>{{ a.why }}</span>
         </div>
+        {% endif %}
+        {% if a.getting_there %}
+        <div class="act-transit-tip">&#x1F686; {{ a.getting_there }}</div>
+        {% endif %}
+        {% if a.book_ahead_note %}
+        <div class="act-book-tip">&#x1F3AB; {{ a.book_ahead_note }}</div>
         {% endif %}
         <div class="act-browse-links">
             {% if a.maps_url %}

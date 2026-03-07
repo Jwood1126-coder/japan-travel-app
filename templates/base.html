@@ -17,7 +17,7 @@
     <title>{% block title %}Japan 2026{% endblock %}</title>
 </head>
 <body>
-    {% from "icons.html" import icon_home, icon_check, icon_chat, icon_more, icon_hotel, icon_book, icon_moon, icon_logout, icon_clipboard, icon_lightbulb %}
+    {% from "icons.html" import icon_home, icon_check, icon_chat, icon_more, icon_hotel, icon_book, icon_moon, icon_logout, icon_clipboard, icon_lightbulb, icon_ticket %}
     <main class="container app-main">
         {% block content %}{% endblock %}
     </main>
@@ -47,6 +47,7 @@
         <div class="more-menu-sheet" role="menu">
             <div class="more-menu-handle"></div>
             <a href="{{ url_for('documents.documents_view') }}" class="more-link">{{ icon_clipboard(18) }} Travel Documents</a>
+            <a href="{{ url_for('bookahead.bookahead_view') }}" class="more-link">{{ icon_ticket(18) }} Book Ahead</a>
             <a href="{{ url_for('checklists.checklists_view') }}" class="more-link">{{ icon_check(18) }} Checklists</a>
             <a href="{{ url_for('activities.activities_view') }}" class="more-link">{{ icon_lightbulb(18) }} Activities</a>
             <a href="{{ url_for('reference.reference_view') }}" class="more-link">{{ icon_book(18) }} Reference Guide</a>

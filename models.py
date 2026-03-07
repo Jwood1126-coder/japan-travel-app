@@ -76,6 +76,9 @@ class Activity(db.Model):
     is_eliminated = db.Column(db.Boolean, default=False)
     category = db.Column(db.String(50))  # temple, food, nightlife, shopping, nature, culture, transit, logistics
     why = db.Column(db.Text)  # reasoning for choosing this activity / comparison notes
+    book_ahead = db.Column(db.Boolean, default=False)  # needs advance tickets/reservation
+    book_ahead_note = db.Column(db.String(300))  # booking details: how far ahead, where to book
+    getting_there = db.Column(db.String(500))  # transit tip: how to get here from previous activity
 
     def to_dict(self):
         return {

@@ -3306,6 +3306,141 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
 [data-theme="dark"] .act-browse-card { border-bottom-color: rgba(255,255,255,0.06); }
 [data-theme="dark"] .add-activity-form { background: #2d1f24; }
 
+/* ===== Book Ahead Badge ===== */
+.book-ahead-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-weight: 600;
+    white-space: nowrap;
+}
+[data-theme="dark"] .book-ahead-badge {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+/* ===== Transit & Booking Tips (Activities + Day view) ===== */
+.act-transit-tip, .activity-transit-tip {
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    margin: 4px 0;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    color: #1e40af;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+.act-book-tip, .activity-book-tip {
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    margin: 4px 0;
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    color: #166534;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+[data-theme="dark"] .act-transit-tip,
+[data-theme="dark"] .activity-transit-tip {
+    background: #0c1929;
+    border-left-color: #60a5fa;
+    color: #93c5fd;
+}
+[data-theme="dark"] .act-book-tip,
+[data-theme="dark"] .activity-book-tip {
+    background: #052e16;
+    border-left-color: #4ade80;
+    color: #86efac;
+}
+
+/* ===== Book Ahead Page ===== */
+.book-ahead-intro {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    margin: -8px 0 12px;
+}
+.book-ahead-location {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 20px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--sakura);
+    color: var(--sakura-text);
+}
+.book-ahead-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--pico-muted-border-color);
+    background: var(--pico-card-background-color, #fff);
+}
+.book-ahead-card.needs-action {
+    border-left: 4px solid #3b82f6;
+}
+.book-ahead-card.no-rush {
+    border-left: 4px solid #22c55e;
+}
+.book-ahead-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.book-ahead-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+.book-ahead-meta {
+    font-size: 0.78rem;
+    color: var(--pico-muted-color);
+    margin: 2px 0 6px;
+}
+.book-ahead-note {
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    margin: 6px 0;
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    color: #166534;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+.book-ahead-transit {
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    margin: 6px 0;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    color: #1e40af;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+.book-ahead-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+[data-theme="dark"] .book-ahead-card { border-color: #333; }
+[data-theme="dark"] .book-ahead-card.needs-action { border-left-color: #60a5fa; }
+[data-theme="dark"] .book-ahead-card.no-rush { border-left-color: #4ade80; }
+[data-theme="dark"] .book-ahead-note {
+    background: #052e16;
+    border-left-color: #4ade80;
+    color: #86efac;
+}
+[data-theme="dark"] .book-ahead-transit {
+    background: #0c1929;
+    border-left-color: #60a5fa;
+    color: #93c5fd;
+}
+[data-theme="dark"] .book-ahead-location {
+    color: var(--sakura-text);
+    border-bottom-color: var(--sakura-dark);
+}
+
 /* ===== Fun Japanese Touches ===== */
 
 /* --- Falling Sakura Petals (Dashboard) --- */

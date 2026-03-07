@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Book Ahead{% endblock %}
+
+{% block content %}
+{% from "icons.html" import icon_ticket, icon_pin, icon_link, icon_translate, icon_lightbulb %}
+<header>
+    <h1>{{ icon_ticket(22) }} Book Ahead</h1>
+    <p class="book-ahead-intro">Activities that need advance tickets, reservations, or preparation. Sorted by trip day so you can plan ahead.</p>
+</header>
+
+{% if items %}
+{% set ns = namespace(current_loc='') %}
+{% for item in items %}
+{% set a = item.activity %}
+{% set d = item.day %}
+{% set loc = item.location %}
+
+{% if loc and loc.name != ns.current_loc %}
+{% set ns.current_loc = loc.name %}
+<h2 class="book-ahead-location">{{ loc.name }}</h2>
+{% endif %}
+
+<div class="book-ahead-card {% if a.book_ahead_note and 'No' in a.book_ahead_note and ('advance' in a.book_ahead_note or 'needed' in a.book_ahead_note) %}no-rush{% else %}needs-action{% endif %}">
+    <div class="book-ahead-header">
+        <span class="book-ahead-title">{{ a.title }}</span>
+        {% if a.category %}
+        <span class="cat-badge cat-{{ a.category }}">{{ a.category | title }}</span>
+        {% endif %}
+    </div>
+    <div class="book-ahead-meta">
+        Day {{ d.day_number }} &middot; {{ d.date.strftime('%b %d') }}
+        {% if a.time_slot %}&middot; {{ a.time_slot | title }}{% endif %}
+        {% if a.cost_note %}&middot; {{ a.cost_note }}{% endif %}
+        {% if a.cost_per_person and not a.cost_note %}&middot; &yen;{{ a.cost_per_person | int }}/person{% endif %}
+    </div>
+    {% if a.book_ahead_note %}
+    <div class="book-ahead-note">
+        {{ icon_ticket(14) }} {{ a.book_ahead_note }}
+    </div>
+    {% endif %}
+    {% if a.getting_there %}
+    <div class="book-ahead-transit">
+        &#x1F686; {{ a.getting_there }}
+    </div>
+    {% endif %}
+    <div class="book-ahead-links">
+        {% if a.url %}
+        <a href="{{ a.url }}" target="_blank" rel="noopener" class="doc-link">
+            {{ icon_link(14) }} Book / Details
+        </a>
+        <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Translate">
+            {{ icon_translate(14) }} EN
+        </a>
+        {% endif %}
+        {% if a.maps_url %}
+        <a href="{{ a.maps_url }}" target="_blank" rel="noopener" class="maps-navigate-btn">
+            {{ icon_pin(14) }} Navigate
+        </a>
+        {% elif a.address %}
+        <a href="{{ a.address | maps_link }}" target="_blank" rel="noopener" class="navigate-link">
+            {{ icon_pin(14) }} Navigate
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p class="empty-state">No activities flagged for advance booking.</p>
+{% endif %}
+{% endblock %}

@@ -210,11 +210,11 @@
 <section class="time-slot-section">
     <h3 class="slot-heading">{{ slot_macros[slot](18) }} {{ slot_labels[slot] }}</h3>
 
-    {# Major activities: has cost or JR pass #}
+    {# Major activities: has cost, JR pass, or needs advance booking #}
     {% set major = [] %}
     {% set minor = [] %}
     {% for activity in slot_activities %}
-        {% if activity.cost_per_person or activity.jr_pass_covered %}
+        {% if activity.cost_per_person or activity.jr_pass_covered or activity.book_ahead or activity.start_time %}
             {% if major.append(activity) %}{% endif %}
         {% else %}
             {% if minor.append(activity) %}{% endif %}
@@ -242,6 +242,9 @@
                     {% if activity.jr_pass_covered %}
                     <span class="jr-badge" title="Covered by JR Pass">JR</span>
                     {% endif %}
+                    {% if activity.book_ahead %}
+                    <span class="book-ahead-badge" title="Book in advance">Book</span>
+                    {% endif %}
                 </div>
                 {% if activity.maps_url %}
                 <a href="{{ activity.maps_url }}" target="_blank" rel="noopener" class="maps-navigate-btn">
@@ -266,6 +269,12 @@
                     <summary>Details</summary>
                     <p>{{ activity.description }}</p>
                 </details>
+                {% endif %}
+                {% if activity.getting_there %}
+                <div class="activity-transit-tip">&#x1F686; {{ activity.getting_there }}</div>
+                {% endif %}
+                {% if activity.book_ahead_note %}
+                <div class="activity-book-tip">&#x1F3AB; {{ activity.book_ahead_note }}</div>
                 {% endif %}
                 {% if activity.why %}
                 <div class="activity-why-tip">{{ icon_lightbulb(14) }} {{ activity.why }}</div>
@@ -327,6 +336,9 @@
                         <summary>Details</summary>
                         <p>{{ activity.description }}</p>
                     </details>
+                    {% endif %}
+                    {% if activity.getting_there %}
+                    <div class="activity-transit-tip">&#x1F686; {{ activity.getting_there }}</div>
                     {% endif %}
                     {% if activity.notes %}
                     <div class="activity-user-note">{{ activity.notes }}</div>
