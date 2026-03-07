@@ -66,6 +66,230 @@ def _run_migrations(app):
     conn.close()
 
 
+def _migrate_remove_kanazawa(app):
+    """One-time data migration: remove Kanazawa overnight, extend Takayama to 3 nights.
+    Idempotent — checks if already applied."""
+    from datetime import date as dt_date
+    from models import (db, Day, Activity, Location, AccommodationLocation,
+                        AccommodationOption)
+
+    # Check if already applied: Takayama accom has 3 nights
+    takayama_accom = AccommodationLocation.query.filter_by(
+        location_name='Takayama').first()
+    if not takayama_accom or takayama_accom.num_nights >= 3:
+        return  # Already migrated
+
+    print("Running data migration: remove Kanazawa, extend Takayama...")
+
+    # 1. Clean up Day 7 — remove K's House checkout/checkin shuffle
+    day7 = Day.query.filter_by(day_number=7).first()
+    if day7:
+        for act in Activity.query.filter_by(day_id=day7.id).all():
+            if "Check out of ryokan" in (act.title or ''):
+                db.session.delete(act)
+            elif "Check into K" in (act.title or ''):
+                db.session.delete(act)
+
+    # 2. Repurpose Day 8 as Takayama Day 3
+    day8 = Day.query.filter_by(day_number=8).first()
+    if day8:
+        Activity.query.filter_by(day_id=day8.id).delete()
+        day8.title = "TAKAYAMA DAY 3 -- Slow Morning & Alps Life"
+        day8.location_id = Location.query.filter_by(name='Takayama').first().id
+        for title, slot, order in [
+            ("Miyagawa Morning Market (round 2)", "morning", 1),
+            ("Breakfast at a local kissaten (retro coffee shop)", "morning", 2),
+            ("Rent bikes & ride along Miyagawa River", "morning", 3),
+            ("Train to Hida-Furukawa -- quieter version of Takayama", "morning", 4),
+            ("Furukawa's White-Walled Storehouses & koi canal", "afternoon", 5),
+            ("Hida Crafts Museum or sake tasting", "afternoon", 6),
+            ("Train back to Takayama", "afternoon", 7),
+            ("Afternoon onsen soak", "afternoon", 8),
+            ("Final Hida beef dinner -- go all out", "evening", 9),
+            ("Pack & prep for early departure", "evening", 10),
+        ]:
+            db.session.add(Activity(day_id=day8.id, title=title,
+                                    time_slot=slot, sort_order=order))
+
+    # 3. Repurpose Day 9 as Takayama->Shirakawa->Kyoto
+    day9 = Day.query.filter_by(day_number=9).first()
+    if day9:
+        Activity.query.filter_by(day_id=day9.id).delete()
+        kyoto_loc = Location.query.filter_by(name='Kyoto').first()
+        day9.title = "TAKAYAMA -> SHIRAKAWA-GO -> KYOTO"
+        day9.location_id = kyoto_loc.id if kyoto_loc else day9.location_id
+        for title, slot, order in [
+            ("Check out of Takayama accommodation", "morning", 1),
+            ("Nohi Bus: Takayama -> Shirakawa-go (~50 min)", "morning", 2),
+            ("Shirakawa-go UNESCO Village", "morning", 3),
+            ("Wada House (oldest thatched-roof house)", "morning", 4),
+            ("Hike to Shiroyama observation deck", "morning", 5),
+            ("Village lunch", "afternoon", 6),
+            ("Nohi Bus: Shirakawa-go -> Kanazawa Station (~75 min)", "afternoon", 7),
+            ("Hokuriku Shinkansen + Thunderbird: Kanazawa -> Kyoto (~2.5 hrs)", "afternoon", 8),
+            ("Check into Piece Hostel Sanjo", "evening", 9),
+            ("Stroll along Kamo River", "evening", 10),
+            ("Pontocho Alley dinner", "evening", 11),
+        ]:
+            db.session.add(Activity(day_id=day9.id, title=title,
+                                    time_slot=slot, sort_order=order))
+
+    # 4. Update Takayama accommodation: 2->3 nights
+    takayama_accom.num_nights = 3
+    takayama_accom.check_out_date = dt_date(2026, 4, 12)
+
+    # 5. Remove Kanazawa accommodation
+    kanazawa_accom = AccommodationLocation.query.filter_by(
+        location_name='Kanazawa').first()
+    if kanazawa_accom:
+        AccommodationOption.query.filter_by(location_id=kanazawa_accom.id).delete()
+        db.session.delete(kanazawa_accom)
+
+    # 6. Update Takayama location departure date
+    takayama_loc = Location.query.filter_by(name='Takayama').first()
+    if takayama_loc:
+        takayama_loc.departure_date = dt_date(2026, 4, 12)
+
+    # 7. Update Kanazawa location dates (transit only)
+    kanazawa_loc = Location.query.filter_by(name='Kanazawa').first()
+    if kanazawa_loc:
+        kanazawa_loc.arrival_date = dt_date(2026, 4, 12)
+        kanazawa_loc.departure_date = dt_date(2026, 4, 12)
+
+    # 8. Delete "SKIP KANAZAWA ENTIRELY" activity if it exists
+    skip_acts = Activity.query.filter(Activity.title.ilike('%SKIP KANAZAWA%')).all()
+    for act in skip_acts:
+        db.session.delete(act)
+
+    db.session.commit()
+    print("Migration complete: Kanazawa removed, Takayama extended to 3 nights.")
+
+
+def _migrate_add_osaka_day(app):
+    """One-time: add Day 16, extend Osaka to 2 nights, shift Tokyo return/departure.
+    Idempotent — checks if already applied."""
+    from datetime import date as dt_date
+    from models import db, Day, Activity, Flight, Location, AccommodationLocation, Trip
+
+    # Check if already applied: Day 16 exists
+    if Day.query.filter_by(day_number=16).first():
+        return
+
+    print("Running data migration: add Osaka day, extend trip to 16 days...")
+
+    day14 = Day.query.filter_by(day_number=14).first()
+    day15 = Day.query.filter_by(day_number=15).first()
+    if not day14 or not day15:
+        return
+
+    # Shift departure day (15->16) first to avoid unique date conflict
+    day15.day_number = 16
+    day15.date = dt_date(2026, 4, 19)
+    day15.title = "DEPARTURE DAY"
+    db.session.flush()
+
+    # Shift Tokyo return day (14->15)
+    day14.day_number = 15
+    day14.date = dt_date(2026, 4, 18)
+    day14.title = "OSAKA -> TOKYO (LAST EVENING)"
+    db.session.flush()
+
+    # Update departure day activities: Narita -> Haneda
+    for act in Activity.query.filter_by(day_id=day15.id).all():
+        if "Narita Express" in (act.title or ''):
+            act.title = "Train to Haneda Airport"
+        elif "Narita Airport" in (act.title or ''):
+            act.title = "Haneda Airport shops & last meal"
+
+    # Update Tokyo return day: Kyoto -> Osaka references
+    for act in Activity.query.filter_by(day_id=day14.id).all():
+        if act.title and "Kyoto" in act.title:
+            act.title = act.title.replace("Kyoto", "Osaka")
+        if act.title and "Shinkansen Kyoto" in act.title:
+            act.title = "Shinkansen Osaka -> Tokyo"
+
+    # Create new Day 14 — Osaka Day 2
+    osaka_loc = Location.query.filter_by(name="Osaka").first()
+    new_day14 = Day(
+        day_number=14,
+        date=dt_date(2026, 4, 17),
+        title="OSAKA DAY 2 -- Deeper Cuts",
+        location_id=osaka_loc.id if osaka_loc else None,
+        theme="exploration",
+    )
+    db.session.add(new_day14)
+    db.session.flush()
+
+    for title, slot, order in [
+        ("Morning coffee & konbini breakfast", "morning", 1),
+        ("Nara day trip -- deer park, Todai-ji temple", "morning", 2),
+        ("JR Nara Line back to Osaka", "afternoon", 3),
+        ("Explore Amerikamura (American Village)", "afternoon", 4),
+        ("Shinsaibashi shopping arcade", "afternoon", 5),
+        ("Dinner: Dotonbori round 2 -- try what you missed", "evening", 6),
+        ("Night views from Umeda Sky Building", "evening", 7),
+        ("Check out of Osaka hotel (store luggage)", "night", 8),
+    ]:
+        db.session.add(Activity(day_id=new_day14.id, title=title,
+                                time_slot=slot, sort_order=order))
+
+    # Remove Nara day trip from Day 13 (moved to Day 14)
+    day13 = Day.query.filter_by(day_number=13).first()
+    if day13:
+        nara = Activity.query.filter_by(day_id=day13.id).filter(
+            Activity.title.ilike('%nara%')).first()
+        if nara:
+            db.session.delete(nara)
+
+    # Update Osaka accommodation: 1->2 nights
+    osaka_accom = AccommodationLocation.query.filter_by(
+        location_name='Osaka').first()
+    if osaka_accom and osaka_accom.num_nights < 2:
+        osaka_accom.num_nights = 2
+        osaka_accom.check_out_date = dt_date(2026, 4, 18)
+
+    # Update Tokyo Final Night dates
+    tokyo_final = AccommodationLocation.query.filter_by(
+        location_name='Tokyo Final Night').first()
+    if tokyo_final:
+        tokyo_final.check_in_date = dt_date(2026, 4, 18)
+        tokyo_final.check_out_date = dt_date(2026, 4, 19)
+
+    # Update Osaka location departure
+    if osaka_loc:
+        osaka_loc.departure_date = dt_date(2026, 4, 18)
+
+    # Update Tokyo location departure
+    tokyo_loc = Location.query.filter_by(name='Tokyo').first()
+    if tokyo_loc:
+        tokyo_loc.departure_date = dt_date(2026, 4, 19)
+
+    # Update return flights: HND -> SFO -> CLE
+    Flight.query.filter_by(direction='return').delete()
+    db.session.add(Flight(direction='return', leg_number=1,
+                          flight_number='TBD', airline='TBD',
+                          route_from='HND', route_to='SFO',
+                          depart_date=dt_date(2026, 4, 19),
+                          depart_time='3:55 PM',
+                          arrive_date=dt_date(2026, 4, 19),
+                          booking_status='not_booked'))
+    db.session.add(Flight(direction='return', leg_number=2,
+                          flight_number='TBD', airline='TBD',
+                          route_from='SFO', route_to='CLE',
+                          depart_date=dt_date(2026, 4, 19),
+                          arrive_time='10:13 PM',
+                          arrive_date=dt_date(2026, 4, 19),
+                          booking_status='not_booked'))
+
+    # Update trip end date
+    trip = Trip.query.first()
+    if trip:
+        trip.end_date = dt_date(2026, 4, 19)
+
+    db.session.commit()
+    print("Migration complete: trip extended to 16 days, Osaka 2 nights.")
+
+
 def _seed_checklist_decisions(app):
     """Upgrade existing checklist items to decision type and seed options.
     Runs on every startup but skips if already done (idempotent)."""
@@ -1163,6 +1387,8 @@ def create_app():
         _restructure_osaka(app)
         _seed_osaka_and_substitutes(app)
         _revise_itinerary_activities(app)
+        _migrate_add_osaka_day(app)
+        _migrate_remove_kanazawa(app)
         _fix_checklist_consistency(app)
 
     return app
