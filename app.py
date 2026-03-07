@@ -171,8 +171,11 @@ def _migrate_add_osaka_day(app):
     from datetime import date as dt_date
     from models import db, Day, Activity, Flight, Location, AccommodationLocation, Trip
 
-    # Check if already applied: Day 16 exists
+    # Check if already applied: Day 16 exists OR trip has been restructured to 14 days
     if Day.query.filter_by(day_number=16).first():
+        return
+    # Also skip if trip already restructured to 14 days (no Day 15 either)
+    if not Day.query.filter_by(day_number=15).first():
         return
 
     print("Running data migration: add Osaka day, extend trip to 16 days...")
@@ -1302,6 +1305,178 @@ def _revise_itinerary_activities(app):
     app.logger.info('Revised itinerary activities for all days.')
 
 
+def _migrate_14day_restructure(app):
+    """Restructure trip from 16 to 14 days: remove Minneapolis, update flights
+    to confirmed bookings, remove Tokyo Final Night. Idempotent."""
+    import sqlite3
+    from datetime import date as dt_date
+    from models import (db, Day, Activity, Flight, Location, Trip,
+                        AccommodationLocation, AccommodationOption,
+                        ChecklistItem, ChecklistOption)
+
+    # Guard: already applied if Day 1 title contains CLEVELAND->TOKYO travel
+    day1 = Day.query.filter_by(day_number=1).first()
+    if day1 and 'CLEVELAND' in (day1.title or '') and 'TOKYO' in (day1.title or ''):
+        return
+
+    # Also guard: if no Day 16 exists and Day 1 isn't Minneapolis, skip
+    if not Day.query.filter_by(day_number=16).first() and day1 and 'MINNEAPOLIS' not in (day1.title or '').upper():
+        return
+
+    print("Running data migration: restructure trip to 14 days...")
+
+    # Use raw sqlite3 for day renumbering (avoids ORM unique constraint issues)
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+
+    import sqlite3
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # 1. Delete Day 1 (Minneapolis) activities and day
+    c.execute("SELECT id FROM day WHERE day_number=1")
+    d1 = c.fetchone()
+    if d1:
+        c.execute("DELETE FROM activity WHERE day_id=?", (d1[0],))
+        c.execute("DELETE FROM day WHERE id=?", (d1[0],))
+
+    # 2. Repurpose Day 2 as Day 1 (CLE->DTW->HND travel)
+    c.execute("SELECT id FROM day WHERE day_number=2")
+    d2 = c.fetchone()
+    if d2:
+        d2_id = d2[0]
+        c.execute("DELETE FROM activity WHERE day_id=?", (d2_id,))
+        c.execute("""UPDATE day SET day_number=1, date='2026-04-05',
+                     title='TRAVEL DAY -- CLEVELAND -> TOKYO'
+                     WHERE id=?""", (d2_id,))
+        for title, slot, order, desc in [
+            ('Depart CLE 10:30 AM -- Delta DL5392 to Detroit', 'morning', 1,
+             'Endeavor Air regional jet. ~56 min flight. Confirmation: HBPF75'),
+            ('Arrive DTW 11:26 AM -- layover', 'morning', 2,
+             '2h 39min layover at Detroit Metropolitan. Grab lunch.'),
+            ('Depart DTW 2:05 PM -- Delta DL275 to Tokyo Haneda', 'afternoon', 3,
+             'Boeing 767-400ER. ~13h 10min flight. Main Basic (E class). Seats assigned at gate.'),
+        ]:
+            c.execute("""INSERT INTO activity (day_id, title, time_slot, sort_order, description,
+                         is_optional, is_substitute, jr_pass_covered)
+                         VALUES (?, ?, ?, ?, ?, 0, 0, 0)""",
+                      (d2_id, title, slot, order, desc))
+
+    # 3. Shift Days 3-14 down by 1
+    for old_num in range(3, 15):
+        c.execute("UPDATE day SET day_number=? WHERE day_number=?", (old_num - 1, old_num))
+
+    # 4. Repurpose Day 15 as Day 14 (Departure from Osaka)
+    c.execute("SELECT id FROM day WHERE day_number=15")
+    d15 = c.fetchone()
+    if d15:
+        d15_id = d15[0]
+        c.execute("DELETE FROM activity WHERE day_id=?", (d15_id,))
+        c.execute("""UPDATE day SET day_number=14, date='2026-04-18',
+                     title='DEPARTURE DAY -- OSAKA -> HOME'
+                     WHERE id=?""", (d15_id,))
+        for title, slot, order, desc, jr in [
+            ('Early checkout from Osaka hotel', 'morning', 1,
+             'Pack up. Check out by 8 AM for the journey home.', 0),
+            ('Shinkansen Osaka -> Shinagawa (~2h 30min)', 'morning', 2,
+             'Hikari shinkansen. JR Pass covered. Last ekiben lunch on the train!', 1),
+            ('Transfer to Haneda Airport', 'afternoon', 3,
+             'Keikyu Line from Shinagawa to Haneda Terminal 3 (~15 min, ~500 yen).', 0),
+            ('Haneda Airport -- last shopping & check-in', 'afternoon', 4,
+             'Arrive by 1:30 PM for 3:50 PM departure. Tax-free omiyage shops in terminal.', 0),
+            ('United UA876 HND 3:50 PM -> SFO 9:35 AM', 'afternoon', 5,
+             'Boeing 777-200. Seats: Jacob 52B, Jessica 52A (window pair, no third seat). Confirmation: I91ZHJ', 0),
+            ('SFO layover (4h 45min)', 'evening', 6,
+             'Arrive 9:35 AM same day (cross dateline). Long layover -- grab food, stretch legs.', 0),
+            ('United UA1470 SFO 2:20 PM -> CLE 10:13 PM', 'evening', 7,
+             'Seats: Jacob 37C, Jessica 37B. Confirmation: I91ZHJ. Welcome home!', 0),
+        ]:
+            c.execute("""INSERT INTO activity (day_id, title, time_slot, sort_order, description,
+                         is_optional, is_substitute, jr_pass_covered)
+                         VALUES (?, ?, ?, ?, ?, 0, 0, ?)""",
+                      (d15_id, title, slot, order, desc, jr))
+
+    # 5. Delete Day 16
+    c.execute("SELECT id FROM day WHERE day_number=16")
+    d16 = c.fetchone()
+    if d16:
+        c.execute("DELETE FROM activity WHERE day_id=?", (d16[0],))
+        c.execute("DELETE FROM day WHERE id=?", (d16[0],))
+
+    # 6. Update flights
+    c.execute("DELETE FROM flight")
+    for vals in [
+        ('outbound', 1, 'DL5392', 'Delta (Endeavor Air)', 'CLE', 'DTW',
+         '2026-04-05', '10:30 AM', '2026-04-05', '11:26 AM', '56 min',
+         'CRJ-900', 'cash', '$775.00/person', 'booked', 'HBPF75',
+         'Main Basic (E class). Seats assigned at gate. Operated by Endeavor Air.'),
+        ('outbound', 2, 'DL275', 'Delta', 'DTW', 'HND',
+         '2026-04-05', '2:05 PM', '2026-04-06', '4:15 PM', '13h 10min',
+         'Boeing 767-400ER', 'cash', '$775.00/person', 'booked', 'HBPF75',
+         'Main Basic (E class). Seats assigned at gate.'),
+        ('return', 1, 'UA876', 'United', 'HND', 'SFO',
+         '2026-04-18', '3:50 PM', '2026-04-18', '9:35 AM', '9h 45min',
+         'Boeing 777-200', 'miles', '61,800 miles + $49.03/person', 'booked', 'I91ZHJ',
+         'Jessica: seat 52A / Jacob: seat 52B (window pair, 2-seat section)'),
+        ('return', 2, 'UA1470', 'United', 'SFO', 'CLE',
+         '2026-04-18', '2:20 PM', '2026-04-18', '10:13 PM', '4h 53min',
+         None, 'miles', '61,800 miles + $49.03/person', 'booked', 'I91ZHJ',
+         'Jessica: seat 37B / Jacob: seat 37C'),
+    ]:
+        c.execute("""INSERT INTO flight (direction, leg_number, flight_number, airline,
+                     route_from, route_to, depart_date, depart_time, arrive_date, arrive_time,
+                     duration, aircraft, cost_type, cost_amount, booking_status,
+                     confirmation_number, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""", vals)
+
+    # 7. Remove Minneapolis
+    c.execute("SELECT id FROM accommodation_location WHERE location_name='Minneapolis'")
+    mpls = c.fetchone()
+    if mpls:
+        c.execute("DELETE FROM accommodation_option WHERE location_id=?", (mpls[0],))
+        c.execute("SELECT id FROM checklist_item WHERE accommodation_location_id=?", (mpls[0],))
+        for ci in c.fetchall():
+            c.execute("DELETE FROM checklist_option WHERE checklist_item_id=?", (ci[0],))
+            c.execute("DELETE FROM checklist_item WHERE id=?", (ci[0],))
+        c.execute("DELETE FROM accommodation_location WHERE id=?", (mpls[0],))
+    c.execute("SELECT id FROM checklist_item WHERE title LIKE '%Minneapolis%' OR title LIKE '%MSP%'")
+    for ci in c.fetchall():
+        c.execute("DELETE FROM checklist_option WHERE checklist_item_id=?", (ci[0],))
+        c.execute("DELETE FROM checklist_item WHERE id=?", (ci[0],))
+    c.execute("DELETE FROM location WHERE name='Minneapolis'")
+
+    # 8. Remove Tokyo Final Night accommodation
+    c.execute("SELECT id FROM accommodation_location WHERE location_name='Tokyo Final Night'")
+    tfn = c.fetchone()
+    if tfn:
+        c.execute("DELETE FROM accommodation_option WHERE location_id=?", (tfn[0],))
+        c.execute("UPDATE checklist_item SET accommodation_location_id=NULL WHERE accommodation_location_id=?", (tfn[0],))
+        c.execute("DELETE FROM accommodation_location WHERE id=?", (tfn[0],))
+    c.execute("SELECT id FROM checklist_item WHERE title LIKE '%Tokyo final night%'")
+    for ci in c.fetchall():
+        c.execute("DELETE FROM checklist_option WHERE checklist_item_id=?", (ci[0],))
+        c.execute("DELETE FROM checklist_item WHERE id=?", (ci[0],))
+
+    # 9. Update checklist items for flights
+    c.execute("""UPDATE checklist_item SET title='Book Delta outbound CLE -> DTW -> HND',
+                 is_completed=1, status='completed' WHERE title LIKE '%Delta outbound%'""")
+    c.execute("""UPDATE checklist_item SET title='Book United return HND -> SFO -> CLE',
+                 is_completed=1, status='completed'
+                 WHERE title LIKE '%United%return%' OR title LIKE '%United award return%'""")
+
+    # 10. Update location/trip dates
+    c.execute("UPDATE location SET departure_date='2026-04-18' WHERE name='Tokyo'")
+    c.execute("UPDATE location SET departure_date='2026-04-18' WHERE name='Osaka'")
+    c.execute("""UPDATE trip SET start_date='2026-04-05', end_date='2026-04-18',
+                 notes='14-day cherry blossom trip. Cleveland -> Tokyo -> Alps -> Kyoto -> Osaka -> Home'
+                 WHERE id=1""")
+
+    conn.commit()
+    conn.close()
+
+    # Clear SQLAlchemy session to pick up raw SQL changes
+    db.session.expire_all()
+    print("Migration complete: trip restructured to 14 days (Apr 5-18).")
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -1390,6 +1565,7 @@ def create_app():
         _migrate_add_osaka_day(app)
         _migrate_remove_kanazawa(app)
         _fix_checklist_consistency(app)
+        _migrate_14day_restructure(app)
 
     return app
 
