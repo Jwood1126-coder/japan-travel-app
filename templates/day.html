@@ -2,7 +2,7 @@
 {% block title %}Day {{ day.day_number }} - {{ day.title }}{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes, icon_translate %}
+{% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes, icon_translate, icon_lightbulb %}
 <a href="{{ url_for('itinerary.index') }}" class="back-to-overview">&larr; All Days</a>
 <header class="day-header">
     <div class="day-nav-row">
@@ -267,6 +267,9 @@
                     <p>{{ activity.description }}</p>
                 </details>
                 {% endif %}
+                {% if activity.why %}
+                <div class="activity-why-tip">{{ icon_lightbulb(14) }} {{ activity.why }}</div>
+                {% endif %}
                 {% if activity.notes %}
                 <div class="activity-user-note">{{ activity.notes }}</div>
                 {% endif %}
@@ -388,21 +391,35 @@
     {% for activity in subs %}
     <div class="activity-card substitute">
         <div class="activity-content">
-            <span class="activity-title">{{ activity.title }}</span>
+            <div class="activity-title-row">
+                <span class="activity-title">{{ activity.title }}</span>
+                {% if activity.cost_per_person %}
+                <span class="cost-badge">&yen;{{ activity.cost_per_person | int }}</span>
+                {% endif %}
+            </div>
             {% if activity.substitute_for %}
             <span class="sub-for">Instead of {{ activity.substitute_for }}</span>
             {% endif %}
             {% if activity.description %}
             <p class="activity-desc">{{ activity.description }}</p>
             {% endif %}
+            {% if activity.why %}
+            <div class="activity-why-tip">{{ icon_lightbulb(14) }} {{ activity.why }}</div>
+            {% endif %}
+            {% if activity.maps_url %}
+            <a href="{{ activity.maps_url }}" target="_blank" rel="noopener" class="maps-navigate-btn">
+                {{ icon_pin(14) }} Navigate
+            </a>
+            {% elif activity.address %}
+            <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
+                {{ icon_pin(14) }}{{ activity.address }}
+            </a>
+            {% endif %}
             {% if activity.url %}
             <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
                 {{ icon_ticket(14) }} Tickets / Info
             </a>
             <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
-            {% endif %}
-            {% if activity.cost_per_person %}
-            <span class="cost-badge">&yen;{{ activity.cost_per_person | int }}</span>
             {% endif %}
         </div>
     </div>

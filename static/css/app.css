@@ -3166,6 +3166,140 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     font-weight: 600;
 }
 
+/* Category filter chips */
+.category-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 0 0 0.75rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.category-chips::-webkit-scrollbar { display: none; }
+.cat-chip {
+    padding: 4px 12px;
+    border-radius: 16px;
+    border: 1px solid var(--pico-muted-border-color);
+    background: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    color: var(--pico-muted-color);
+    transition: all 0.15s;
+}
+.cat-chip.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+.cat-chip:hover:not(.active) {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+/* Category badges */
+.cat-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.cat-temple { background: #fef3c7; color: #92400e; }
+.cat-food { background: #fce7f3; color: #9d174d; }
+.cat-nightlife { background: #ede9fe; color: #5b21b6; }
+.cat-shopping { background: #dbeafe; color: #1e40af; }
+.cat-nature { background: #d1fae5; color: #065f46; }
+.cat-culture { background: #e0e7ff; color: #3730a3; }
+.cat-transit { background: #f3f4f6; color: #6b7280; }
+
+[data-theme="dark"] .cat-temple { background: #451a03; color: #fbbf24; }
+[data-theme="dark"] .cat-food { background: #500724; color: #f9a8d4; }
+[data-theme="dark"] .cat-nightlife { background: #2e1065; color: #c4b5fd; }
+[data-theme="dark"] .cat-shopping { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .cat-nature { background: #064e3b; color: #6ee7b7; }
+[data-theme="dark"] .cat-culture { background: #1e1b4b; color: #a5b4fc; }
+
+/* Why/reasoning card (activities page) */
+.act-why-card {
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    margin-top: 6px;
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: #92400e;
+}
+.act-why-card svg { flex-shrink: 0; margin-top: 1px; }
+
+[data-theme="dark"] .act-why-card {
+    background: #2d2305;
+    border-left-color: #d97706;
+    color: #fcd34d;
+}
+
+/* Why/reasoning tip in day view */
+.activity-why-tip {
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+    padding: 6px 8px;
+    margin-top: 4px;
+    background: #fffbeb;
+    border-left: 2px solid #f59e0b;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #92400e;
+}
+.activity-why-tip svg { flex-shrink: 0; margin-top: 1px; }
+
+[data-theme="dark"] .activity-why-tip {
+    background: #2d2305;
+    border-left-color: #d97706;
+    color: #fcd34d;
+}
+
+/* Substitute/alternative badge */
+.sub-for-badge {
+    font-size: 0.7rem;
+    padding: 1px 8px;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 500;
+}
+[data-theme="dark"] .sub-for-badge {
+    background: #451a03;
+    color: #fbbf24;
+}
+
+/* Alternatives section in activities page */
+.act-alternatives-section {
+    margin: 4px 0 0;
+    border-top: 1px dashed var(--pico-muted-border-color);
+}
+.act-alt-heading {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pico-muted-color);
+    padding: 8px 1rem;
+    cursor: pointer;
+}
+.act-browse-card.substitute {
+    border-left: 3px solid #f59e0b;
+    background: rgba(245, 158, 11, 0.04);
+}
+[data-theme="dark"] .act-browse-card.substitute {
+    background: rgba(245, 158, 11, 0.06);
+}
+
 /* Dark mode */
 [data-theme="dark"] .act-location-group { border-color: #333; }
 [data-theme="dark"] .act-location-title { background: #2a1a2a; }

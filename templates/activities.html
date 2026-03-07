@@ -2,15 +2,23 @@
 {% block title %}Activities{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_lightbulb, icon_pin, icon_link, icon_translate, icon_delete %}
+{% from "icons.html" import icon_lightbulb, icon_pin, icon_link, icon_translate, icon_delete, icon_pencil %}
 <header>
     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <h1 style="margin:0;">{{ icon_lightbulb(22) }} Activities</h1>
         <button class="add-activity-toggle" onclick="toggleAddActivity()">+ Add</button>
     </div>
     <input type="search" id="actSearch" placeholder="Search activities..."
-           oninput="filterActivities(this.value)">
+           oninput="filterActivities()">
 </header>
+
+<!-- Category filter chips -->
+<div class="category-chips">
+    <button class="cat-chip active" data-cat="all" onclick="filterByCategory('all', this)">All</button>
+    {% for cat in categories %}
+    <button class="cat-chip" data-cat="{{ cat }}" onclick="filterByCategory('{{ cat }}', this)">{{ category_labels[cat] }}</button>
+    {% endfor %}
+</div>
 
 <div id="addActivityForm" class="add-activity-form" style="display:none;">
     <select id="addActDay">
@@ -28,7 +36,12 @@
             <option value="evening">Evening</option>
             <option value="night">Night</option>
         </select>
-        <input type="text" id="addActTime" placeholder="Time (e.g. 10:00)" style="flex:1;">
+        <select id="addActCategory" style="flex:1;">
+            <option value="">Category</option>
+            {% for cat in categories %}
+            <option value="{{ cat }}">{{ category_labels[cat] }}</option>
+            {% endfor %}
+        </select>
     </div>
     <input type="text" id="addActAddress" placeholder="Address (optional)">
     <input type="text" id="addActCost" placeholder="Cost note (optional)">
@@ -44,18 +57,21 @@
 </div>
 
 {% for group in location_activities %}
-<details class="act-location-group">
+<details class="act-location-group" open>
     <summary class="act-location-title">
         {{ group.location.name }}
-        <span class="act-location-count">{{ group.activities | length }}</span>
+        <span class="act-location-count">{{ group.activities | length }}{% if group.substitutes %} + {{ group.substitutes | length }} alt{% endif %}</span>
     </summary>
 
     {% for item in group.activities %}
     {% set a = item.activity %}
     {% set d = item.day %}
-    <div class="act-browse-card {% if a.is_eliminated %}eliminated{% endif %}" data-activity-id="{{ a.id }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }}">
+    <div class="act-browse-card {% if a.is_eliminated %}eliminated{% endif %}" data-activity-id="{{ a.id }}" data-category="{{ a.category or '' }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }} {{ a.category or '' }}">
         <div class="act-browse-header">
             <span class="act-browse-title">{{ a.title }}</span>
+            {% if a.category %}
+            <span class="cat-badge cat-{{ a.category }}">{{ category_labels.get(a.category, a.category) }}</span>
+            {% endif %}
             {% if a.is_optional %}<span class="optional-badge">Optional</span>{% endif %}
             {% if a.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}
             {% if a.is_eliminated %}<span class="ruled-out-badge">Ruled Out</span>{% endif %}
@@ -64,15 +80,18 @@
             Day {{ d.day_number }} &middot; {{ d.date.strftime('%b %d') }}
             {% if a.time_slot %}&middot; {{ a.time_slot | title }}{% endif %}
             {% if a.start_time %}&middot; {{ a.start_time }}{% endif %}
+            {% if a.cost_note %}&middot; {{ a.cost_note }}{% endif %}
+            {% if a.cost_per_person and not a.cost_note %}&middot; &yen;{{ a.cost_per_person | int }}/person{% endif %}
         </div>
         {% if a.description %}
         <div class="act-browse-desc">{{ a.description }}</div>
         {% endif %}
-        {% if a.cost_note %}
-        <div class="act-browse-cost">{{ a.cost_note }}</div>
+        {% if a.why %}
+        <div class="act-why-card">
+            {{ icon_lightbulb(14) }}
+            <span>{{ a.why }}</span>
+        </div>
         {% endif %}
-        <textarea class="act-notes" placeholder="Notes..."
-                  onchange="updateActNotes({{ a.id }}, this.value)">{{ a.notes or '' }}</textarea>
         <div class="act-browse-links">
             {% if a.maps_url %}
             <a href="{{ a.maps_url }}" target="_blank" rel="noopener" class="maps-navigate-btn">
@@ -98,8 +117,58 @@
                 {{ icon_delete(14) }}
             </button>
         </div>
+        <textarea class="act-notes" placeholder="Notes..."
+                  onchange="updateActNotes({{ a.id }}, this.value)">{{ a.notes or '' }}</textarea>
     </div>
     {% endfor %}
+
+    {% if group.substitutes %}
+    <details class="act-alternatives-section">
+        <summary class="act-alt-heading">Alternative Options ({{ group.substitutes | length }})</summary>
+        {% for item in group.substitutes %}
+        {% set a = item.activity %}
+        {% set d = item.day %}
+        <div class="act-browse-card substitute {% if a.is_eliminated %}eliminated{% endif %}" data-activity-id="{{ a.id }}" data-category="{{ a.category or '' }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }} {{ a.category or '' }}">
+            <div class="act-browse-header">
+                <span class="act-browse-title">{{ a.title }}</span>
+                {% if a.substitute_for %}<span class="sub-for-badge">Instead of: {{ a.substitute_for }}</span>{% endif %}
+                {% if a.category %}
+                <span class="cat-badge cat-{{ a.category }}">{{ category_labels.get(a.category, a.category) }}</span>
+                {% endif %}
+            </div>
+            <div class="act-browse-meta">
+                Day {{ d.day_number }} &middot; {{ d.date.strftime('%b %d') }}
+                {% if a.time_slot %}&middot; {{ a.time_slot | title }}{% endif %}
+                {% if a.cost_note %}&middot; {{ a.cost_note }}{% endif %}
+                {% if a.cost_per_person and not a.cost_note %}&middot; &yen;{{ a.cost_per_person | int }}/person{% endif %}
+            </div>
+            {% if a.description %}
+            <div class="act-browse-desc">{{ a.description }}</div>
+            {% endif %}
+            {% if a.why %}
+            <div class="act-why-card">
+                {{ icon_lightbulb(14) }}
+                <span>{{ a.why }}</span>
+            </div>
+            {% endif %}
+            <div class="act-browse-links">
+                {% if a.maps_url %}
+                <a href="{{ a.maps_url }}" target="_blank" rel="noopener" class="maps-navigate-btn">{{ icon_pin(14) }} Navigate</a>
+                {% elif a.address %}
+                <a href="{{ a.address | maps_link }}" target="_blank" rel="noopener" class="navigate-link">{{ icon_pin(14) }} Navigate</a>
+                {% endif %}
+                {% if a.url %}
+                <a href="{{ a.url }}" target="_blank" rel="noopener" class="doc-link">{{ icon_link(14) }} Details</a>
+                <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Translate">{{ icon_translate(14) }} EN</a>
+                {% endif %}
+                <button class="eliminate-btn {% if a.is_eliminated %}active{% endif %}" onclick="eliminateActivity({{ a.id }})">
+                    {% if a.is_eliminated %}&#x2713; Ruled Out{% else %}&#x2715; Rule Out{% endif %}
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </details>
+    {% endif %}
 </details>
 {% endfor %}
 
@@ -110,16 +179,29 @@
 
 {% block scripts %}
 <script>
-function filterActivities(query) {
-    const q = query.toLowerCase();
+let activeCategory = 'all';
+
+function filterActivities() {
+    const q = (document.getElementById('actSearch').value || '').toLowerCase();
     document.querySelectorAll('.act-browse-card').forEach(card => {
         const text = card.dataset.search || '';
-        card.style.display = text.includes(q) ? '' : 'none';
+        const cat = card.dataset.category || '';
+        const matchesSearch = !q || text.includes(q);
+        const matchesCat = activeCategory === 'all' || cat === activeCategory;
+        card.style.display = (matchesSearch && matchesCat) ? '' : 'none';
     });
-    // Open all groups when searching
+    // Open all groups when searching or filtering
+    const isFiltering = q.length > 0 || activeCategory !== 'all';
     document.querySelectorAll('.act-location-group').forEach(d => {
-        d.open = q.length > 0;
+        if (isFiltering) d.open = true;
     });
+}
+
+function filterByCategory(cat, btn) {
+    activeCategory = cat;
+    document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    filterActivities();
 }
 
 function toggleAddActivity() {
@@ -135,7 +217,7 @@ async function saveNewActivity() {
         title,
         description: document.getElementById('addActDesc').value.trim() || null,
         time_slot: document.getElementById('addActSlot').value || null,
-        start_time: document.getElementById('addActTime').value.trim() || null,
+        category: document.getElementById('addActCategory').value || null,
         address: document.getElementById('addActAddress').value.trim() || null,
         cost_note: document.getElementById('addActCost').value.trim() || null,
         url: document.getElementById('addActUrl').value.trim() || null,

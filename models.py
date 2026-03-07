@@ -74,6 +74,8 @@ class Activity(db.Model):
     notes = db.Column(db.Text)
     url = db.Column(db.String(500))
     is_eliminated = db.Column(db.Boolean, default=False)
+    category = db.Column(db.String(50))  # temple, food, nightlife, shopping, nature, culture, transit, logistics
+    why = db.Column(db.Text)  # reasoning for choosing this activity / comparison notes
 
     def to_dict(self):
         return {
@@ -89,6 +91,8 @@ class Activity(db.Model):
             'jr_pass_covered': self.jr_pass_covered,
             'url': self.url,
             'notes': self.notes,
+            'category': self.category,
+            'why': self.why,
         }
 
 

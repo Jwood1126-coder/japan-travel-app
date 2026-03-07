@@ -32,9 +32,23 @@ _HOTEL_AMENITY_PATTERNS = re.compile(
     r'|kaiseki\s+dinner\s+at\s+ryokan'
 )
 
+CATEGORY_LABELS = {
+    'temple': 'Temples & Shrines',
+    'food': 'Food & Dining',
+    'nightlife': 'Nightlife',
+    'shopping': 'Shopping',
+    'nature': 'Nature & Outdoors',
+    'culture': 'Culture & Museums',
+    'transit': 'Transit',
+}
+
+CATEGORY_ORDER = ['temple', 'culture', 'food', 'nature', 'nightlife', 'shopping']
+
 
 def _is_browseable_activity(activity):
     """Return True if activity is a real experience, not logistics."""
+    if activity.category == 'transit':
+        return False
     title = activity.title
     if _LOGISTICS_PATTERNS.search(title):
         return False
@@ -49,6 +63,7 @@ def activities_view():
     days = Day.query.order_by(Day.day_number).all()
 
     location_activities = []
+    all_categories = set()
     for loc in locations:
         loc_days = [d for d in days if d.location_id == loc.id]
         activities = []
@@ -56,15 +71,31 @@ def activities_view():
             for a in d.activities:
                 if not a.is_substitute and _is_browseable_activity(a):
                     activities.append({'activity': a, 'day': d})
-        if activities:
+                    if a.category:
+                        all_categories.add(a.category)
+        # Also include substitutes grouped separately
+        substitutes = []
+        for d in loc_days:
+            for a in d.activities:
+                if a.is_substitute and _is_browseable_activity(a):
+                    substitutes.append({'activity': a, 'day': d})
+                    if a.category:
+                        all_categories.add(a.category)
+        if activities or substitutes:
             location_activities.append({
                 'location': loc,
                 'activities': activities,
+                'substitutes': substitutes,
             })
+
+    # Sort categories in display order
+    sorted_categories = [c for c in CATEGORY_ORDER if c in all_categories]
 
     return render_template('activities.html',
                            location_activities=location_activities,
-                           all_days=days)
+                           all_days=days,
+                           categories=sorted_categories,
+                           category_labels=CATEGORY_LABELS)
 
 
 @activities_bp.route('/api/activities/add', methods=['POST'])
@@ -87,6 +118,7 @@ def add_activity():
         cost_note=(data.get('cost_note') or '').strip() or None,
         address=(data.get('address') or '').strip() or None,
         url=(data.get('url') or '').strip() or None,
+        category=data.get('category') or None,
         is_optional=bool(data.get('is_optional')),
         sort_order=max_order + 1,
     )
@@ -120,5 +152,14 @@ def update_activity_notes(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     data = request.get_json()
     activity.notes = data.get('notes', '').strip() or None
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@activities_bp.route('/api/activities/<int:activity_id>/why', methods=['PUT'])
+def update_activity_why(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    data = request.get_json()
+    activity.why = data.get('why', '').strip() or None
     db.session.commit()
     return jsonify({'ok': True})

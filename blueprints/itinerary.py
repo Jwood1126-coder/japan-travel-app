@@ -213,16 +213,16 @@ def day_view(day_number):
     prev_day = day_number - 1 if day_number > 1 else None
     next_day = day_number + 1 if day_number < total_days else None
 
-    # Transport routes: find routes for travel days (location changed from previous day)
-    transport_routes = []
-    if day.location:
+    # Transport routes: find routes linked to this day OR matching location change
+    transport_routes = TransportRoute.query.filter_by(day_id=day.id).order_by(
+        TransportRoute.sort_order).all()
+    if not transport_routes and day.location:
         prev_day_obj = Day.query.filter_by(day_number=day_number - 1).first() if day_number > 1 else None
         if prev_day_obj and prev_day_obj.location and prev_day_obj.location.name != day.location.name:
             prev_loc = prev_day_obj.location.name
             cur_loc = day.location.name
             routes = TransportRoute.query.filter_by(route_from=prev_loc, route_to=cur_loc).all()
             if not routes:
-                # Try partial match (first word of location name)
                 routes = TransportRoute.query.filter(
                     TransportRoute.route_from.contains(prev_loc.split()[0]),
                     TransportRoute.route_to.contains(cur_loc.split()[0])

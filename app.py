@@ -61,6 +61,8 @@ def _run_migrations(app):
         ('accommodation_option', 'check_out_info', 'TEXT'),
         ('activity', 'is_eliminated', 'BOOLEAN DEFAULT 0'),
         ('chat_message', 'context_summary', 'TEXT'),
+        ('activity', 'category', 'TEXT'),
+        ('activity', 'why', 'TEXT'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -1661,6 +1663,316 @@ def _migrate_data_cleanup(app):
     print("Migration complete: stale data cleaned up.")
 
 
+def _migrate_enrich_activities(app):
+    """Enrich activities with addresses, categories, why reasoning, merge description-activities,
+    and add missing transport routes. Idempotent."""
+    import sqlite3
+    from models import Activity
+
+    # Guard: if Senso-ji already has a category, skip
+    act = Activity.query.filter(Activity.title.contains('Senso-ji Temple')).first()
+    if act and act.category:
+        return
+
+    print("Running data migration: enriching activities with addresses, categories, and reasoning...")
+    db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    # === 1. Add addresses to activities that don't have them ===
+    address_map = {
+        # Tokyo
+        'Senso-ji Temple at night': '2-3-1 Asakusa, Taito-ku, Tokyo',
+        'Senso-ji Temple': '2-3-1 Asakusa, Taito-ku, Tokyo',
+        'Tokyo Skytree': '1-1-2 Oshiage, Sumida-ku, Tokyo',
+        'Meiji Shrine': '1-1 Yoyogi Kamizono-cho, Shibuya-ku, Tokyo',
+        'Harajuku': 'Takeshita-dori, Jingumae, Shibuya-ku, Tokyo',
+        'Shibuya Crossing': 'Shibuya Scramble Crossing, Shibuya-ku, Tokyo',
+        'Golden Gai': 'Kabukicho 1-chome, Shinjuku-ku, Tokyo',
+        'Omoide Yokocho': '1-2 Nishishinjuku, Shinjuku-ku, Tokyo',
+        'Ueno Zoo': '9-83 Uenokoen, Taito-ku, Tokyo',
+        'Hakone Open-Air Museum': '1121 Ninotaira, Hakone-machi, Ashigarashimo-gun, Kanagawa',
+        # Takayama
+        'Sanmachi Suji': 'Sanmachi, Takayama-shi, Gifu',
+        'Takayama Jinya': '1-5 Hachiken-machi, Takayama-shi, Gifu',
+        'Miyagawa Morning Market': 'Miyagawa Asaichi, Shimosannomachi, Takayama-shi, Gifu',
+        'Hida Folk Village': '1-590 Kamiokamoto-machi, Takayama-shi, Gifu',
+        'Takayama Festival Floats Museum': '178 Sakura-machi, Takayama-shi, Gifu',
+        'Hida beef sushi': 'Sanmachi area, Takayama-shi, Gifu',
+        # Shirakawa-go
+        'Shirakawa-go UNESCO Village': 'Ogimachi, Shirakawa-mura, Ono-gun, Gifu',
+        'Wada House': 'Ogimachi 997, Shirakawa-mura, Ono-gun, Gifu',
+        # Kyoto
+        'Fushimi Inari': '68 Fukakusa Yabunouchimachi, Fushimi-ku, Kyoto',
+        'Kiyomizu-dera': '1-294 Kiyomizu, Higashiyama-ku, Kyoto',
+        'Kinkaku-ji': '1 Kinkakuji-cho, Kita-ku, Kyoto',
+        'Bamboo Grove': 'Sagaogurayama Tabuchiyama-cho, Ukyo-ku, Kyoto',
+        'Tenryu-ji': '68 Saga-Tenryuji Susukinobaba-cho, Ukyo-ku, Kyoto',
+        'Togetsukyo Bridge': 'Arashiyama, Ukyo-ku, Kyoto',
+        'Monkey Park Iwatayama': '8 Arashiyama Genrokuzancho, Nishikyo-ku, Kyoto',
+        'Nishiki Market': 'Nishikikoji-dori, Nakagyo-ku, Kyoto',
+        'Pontocho Alley': 'Pontocho, Nakagyo-ku, Kyoto',
+        'Stroll along Kamo River': 'Kamo River, Kyoto',
+        'Hanamikoji Street': 'Hanamikoji-dori, Higashiyama-ku, Kyoto',
+        # Nara
+        'Nara day trip': 'Nara Park, Nara',
+        # Osaka
+        'Morning coffee': 'near hotel, Osaka',
+        'Shinsaibashi shopping': 'Shinsaibashi-suji, Chuo-ku, Osaka',
+        'Umeda Sky Building': '1-1-88 Oyodonaka, Kita-ku, Osaka',
+    }
+
+    for title_fragment, addr in address_map.items():
+        c.execute("""UPDATE activity SET address=? WHERE title LIKE ? AND address IS NULL""",
+                  (addr, f'%{title_fragment}%'))
+
+    # === 2. Add categories to all activities ===
+    category_rules = [
+        # Temples & shrines
+        ('temple', ['Senso-ji', 'Meiji Shrine', 'Fushimi Inari', 'Kiyomizu-dera',
+                     'Kinkaku-ji', 'Tenryu-ji', 'Todai-ji', 'Itsukushima Shrine',
+                     'Peace Memorial', 'A-Bomb Dome', 'Nijo Castle', 'Kurama']),
+        # Food & dining
+        ('food', ['dinner', 'lunch', 'breakfast', 'ramen', 'takoyaki', 'okonomiyaki',
+                  'sushi', 'Kuromon Market', 'Nishiki Market', 'Omicho Market',
+                  'kaiseki', 'beef', 'Pontocho', 'konbini', 'ice cream', 'coffee',
+                  'Omoide Yokocho', 'Miyagawa Morning Market', 'food crawl',
+                  'sake brewery', 'ekiben', 'omiyage', 'mochi']),
+        # Nightlife & entertainment
+        ('nightlife', ['Golden Gai', 'bar crawl', 'Ura-Namba', 'Robot Restaurant',
+                       'Amerikamura', 'night walk', 'izakaya']),
+        # Shopping
+        ('shopping', ['Nakamise-dori', 'Harajuku', 'Den Den Town', 'Shinsaibashi',
+                      'shopping', 'Don Quijote', 'Shimokitazawa']),
+        # Nature & outdoors
+        ('nature', ['Bamboo Grove', 'Monkey Park', 'Hakone Loop', 'Lake Ashi',
+                    'Ropeway', 'onsen', 'Kamo River', 'hike', 'observation deck',
+                    'Philosopher', 'Togetsukyo', 'Deer', 'Sai River',
+                    'cherry blossom', 'Yozakura', 'Osaka Castle Park']),
+        # Culture & museums
+        ('culture', ['Museum', 'TeamLab', 'Jinya', 'Hida Folk Village', 'Shibuya Crossing',
+                     'Wada House', 'Shirakawa-go', 'Sanmachi', 'tea ceremony',
+                     'Geisha', 'Hanamikoji', 'Hozenji', 'Kenrokuen',
+                     'Nagamachi', '21st Century', 'D.T. Suzuki', 'Shinsekai',
+                     'Tsutenkaku', 'Spa World', 'Skytree', 'Ueno Zoo',
+                     'Float', 'Yatai', 'lantern']),
+        # Transit/logistics
+        ('transit', ['Shinkansen', 'Express', 'Check out', 'Check in', 'ACTIVATE',
+                     'Keikyu', 'Narita Express', 'JR ', 'Bus:', 'Nohi Bus',
+                     'Transfer', 'Ferry', 'Train to', 'Line to',
+                     'luggage', 'takkyubin', 'Suica', 'eSIM', 'WiFi',
+                     'Pick up', 'Arrange', 'Buy Hakone']),
+    ]
+
+    for category, patterns in category_rules:
+        for pattern in patterns:
+            c.execute("""UPDATE activity SET category=? WHERE category IS NULL
+                        AND title LIKE ?""", (category, f'%{pattern}%'))
+
+    # Catch-all: tag remaining untagged as 'culture'
+    c.execute("UPDATE activity SET category='culture' WHERE category IS NULL AND is_substitute=0")
+    c.execute("UPDATE activity SET category='culture' WHERE category IS NULL AND is_substitute=1")
+
+    # === 3. Merge "description activities" into parent descriptions ===
+    # These are activities that are actually descriptions of the previous activity
+    desc_merges = [
+        # Day 3/4 (Tokyo)
+        ("Tokyo's oldest temple (founded 628 AD)", 'Senso-ji Temple'),
+        ("Nakamise-dori: 250m of traditional shops", 'Senso-ji Temple'),
+        ("Walk to Tokyo Skytree for panoramic city views", 'Senso-ji Temple'),
+        ("Massive Shinto shrine hidden in a 170-acre forest", 'Meiji Shrine'),
+        ("Cover charge:", 'Golden Gai'),
+        ("Grab a stool elbow-to-elbow", 'Omoide Yokocho'),
+        # Day 10 (Kyoto south)
+        ("Mid-morning: Kiyomizu-dera", 'GO EARLY: Fushimi Inari'),
+        ("Walk down Sannenzaka", 'GO EARLY: Fushimi Inari'),
+        ("Lunch: In the Higashiyama area", 'GO EARLY: Fushimi Inari'),
+        ("Afternoon: Philosopher's Path", 'GO EARLY: Fushimi Inari'),
+        ("2 km path lined with cherry trees", 'GO EARLY: Fushimi Inari'),
+        ("Be respectful", 'Walk Hanamikoji'),
+        ("Best time: 5:30", 'Walk Hanamikoji'),
+        ("Dinner: Gion area restaurant", 'Walk along the Kamo River'),
+        # Day 11 (Kyoto north)
+        ("Entry:", 'Kinkaku-ji'),
+        ("Lunch: Riverside restaurant", 'Togetsukyo Bridge'),
+        ("Afternoon: Monkey Park", 'Togetsukyo Bridge'),
+        ("Try: dashimaki tamago", 'Nishiki Market'),
+        ("Good for souvenir shopping", 'Nishiki Market'),
+    ]
+
+    for desc_fragment, parent_fragment in desc_merges:
+        # Find the description activity
+        c.execute("SELECT id, title, description, day_id FROM activity WHERE title LIKE ?",
+                  (f'{desc_fragment}%',))
+        desc_acts = c.fetchall()
+        for desc_act in desc_acts:
+            desc_id, desc_title, desc_desc, desc_day_id = desc_act
+            # Find parent on same day
+            c.execute("SELECT id, description FROM activity WHERE day_id=? AND title LIKE ?",
+                      (desc_day_id, f'%{parent_fragment}%'))
+            parent = c.fetchone()
+            if parent:
+                parent_id, parent_desc = parent
+                # Append this title to parent description
+                addition = desc_title
+                if desc_desc:
+                    addition += f' — {desc_desc}'
+                new_desc = f'{parent_desc}\n\n{addition}' if parent_desc else addition
+                c.execute("UPDATE activity SET description=? WHERE id=?", (new_desc, parent_id))
+                c.execute("DELETE FROM activity WHERE id=?", (desc_id,))
+
+    # === 4. Add "why" reasoning for key choices and alternatives ===
+    why_updates = [
+        ('Senso-ji Temple at night', 'Best at night — beautifully lit, almost no crowds. The nighttime visit is more atmospheric than daytime (when it is packed with tour groups). Visit again in morning if you want the full Nakamise shopping experience.'),
+        ('Golden Gai', 'vs Omoide Yokocho: Golden Gai = tiny themed bars (fits 5-8 people each), ¥300-1000 cover. Omoide Yokocho = open-air yakitori grills, no cover. Do both — they are 5 min apart. Start with Omoide Yokocho for food, end at Golden Gai for drinks.'),
+        ('Omoide Yokocho', 'Pair with Golden Gai. Better for dinner (grilled meats, yakitori). No cover charge. More casual than Golden Gai. Go first while hungry.'),
+        ('Robot Restaurant', 'SUBSTITUTE for evening plans. Pure spectacle — not cultural, not subtle. Book online, ¥8000/person. Worth it if you want something completely outrageous. Skip if you prefer authentic nightlife.'),
+        ('Yozakura at Chidorigafuchi', 'SUBSTITUTE for evening. Only available during cherry blossom season (late March-mid April). Rowboats on Imperial Palace moat under lit cherry trees — potentially the most memorable moment of the trip. Check bloom forecast.'),
+        ('Shimokitazawa', 'SUBSTITUTE for Harajuku. Less touristy, more authentic. Vintage shops, live music, indie cafes. Good if Harajuku feels too crowded/commercial.'),
+        ('Hakone Open-Air Museum', 'Optional detour during Hakone loop. Adds 1-2 hours. Best if you love art. Skip if you prefer more onsen time or are tired from the loop.'),
+        ('Day-use onsen: Tenzan Tohji-kyo', 'Best day-use onsen in Hakone area. Outdoor forest baths. Skip if you want more time at Lake Ashi or the museum. ¥1,300 is reasonable for the quality.'),
+        ('Fushimi Inari', 'GO AT 6:30 AM — the vermillion gates are nearly empty before 7 AM. By 9 AM it becomes a dense crowd. The full hike is 2-3 hours but you can turn back at the halfway shrine (45 min up). Dawn light through the torii is magical.'),
+        ('Kinkaku-ji', 'Worth the hype despite crowds. Best light is 9-10 AM (golden reflection strongest). ¥500 entry. The "ticket" is a beautiful calligraphy charm. Quick visit — 30-45 min is enough.'),
+        ('Bamboo Grove', 'Go early (before 9 AM) or skip. During peak hours it is shoulder-to-shoulder tourists. The walk itself is short (10-15 min). Pair with Tenryu-ji temple garden right next to it.'),
+        ('Hiroshima Peace Memorial', 'Allow 2-3 hours minimum. The museum is emotionally heavy but essential. Individual stories and artifacts are more impactful than the statistics. The Children\'s Peace Monument is particularly moving.'),
+        ('Floating Itsukushima Torii', 'Check tide tables! High tide: gate "floats" in water (more photogenic). Low tide: walk out to the gate and touch it. Both are worth seeing. Plan your timing around tides.'),
+        ('Dotonbori Night Walk', 'vs Shinsaibashi: Dotonbori is the neon canal strip (louder, more food). Shinsaibashi is the covered shopping arcade (more retail). They run parallel — do both by walking up one, back on the other.'),
+        ('Nara day trip', 'SUBSTITUTE for Day 13 Osaka activities. More relaxed, nature-focused. The deer are genuinely delightful. Todai-ji has the world\'s largest bronze Buddha. Good if Osaka feels like "too much city" after Tokyo+Kyoto.'),
+        ('Nishiki Market', 'Kyoto\'s 400-year-old food market. Different from Osaka\'s Kuromon — more refined, pickles and tea vs raw seafood. Try dashimaki tamago (rolled omelette) and fresh mochi. Good for souvenir shopping (packaged teas, spices).'),
+        ('Monkey Park Iwatayama', 'Short but steep 20-min hike. Monkeys roam free on mountaintop — you go inside the enclosure, they don\'t. Panoramic views of Kyoto from the top. Fun and different from temple-hopping.'),
+        ('Spa World', 'OPTIONAL. Giant themed onsen complex (Egyptian, Roman, Japanese baths). Culture shock — everyone is naked, no swimsuits. Great if you love onsen. Skip if you\'re uncomfortable or short on time.'),
+        ('TeamLab Planets', 'BOOK IN ADVANCE — sells out weeks ahead. Immersive digital art. You wade through knee-deep water, walk barefoot through light. 60-90 min inside. Unique experience unlike anything else on the trip.'),
+        ('Kurama-Kibune', 'SUBSTITUTE for Arashiyama. Mountain villages + natural hot spring. More adventurous, fewer tourists. The hike between Kurama and Kibune is beautiful. Good for active travelers who want nature over temples.'),
+    ]
+
+    for title_fragment, why_text in why_updates:
+        c.execute("UPDATE activity SET why=? WHERE title LIKE ? AND why IS NULL",
+                  (why_text, f'%{title_fragment}%'))
+
+    # === 5. Restructure Day 10 (Kyoto South) — separate Kiyomizu into its own activity ===
+    c.execute("SELECT id FROM day WHERE day_number=10")
+    day10_row = c.fetchone()
+    if day10_row:
+        day10_id = day10_row[0]
+        # Check if Kiyomizu already exists as its own activity
+        c.execute("SELECT id FROM activity WHERE day_id=? AND title LIKE 'Kiyomizu-dera%' AND is_substitute=0",
+                  (day10_id,))
+        if not c.fetchone():
+            c.execute("SELECT MAX(sort_order) FROM activity WHERE day_id=?", (day10_id,))
+            max_order = (c.fetchone()[0] or 0) + 1
+            # Add Kiyomizu-dera as its own morning activity
+            c.execute("""INSERT INTO activity (day_id, title, description, time_slot, address, url,
+                         category, why, sort_order, is_optional, is_substitute, is_eliminated, jr_pass_covered)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 0)""",
+                      (day10_id,
+                       'Kiyomizu-dera Temple',
+                       'Iconic wooden stage jutting out over a cliff. Stunning views of Kyoto, especially with cherry blossoms. Walk down Sannenzaka & Ninenzaka — atmospheric stone-paved lanes with traditional shops.',
+                       'morning',
+                       '1-294 Kiyomizu, Higashiyama-ku, Kyoto',
+                       'https://www.kiyomizudera.or.jp/en/',
+                       'temple',
+                       'Go after Fushimi Inari — it opens at 6 AM but the crowd builds later. By 10 AM you\'ll be ahead of the tour bus rush. The walk down through Ninenzaka is as good as the temple itself.',
+                       max_order))
+
+    # === 6. Restructure Day 11 (Kyoto North) — ensure Monkey Park is separate ===
+    c.execute("SELECT id FROM day WHERE day_number=11")
+    day11_row = c.fetchone()
+    if day11_row:
+        day11_id = day11_row[0]
+        c.execute("SELECT id FROM activity WHERE day_id=? AND title LIKE 'Monkey Park%' AND is_substitute=0",
+                  (day11_id,))
+        if not c.fetchone():
+            c.execute("SELECT MAX(sort_order) FROM activity WHERE day_id=?", (day11_id,))
+            max_order = (c.fetchone()[0] or 0) + 1
+            c.execute("""INSERT INTO activity (day_id, title, description, time_slot, address, url,
+                         category, why, sort_order, is_optional, is_substitute, is_eliminated, jr_pass_covered)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, 0)""",
+                      (day11_id,
+                       'Monkey Park Iwatayama',
+                       'Short but steep 20-min hike to mountaintop. Wild monkeys roam free — you\'re in their enclosure. Panoramic views of Kyoto from the top.',
+                       'afternoon',
+                       '8 Arashiyama Genrokuzancho, Nishikyo-ku, Kyoto',
+                       'https://www.monkeypark.jp/en/',
+                       'nature',
+                       'Fun and different from temple-hopping. Good if you want a break from shrines. The views alone are worth the hike.',
+                       max_order))
+
+    # === 7. Add missing URLs ===
+    url_updates = {
+        'Tokyo Skytree': 'https://www.tokyo-skytree.jp/en/',
+        'Shibuya Crossing': 'https://www.shibuya-scramble-square.com/',
+        'Ueno Zoo': 'https://www.tokyo-zoo.net/english/ueno/',
+        'Nishiki Market': 'https://www.kyoto-nishiki.or.jp/en/',
+        'Togetsukyo': 'https://www.japan-guide.com/e/e3912.html',
+        'Osaka Castle': 'https://www.osakacastle.net/english/',
+        'Umeda Sky Building': 'https://www.skybldg.co.jp/en/',
+        'Shirakawa-go': 'https://shirakawa-go.org/en/',
+    }
+    for title_fragment, url in url_updates.items():
+        c.execute("UPDATE activity SET url=? WHERE title LIKE ? AND url IS NULL",
+                  (url, f'%{title_fragment}%'))
+
+    # === 8. Add intra-day transport notes for the Day view ===
+    # Add JR Nara Line route for Fushimi Inari day (Day 10)
+    c.execute("SELECT id FROM transport_route WHERE route_from='Kyoto Station' AND route_to='Fushimi Inari'")
+    if not c.fetchone():
+        c.execute("SELECT id FROM day WHERE day_number=10")
+        d10 = c.fetchone()
+        if d10:
+            c.execute("""INSERT INTO transport_route (route_from, route_to, transport_type, train_name,
+                         duration, jr_pass_covered, cost_if_not_covered, notes, day_id, sort_order)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ('Kyoto Station', 'Fushimi Inari', 'JR Nara Line', 'JR Nara Line',
+                       '5 min', 1, '¥150', 'Just 2 stops. JR Pass covered. Keihan Line also works from downtown.', d10[0], 25))
+    else:
+        # Fix day_id if route already exists with wrong day
+        c.execute("SELECT id FROM day WHERE day_number=10")
+        d10 = c.fetchone()
+        if d10:
+            c.execute("UPDATE transport_route SET day_id=? WHERE route_from='Kyoto Station' AND route_to='Fushimi Inari'", (d10[0],))
+
+    # JR Nara Line for Nara day trip (Day 13)
+    c.execute("SELECT id FROM transport_route WHERE route_from='Osaka' AND route_to='Nara'")
+    if not c.fetchone():
+        c.execute("SELECT id FROM day WHERE day_number=13")
+        d13 = c.fetchone()
+        if d13:
+            c.execute("""INSERT INTO transport_route (route_from, route_to, transport_type, train_name,
+                         duration, jr_pass_covered, cost_if_not_covered, notes, day_id, sort_order)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ('Osaka', 'Nara', 'JR Yamatoji Line', 'JR Rapid',
+                       '~50 min', 1, '¥810', 'Direct from Osaka-Namba or Tennoji. JR Pass covered.', d13[0], 26))
+    else:
+        # Fix day_id if route already exists with wrong day
+        c.execute("SELECT id FROM day WHERE day_number=13")
+        d13 = c.fetchone()
+        if d13:
+            c.execute("UPDATE transport_route SET day_id=? WHERE route_from='Osaka' AND route_to='Nara'", (d13[0],))
+
+    # Hakone internal transport (Day 5)
+    c.execute("SELECT id FROM transport_route WHERE route_from='Odawara' AND route_to LIKE 'Hakone%'")
+    if not c.fetchone():
+        c.execute("SELECT id FROM day WHERE day_number=5")
+        d5 = c.fetchone()
+        if d5:
+            c.execute("""INSERT INTO transport_route (route_from, route_to, transport_type, train_name,
+                         duration, jr_pass_covered, cost_if_not_covered, notes, day_id, sort_order)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                      ('Odawara', 'Hakone (Loop)', 'Hakone Tozan Railway', 'Switchback Train',
+                       '~40 min', 0, 'Hakone Free Pass', 'Covered by Hakone Free Pass (¥6,000). Scenic mountain railway.', d5[0], 24))
+    else:
+        # Fix day_id if wrong
+        c.execute("SELECT id FROM day WHERE day_number=5")
+        d5 = c.fetchone()
+        if d5:
+            c.execute("UPDATE transport_route SET day_id=? WHERE route_from='Odawara' AND route_to LIKE 'Hakone%'", (d5[0],))
+
+    conn.commit()
+    conn.close()
+    db.session.expire_all()
+    print("Migration complete: activities enriched with addresses, categories, and reasoning.")
+
+
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -1756,6 +2068,7 @@ def create_app():
         _migrate_consolidate_kyoto(app)
         _migrate_add_addresses_and_cleanup_transport(app)
         _migrate_data_cleanup(app)
+        _migrate_enrich_activities(app)
 
     return app
 
