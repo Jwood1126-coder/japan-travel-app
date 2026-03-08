@@ -2437,6 +2437,106 @@ def _migrate_swap_tokyo_hotel_links(app):
     print("  Migration complete: Google Hotels is now primary link for Shinjuku hotels.")
 
 
+def _migrate_add_neighborhood_descriptions(app):
+    """Add a brief neighborhood area description to user_notes for every accommodation option.
+    Idempotent — skips if already applied (checks for sentinel text in first option)."""
+    from models import AccommodationOption
+
+    sentinel = AccommodationOption.query.filter_by(name='Nui. Hostel & Bar Lounge').first()
+    if sentinel and sentinel.user_notes and 'Kuramae' in (sentinel.user_notes or ''):
+        return
+
+    print("Running migration: add neighborhood descriptions to all accommodation options...")
+
+    area_notes = {
+        # Tokyo — Asakusa / Kuramae
+        'Nui. Hostel & Bar Lounge':
+            'Kuramae / Asakusa — Tokyo\'s most artsy pocket. Independent coffee shops, ceramics studios, craft bars. Quiet at night but 15 min subway to Shinjuku.',
+        'Dormy Inn Asakusa':
+            'Asakusa — Old Tokyo at its best. Senso-ji temple, street food, rickshaws. Calm evenings. Traditional feel, not a nightlife base.',
+        'Airbnb apartment':
+            'Asakusa / Kuramae — Residential and creative. Best for self-catering and a local feel. Quiet after 9pm.',
+        'CITAN Hostel':
+            'Nihonbashi — Old merchant district, now a design hub. Very central, quiet streets, good ramen nearby. Easy subway to everywhere.',
+        'THE GATE HOTEL Kaminarimon':
+            'Asakusa — Prime tourist Asakusa, steps from Kaminarimon Gate. Views of Senso-ji and Tokyo Skytree from the rooftop.',
+        # Tokyo — Shinjuku
+        'Anshin Oyado Tokyo Man Shinjuku':
+            'Shinjuku West — The business/skyscraper side of Shinjuku. Quiet streets but 5-min walk to the east side nightlife. Best of both worlds.',
+        "La'gent Hotel Shinjuku Kabukicho":
+            'Shinjuku / Kabukicho — Tokyo\'s entertainment capital. Neon signs, Golden Gai bars, Omoide Yokocho (Memory Lane). Walk out the door into the action.',
+        'DOMO HOTEL':
+            'Shinjuku — Central Shinjuku, close to the station and nightlife. Everything within walking distance: restaurants, bars, shopping.',
+        'Mitsui Garden Hotel Jingugaien PREMIER':
+            'Jingugaien / Harajuku — Upscale, tree-lined neighborhood between Shibuya and Shinjuku. Near Yoyogi Park, Meiji Shrine, and Omotesando high-end shopping.',
+        'HOTEL GROOVE SHINJUKU (PARKROYAL)':
+            'Shinjuku / Kabukicho Tower — Inside the 2023 Tokyu Kabukicho Tower skyscraper. Literally in the center of Tokyo\'s most electric nightlife district.',
+        # Takayama Ryokan
+        'Tanabe Ryokan':
+            'Central Takayama — Walking distance to Sanmachi Suji historic district, morning markets, and Miyagawa River. Everything is walkable.',
+        'Sumiyoshi Ryokan':
+            'River District Takayama — Along the Miyagawa River, steps from the morning market. Peaceful, scenic, and very central.',
+        'Ryokan Asunaro':
+            'Central Takayama — In the historic core. Easy walk to old town sake breweries, lacquerware shops, and Higashiyama temple walk.',
+        'Oyado Koto no Yume':
+            'Central Takayama — Quiet residential streets near the historic district. Small and intimate — feels like staying with a local family.',
+        'Honjin Hiranoya Annex':
+            'Historic Center Takayama — One of Takayama\'s most prestigious addresses. Samurai-era neighborhood, 200+ year old inn lineage.',
+        # Takayama Budget
+        'Rickshaw Inn':
+            'Near Sanmachi Suji — 8-min walk to the preserved edo-era merchant district. Great base for early morning walks before the crowds arrive.',
+        'Takayama Oasis':
+            'Central Takayama — Near the train station and old town. Good launchpad for day trips to Shirakawa-go.',
+        'J-Hoppers Takayama':
+            'Central Takayama — Social hostel atmosphere, 10-min walk to Sanmachi Suji. Popular with backpackers passing through the Alps.',
+        'Guesthouse Tomaru':
+            'Near Old Town — Renovated traditional machiya (townhouse). Narrow lane location gives an authentic Takayama feel.',
+        'Hostel Murasaki':
+            'Near Old Town — Closest budget option to the preserved historic streets. Bare-bones but unbeatable for morning access to Sanmachi Suji.',
+        # Kanazawa
+        'Minn Kanazawa':
+            'Near Omicho Market — 300m from the covered fresh seafood market. Great for self-catering. Higashi Chaya geisha district is a 15-min walk.',
+        'Kaname Inn Tatemachi':
+            'Tatemachi — Central shopping and dining street. Lively evening scene, easy access to Kenroku-en garden and 21st Century Museum.',
+        'Dormy Inn Kanazawa':
+            'Central Kanazawa — Near the station, convenient for the limited-time Kanazawa stop. Good hub for day-tripping to Omicho and Higashi Chaya.',
+        'Hotel Intergate Kanazawa':
+            'Near Omicho Market — Central location, short walk to the fresh market and Kazuemachi geisha district along the river.',
+        'HATCHi Kanazawa':
+            'Near Kenroku-en — Close to Japan\'s most celebrated garden and the 21st Century Museum of Contemporary Art. Design-forward neighborhood.',
+        # Kyoto 3 nights
+        "K's House Kyoto":
+            'Kyoto Station — Maximum transit convenience. All major bus lines and the subway originate here. Nishiki Market and Fushimi Inari are easy day trips.',
+        'Piece Hostel Sanjo':
+            'Sanjo / Central Kyoto — Heart of the city. Walk to Nishiki Market, Kamo River, Gion. Near Keihan Line for quick access to Fushimi Inari.',
+        'Len Kyoto Kawaramachi':
+            'Kawaramachi — Right on the Kamo River. Steps from Pontocho alley, Nishiki Market, and Gion. The most central base in Kyoto.',
+        'Dormy Inn Premium Kyoto':
+            'Kyoto Station — Best transit hub in Kyoto. Unlimited bus access. Good base for Arashiyama and Fushimi Inari day trips.',
+        'Hotel Ethnography Gion':
+            'Gion — Kyoto\'s famous geisha district. Cobblestone lanes, wooden machiya, chance of spotting maiko in the evening. The most atmospheric location.',
+        # Kyoto Machiya
+        'Rinn Kyoto (Nishijin)':
+            'Nishijin — Traditional weaving district north of central Kyoto. Quiet, residential, and authentic. Full private house with kitchen and washer.',
+        'Rinn Kyoto (Gion)':
+            'Gion — Same quality as Nishijin but in the heart of the geisha district. Walk to Shirakawa canal, Yasaka Shrine, Maruyama Park.',
+        'Machiya Residence Inn':
+            'Various Neighborhoods — Licensed machiya across Higashiyama, Nakagyo, and Nishijin. Choose by area when booking.',
+        'Airbnb machiya':
+            'Higashiyama / Nakagyo — Best areas to filter for. Higashiyama = temple district; Nakagyo = central, near Nishiki Market.',
+        'Nazuna Kyoto':
+            'Central Kyoto — Boutique machiya hotel with full service. Tea ceremony, private hinoki bath. The most luxurious traditional experience.',
+    }
+
+    for name, note in area_notes.items():
+        opt = AccommodationOption.query.filter_by(name=name).first()
+        if opt:
+            opt.user_notes = note
+
+    db.session.commit()
+    print("  Migration complete: neighborhood descriptions added to all accommodation options.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -2591,6 +2691,7 @@ def create_app(run_data_migrations=True):
             _migrate_add_shinjuku_hotels(app)
             _migrate_add_booking_resources(app)
             _migrate_swap_tokyo_hotel_links(app)
+            _migrate_add_neighborhood_descriptions(app)
 
     return app
 
