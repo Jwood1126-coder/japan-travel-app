@@ -131,3 +131,23 @@ From the full app review:
 - SQLite DB lives on Railway volume - schema changes need migration functions in `_run_migrations()`
 - Data fixes for existing records need startup fixer functions (like `_fix_booking_urls()`)
 - `import_markdown.py` only runs for fresh DB creation
+
+### Database Sync (IMPORTANT)
+Railway uses a **persistent volume** for the SQLite database. The DB in the git repo (`data/japan_trip.db`) is NOT automatically used on Railway — it only matters for fresh deployments. To sync local DB changes (e.g. new accommodation options added locally) to production:
+
+1. **Via backup/restore API:** Upload the local `data/japan_trip.db` to `POST /api/backup/restore` (requires authentication)
+2. **Via the app UI:** Log in → open backup panel → restore from uploaded file
+3. **Programmatically:**
+   ```python
+   import requests
+   s = requests.Session()
+   s.post(BASE + "/login", data={"password": "<TRIP_PASSWORD>"})
+   with open("data/japan_trip.db", "rb") as f:
+       s.post(BASE + "/api/backup/restore", files={"backup": ("japan_trip.db", f)})
+   ```
+
+The restore endpoint auto-backs up the current DB before overwriting.
+
+### Production Credentials
+- **TRIP_PASSWORD:** `oscar123` (set via Railway environment variable)
+- **Production URL:** https://web-production-f84b27.up.railway.app
