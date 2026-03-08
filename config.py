@@ -18,6 +18,21 @@ class Config:
     MAX_CONTENT_LENGTH = 20 * 1024 * 1024  # 20MB max upload
     THUMBNAIL_SIZE = (400, 400)
     TRIP_PASSWORD = os.environ.get('TRIP_PASSWORD', 'changeme')
+
+    @classmethod
+    def validate_production(cls):
+        """Abort startup if insecure defaults are used in a Railway deployment."""
+        import sys
+        if os.environ.get('RAILWAY_ENVIRONMENT'):
+            errors = []
+            if cls.SECRET_KEY == 'dev-secret-change-me':
+                errors.append('SECRET_KEY is not set')
+            if cls.TRIP_PASSWORD == 'changeme':
+                errors.append('TRIP_PASSWORD is not set')
+            if errors:
+                for e in errors:
+                    print(f'FATAL: {e} — refusing to start in production with insecure default.', file=sys.stderr)
+                sys.exit(1)
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
 
     # Session security

@@ -137,7 +137,10 @@ def serve_document(filename):
 @documents_bp.route('/api/documents/file/<path:filename>', methods=['DELETE'])
 def delete_document(filename):
     """Delete an uploaded document."""
-    filepath = os.path.join(_docs_folder(), filename)
+    docs_dir = os.path.realpath(_docs_folder())
+    filepath = os.path.realpath(os.path.join(docs_dir, os.path.basename(filename)))
+    if not filepath.startswith(docs_dir + os.sep):
+        return jsonify({'ok': False, 'error': 'Invalid filename'}), 400
     if os.path.exists(filepath):
         os.remove(filepath)
         return jsonify({'ok': True})

@@ -1,3 +1,4 @@
+import io
 import os
 import shutil
 import sqlite3
@@ -30,16 +31,24 @@ def download_backup():
     db = _db_path()
     if not os.path.exists(db):
         return jsonify({'ok': False, 'error': 'No database found'}), 404
-    # Use SQLite backup API for a consistent snapshot
+    # Use SQLite backup API for a consistent snapshot, stream via BytesIO to avoid temp file leak
     ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-    tmp = os.path.join(tempfile.gettempdir(), f'japan_trip_backup_{ts}.db')
-    src = sqlite3.connect(db)
-    dst = sqlite3.connect(tmp)
-    src.backup(dst)
-    src.close()
-    dst.close()
-    return send_file(tmp, as_attachment=True,
-                     download_name=f'japan_trip_backup_{ts}.db')
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.db')
+    os.close(tmp_fd)
+    try:
+        src = sqlite3.connect(db)
+        dst = sqlite3.connect(tmp_path)
+        src.backup(dst)
+        src.close()
+        dst.close()
+        with open(tmp_path, 'rb') as f:
+            data = io.BytesIO(f.read())
+    finally:
+        os.unlink(tmp_path)
+    data.seek(0)
+    return send_file(data, as_attachment=True,
+                     download_name=f'japan_trip_backup_{ts}.db',
+                     mimetype='application/octet-stream')
 
 
 @backup_bp.route('/api/backup/restore', methods=['POST'])
@@ -64,15 +73,16 @@ def restore_backup():
         src.close()
         bak.close()
 
-    # Save uploaded file to temp, validate it's a valid SQLite DB, then restore
-    tmp = os.path.join(tempfile.gettempdir(), 'restore_upload.db')
+    # Save uploaded file to a unique temp path, validate it's a valid SQLite DB, then restore
+    tmp_fd, tmp = tempfile.mkstemp(suffix='.db')
+    os.close(tmp_fd)
     file.save(tmp)
     try:
         check = sqlite3.connect(tmp)
         check.execute('SELECT count(*) FROM trip')
         check.close()
     except Exception:
-        os.remove(tmp)
+        os.unlink(tmp)
         return jsonify({'ok': False, 'error': 'Invalid database file'}), 400
 
     # Use SQLite backup API to safely overwrite live DB

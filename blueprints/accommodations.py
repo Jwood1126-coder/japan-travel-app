@@ -158,6 +158,22 @@ def fetch_url_info():
     if not url:
         return jsonify({'ok': False, 'error': 'No URL provided'}), 400
 
+    from urllib.parse import urlparse
+    import ipaddress
+    import socket
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        return jsonify({'ok': False, 'error': 'URL must use http or https'}), 400
+    # Block SSRF to localhost and private/internal IP ranges
+    hostname = parsed.hostname or ''
+    try:
+        resolved = socket.gethostbyname(hostname)
+        ip = ipaddress.ip_address(resolved)
+        if ip.is_loopback or ip.is_private or ip.is_link_local or ip.is_reserved:
+            return jsonify({'ok': False, 'error': 'URL resolves to a private address'}), 400
+    except (socket.gaierror, ValueError):
+        return jsonify({'ok': False, 'error': 'Could not resolve hostname'}), 400
+
     # Fetch the page
     try:
         headers = {

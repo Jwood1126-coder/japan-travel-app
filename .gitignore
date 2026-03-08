@@ -9,9 +9,13 @@ build/
 # Environment
 .env
 
-# Uploads (user photos - stored on Railway volume)
+# Database (built from source_data/ markdown via import_markdown.py)
+data/japan_trip.db
+
+# Uploads (user content - stored on Railway volume)
 uploads/originals/*
 uploads/thumbnails/*
+uploads/documents/*
 !uploads/.gitkeep
 
 # IDE
@@ -20,6 +24,10 @@ uploads/thumbnails/*
 *.swp
 *.swo
 
+# Backups (local only)
+_backup_pre_cleanup/
+
 # OS
 .DS_Store
 Thumbs.db
+nul

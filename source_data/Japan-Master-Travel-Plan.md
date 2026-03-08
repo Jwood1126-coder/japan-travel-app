@@ -1,7 +1,7 @@
 # JAPAN MASTER TRAVEL PLAN
-## April 4–18, 2026 | 15 Days | 2 People (Couple, 33)
+## April 5–18, 2026 | 14 Days | 2 People (Couple, 33)
 ### Cherry Blossoms, Cities & Countryside
-### Cleveland, OH → Minneapolis → Tokyo → Alps → Kyoto → Home
+### Cleveland, OH → Tokyo → Alps → Kyoto → Osaka → Home
 
 **Prepared:** March 4, 2026 | **Last verified & corrected:** March 4, 2026 (Pass 4 — flights finalized)
 **Budget Target:** ~$4,000–5,000 cash (2 people) + MileagePlus miles for return flight
@@ -48,7 +48,7 @@ The itinerary moves through Japan in a deliberate arc designed to **chase cherry
 
 | Location | First Bloom | Full Bloom | Your Dates | Status |
 |----------|------------|------------|------------|--------|
-| Tokyo | ~Mar 18 | ~Mar 26 | Apr 5–8 | Past peak — falling petals ("sakura fubuki"), still beautiful |
+| Tokyo | ~Mar 18 | ~Mar 26 | Apr 6–8 | Past peak — falling petals ("sakura fubuki"), still beautiful |
 | Takayama (Alps) | ~Apr 8 | ~Apr 14 | Apr 9–10 | **PEAK BLOOM — perfect timing** |
 | Kanazawa | ~Apr 3 | ~Apr 8 | Apr 11 | Late bloom — still good |
 | Kyoto | ~Mar 22 | ~Mar 31 | Apr 12–16 | Late bloom / scattering — still nice |
@@ -58,34 +58,28 @@ The itinerary is designed so you hit **peak cherry blossoms in the Japanese Alps
 ### Route Map (Simplified)
 
 ```
-Cleveland ──✈──> MINNEAPOLIS (overnight layover — explore!)
-                       │
-                       ✈ Delta DL 121 nonstop
-                       │
-                    TOKYO (3 days)
-                       │
-                       ├── Hakone day trip (Mt. Fuji + onsen)
-                       │
-                       🚄 Shinkansen + JR Hida Express
-                       │
-                    TAKAYAMA (2 days, Japanese Alps)
-                       │
-                       🚌 Nohi Bus via Shirakawa-go
-                       │
-                    KANAZAWA (1 day, coastal city)
-                       │
-                       🚄 Shinkansen + Thunderbird
-                       │
-                    KYOTO (5 days, cultural capital)
-                       │
-                       ├── Hiroshima + Miyajima day trip
-                       ├── Osaka or Nara day trip (buffer day)
-                       │
-                       🚄 Shinkansen back
-                       │
-                    TOKYO (1.5 days, final)
-                       │
-                    Cleveland <──✈── Los Angeles <──✈── Narita
+Cleveland ──✈──> Detroit ──✈──> TOKYO (3 days)
+                                   │
+                                   ├── Hakone day trip (Mt. Fuji + onsen)
+                                   │
+                                   🚄 Shinkansen + JR Hida Express
+                                   │
+                                TAKAYAMA (2 days, Japanese Alps)
+                                   │
+                                   🚌 Nohi Bus via Shirakawa-go
+                                   │
+                                KANAZAWA (1 day, coastal city)
+                                   │
+                                   🚄 Shinkansen + Thunderbird
+                                   │
+                                KYOTO (5 days, cultural capital)
+                                   │
+                                   ├── Hiroshima + Miyajima day trip
+                                   ├── Osaka or Nara day trip (buffer day)
+                                   │
+                                OSAKA (departure)
+                                   │
+                                Cleveland <──✈── San Francisco <──✈── Haneda
 ```
 
 ---
@@ -96,86 +90,62 @@ Cleveland ──✈──> MINNEAPOLIS (overnight layover — explore!)
 
 Cherry blossom peak season (April) inflates United award pricing to 100,000 miles/person — well above saver rates. Instead of overpaying with miles outbound, we found a **fare hack: Delta cash outbound ($638/person) + United award return (~76,500 miles/person)**. This combination saves ~$1,600 vs cash round trips and maximizes the value of your MileagePlus balance.
 
-**Bonus:** The Delta routing includes a **21-hour overnight layover in Minneapolis** — a free mini-city break.
+### Outbound — April 5, 2026 (Saturday)
 
-### Outbound — April 4–5, 2026 (Saturday–Sunday)
+Booked as **cash** on **Delta** ($775/person, $1,550 total for 2). Confirmation: **HBPF75**
 
-Booked as **cash** on **Delta** ($638/person, $1,276 total for 2).
-
-| | Leg 1: Cleveland → Minneapolis | Leg 2: Minneapolis → Tokyo |
+| | Leg 1: Cleveland → Detroit | Leg 2: Detroit → Tokyo |
 |---|---|---|
-| **Flight** | DL 5132 | DL 121 |
-| **Route** | CLE → MSP | MSP → HND Terminal 3 |
-| **Depart** | Apr 4 (per ticketed itinerary) | Apr 5 (per ticketed itinerary) |
-| **Duration** | ~2h 30min | ~12–13h nonstop |
-| **Aircraft** | Regional jet | Boeing 767 or A330 (verify) |
-| **Layover** | — | **~21 hours in Minneapolis (overnight!)** |
+| **Flight** | DL5392 (Endeavor Air) | DL275 |
+| **Route** | CLE → DTW | DTW → HND |
+| **Depart** | 10:30 AM | 2:05 PM |
+| **Arrive** | 11:26 AM | 4:15 PM +1 day |
+| **Duration** | 56 min | 13h 10min |
+| **Aircraft** | CRJ-900 | Boeing 767-400ER |
+| **Layover** | — | 2h 39min at DTW |
 
 **Notes:**
-- You cross the International Date Line — you lose a calendar day. Depart Sunday from MSP, arrive **Monday April 6** in Tokyo.
-- The 21-hour MSP layover is a feature, not a bug: explore Minneapolis, sleep in a hotel (use your **$100 United Hotels credit**), fly refreshed.
-- **Arrive HND ~3–5 PM JST on April 6** (verify exact time at booking).
+- You cross the International Date Line — you lose a calendar day. Depart Saturday from DTW, arrive **Sunday April 6** in Tokyo.
+- Main Basic (E class). Seats assigned at gate.
+- **Arrive HND 4:15 PM JST on April 6.**
 
 ### Return — April 18, 2026 (Saturday)
 
-Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~$100 taxes for 2).
+Booked as **United MileagePlus award** (61,800 miles/person + $49.03/person taxes). Confirmation: **I91ZHJ**
 
-| | Leg 1: Tokyo → Los Angeles | Leg 2: Los Angeles → Cleveland |
+| | Leg 1: Tokyo → San Francisco | Leg 2: San Francisco → Cleveland |
 |---|---|---|
-| **Flight** | UA 33 | UA 1896 |
-| **Route** | NRT → LAX | LAX → CLE |
-| **Depart** | 4:45 PM JST | 1:05 PM Pacific |
-| **Arrive** | 10:45 AM Pacific **same day** | 8:45 PM Eastern **same day** |
-| **Duration** | 10h 0min | 4h 40min |
-| **Aircraft** | Boeing 787-9 Dreamliner (meal included) | Boeing 737-900 |
-| **Layover** | — | 2h 20min at LAX (plane change) |
+| **Flight** | UA876 | UA1470 |
+| **Route** | HND → SFO | SFO → CLE |
+| **Depart** | 3:50 PM JST | 2:20 PM Pacific |
+| **Arrive** | 9:35 AM Pacific **same day** | 10:13 PM Eastern **same day** |
+| **Duration** | 9h 45min | 4h 53min |
+| **Aircraft** | Boeing 777-200 | — |
+| **Layover** | — | 4h 45min at SFO |
+| **Seats** | Jacob 52B, Jessica 52A | Jacob 37C, Jessica 37B |
 
 **Notes:**
-- Departs from **Narita (NRT)**, not Haneda. Take the **Narita Express** from Tokyo/Shinagawa (~60 min, **covered by JR Pass**).
-- You gain time crossing the Date Line — depart Saturday afternoon JST, arrive Saturday evening Eastern. **Home by 8:45 PM on April 18.**
-- Use **Global Entry kiosks** at LAX for expedited customs.
-- 2h 20min LAX layover is adequate — stay in the international terminal area for the CLE connection.
+- Departs from **Haneda (HND)**, not Narita. Keikyu Line from Shinagawa to HND Terminal 3 (~15 min, ~500 yen).
+- You gain time crossing the Date Line — depart Saturday afternoon JST, arrive Saturday evening Eastern. **Home by 10:13 PM on April 18.**
+- Use **Global Entry kiosks** at SFO for expedited customs.
+- 4h 45min SFO layover — grab food and stretch legs.
 
-### Miles & Card Perks Strategy
+### United Card Perks (as of Mar 2026)
 
-**Miles balance:** ~139,200 miles (as of March 2026)
-**Needed for return:** ~153,000 miles (76,500/person × 2)
-**Shortfall:** ~13,800 miles
-
-**Closing the gap:**
-- **Option 1 (recommended):** Wait for March billing cycle to close (~Mar 9). Recent credit card spending should generate enough miles. Miles post to United 1–5 business days after statement close (~Mar 10–14).
-- **Option 2:** Buy the remaining miles on united.com (~$140–490 depending on how many you need). Miles post instantly.
-- **10,000-mile card discount** — if applicable to one-way award bookings, reduces the shortfall. Check terms at checkout on united.com. Expires 07/18/2026.
-
-**United Card Perks (as of Mar 2026):**
-- **$100 United Hotels credit** — **USE FOR MINNEAPOLIS HOTEL** on April 4. Book through united.com hotel portal.
-- **2 United Club one-time passes** — expire 04/17/2026. Outbound is on Delta (not usable). Return is April 18 (expired). **Cannot use these passes on this routing.**
-- **$5/month rideshare credit** — $5 available in April. Minor benefit for a short ride.
-- **Global Entry / TSA PreCheck** — active through 12/30/2027. Faster security at CLE. **Expedited customs on return at LAX.**
-
-### Booking Steps
-
-1. **Book Delta outbound NOW** on Google Flights/Kayak/delta.com — CLE → MSP → HND, April 4–5, $638/person cash. Cash fares can increase any time.
-2. **Wait for miles to post** (after ~Mar 9 billing cycle close + 1–5 business days) OR buy the remaining miles on united.com (instant).
-3. **Book United award return** on united.com → "Search award travel" → one-way → NRT → CLE → April 18 → 2 adults. Select UA 33/UA 1896 routing via LAX.
-4. **Book Minneapolis hotel** through united.com hotel portal → apply $100 credit → search MSP hotels for April 4 (1 night).
+- **Global Entry / TSA PreCheck** — active through 12/30/2027. Faster security at CLE. **Expedited customs on return at SFO.**
 
 **Flight Tips:**
-- Download movies/shows for the 12+ hour MSP→HND flight
+- Download movies/shows for the 13h DTW→HND flight
 - Bring a neck pillow, compression socks, and stay hydrated
 - Set your watch to JST as soon as you board — start adjusting mentally
-- Pack a light jacket accessible in your carry-on for the Minneapolis overnight (April in MSP = 30s–50s°F)
 
 ### Flight Cost Summary (2 People)
 
 | | Cost | Notes |
 |---|---|---|
-| **Outbound (Delta cash)** | **$1,276** | CLE → MSP → HND, booked on Kayak/Google Flights |
-| **Return (United award)** | **~153,000 miles + ~$100 taxes** | NRT → LAX → CLE, booked on united.com |
-| **Minneapolis hotel** | **~$0–50** | After $100 United Hotels credit |
-| **Miles purchase (if needed)** | **$0–490** | Only if billing cycle miles don't cover the gap |
-| **Total cash** | **~$1,376–1,916** | + all miles used |
-| **Miles remaining** | **~0** | All miles allocated to return flight |
+| **Outbound (Delta cash)** | **$1,550** | CLE → DTW → HND. Confirmation: HBPF75 |
+| **Return (United award)** | **123,600 miles + ~$98 taxes** | HND → SFO → CLE. Confirmation: I91ZHJ |
+| **Total cash** | **~$1,648** | + all miles used |
 
 ---
 
@@ -189,37 +159,16 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 1 — April 4 (Saturday): CLEVELAND → MINNEAPOLIS
+### DAY 1 — April 5 (Saturday): TRAVEL DAY — CLEVELAND → TOKYO
 
-**Daytime:**
-- Depart CLE on **Delta DL 5132** (per ticketed itinerary)
-- Arrive **MSP (Minneapolis)** — you have a **~21-hour overnight layover!**
-- Stash luggage at the airport or take it to the hotel
-- **Blue Line light rail** from MSP airport to downtown Minneapolis (~25 min, ~$2)
+**Morning:**
+- Depart CLE 10:30 AM — **Delta DL5392** to Detroit (Endeavor Air, CRJ-900, ~56 min)
+- Arrive DTW 11:26 AM — 2h 39min layover. Grab lunch.
+- Confirmation: **HBPF75**
 
-**Explore Minneapolis:**
-- **Stone Arch Bridge** — iconic walk over the Mississippi River, great for photos
-- **North Loop / Warehouse District** — trendy restaurants, breweries, galleries
-- **First Avenue** — the legendary Prince music venue. Check if there's a show tonight.
-- **Brewery tour:** Surly Brewing, Modist, or Inbound BrewCo — Minneapolis has an incredible craft beer scene
-- Dinner: **North Loop** area has excellent restaurants at reasonable prices
-- April in Minneapolis = **30s–50s°F** — dress warmly (pack a layer accessible in your carry-on)
-
-**🌙 Night:**
-- Check into your **Minneapolis hotel** (book through united.com hotel portal — use your **$100 United Hotels credit** for a free or near-free night)
-- Sleep well — you have a long flight tomorrow
-
----
-
-### DAY 2 — April 5 (Sunday): TRAVEL DAY — MINNEAPOLIS → TOKYO
-
-**Daytime:**
-- Morning: Grab breakfast near the hotel. If time allows:
-  - **Minnehaha Falls** — beautiful waterfall, quick visit
-  - **Minneapolis Institute of Art** — free admission, world-class collection
-  - Downtown **Skyway system** — enclosed walkways between buildings, good for a cold morning
-- Return to MSP airport for **DL 121 MSP → HND** (per ticketed itinerary)
-- ~12–13h nonstop flight to Tokyo Haneda
+**Afternoon:**
+- Depart DTW 2:05 PM — **Delta DL275** to Tokyo Haneda (Boeing 767-400ER, ~13h 10min)
+- Main Basic (E class). Seats assigned at gate.
 
 **On the plane:**
 - Watch movies, sleep as much as possible
@@ -228,11 +177,11 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 - Get up and walk the aisle periodically
 - Set your watch to Japan Standard Time (JST) — 14 hours ahead of Eastern
 
-**🌙 Night:** You're on the plane. Try to sleep on Japan time. You cross the International Date Line — you lose a calendar day. **Arrive Monday April 6.**
+**🌙 Night:** You're on the plane. Try to sleep on Japan time. You cross the International Date Line — you lose a calendar day. **Arrive Sunday April 6.**
 
 ---
 
-### DAY 3 — April 6 (Monday): ARRIVE TOKYO — SETTLE IN
+### DAY 2 — April 6 (Sunday): ARRIVE TOKYO — SETTLE IN
 
 **Late Afternoon/Evening:**
 - Arrive Haneda ~3–5 PM JST (verify exact time at booking)
@@ -256,7 +205,7 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 4 — April 7 (Tuesday): FULL TOKYO DAY — East Meets West
+### DAY 3 — April 7 (Monday): FULL TOKYO DAY — East Meets West
 
 **⚠️ This is your ONE full Tokyo day before Hakone. Pick your favorites from East and West side — you'll catch the rest when you return to Tokyo on Day 14.**
 
@@ -292,7 +241,7 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 5 — April 8 (Wednesday): DAY TRIP — HAKONE (Mt. Fuji Views & Hot Springs)
+### DAY 4 — April 8 (Tuesday): DAY TRIP — HAKONE (Mt. Fuji Views & Hot Springs)
 
 **🎫 ACTIVATE YOUR 14-DAY JR PASS** at Tokyo Station JR counter first thing (~8 AM). Bring your exchange voucher and passports.
 
@@ -339,7 +288,7 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 6 — April 9 (Thursday): TOKYO → TAKAYAMA (Japanese Alps)
+### DAY 5 — April 9 (Wednesday): TOKYO → TAKAYAMA (Japanese Alps)
 
 **Daytime:**
 - Check out of Dormy Inn Asakusa (bags already sent to Kyoto via takkyubin — travel with daypacks!)
@@ -371,7 +320,7 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 7 — April 10 (Friday): FULL DAY TAKAYAMA
+### DAY 6 — April 10 (Thursday): FULL DAY TAKAYAMA
 
 **Daytime:**
 - Early morning: **Miyagawa Morning Market** (opens 6 AM, runs until noon)
@@ -394,7 +343,7 @@ Booked as **United MileagePlus award** (~76,500 miles/person, ~153,000 total + ~
 
 ---
 
-### DAY 8 — April 11 (Saturday): TAKAYAMA → SHIRAKAWA-GO → KANAZAWA
+### DAY 7 — April 11 (Friday): TAKAYAMA → SHIRAKAWA-GO → KANAZAWA
 
 **⚠️ NOHI BUS MUST BE PRE-BOOKED — sells out in cherry blossom season!**
 Reserve at **nouhibus.co.jp** or **japanbusonline.com** (opens 1 month prior). Phone: +81-577-32-1688 (9 AM–6 PM JST).
@@ -445,7 +394,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 9 — April 12 (Sunday): KANAZAWA → KYOTO
+### DAY 8 — April 12 (Saturday): KANAZAWA → KYOTO
 
 **Daytime:**
 - Morning: **21st Century Museum of Contemporary Art** — free outdoor installations, ticketed indoor exhibits
@@ -474,7 +423,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 10 — April 13 (Monday): KYOTO DAY 1 — Eastern Temples & Gion
+### DAY 9 — April 13 (Sunday): KYOTO DAY 1 — Eastern Temples & Gion
 
 **Daytime:**
 - **GO EARLY: Fushimi Inari Shrine at ~6:30 AM**
@@ -507,7 +456,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 11 — April 14 (Tuesday): KYOTO DAY 2 — Arashiyama & Western Kyoto
+### DAY 10 — April 14 (Monday): KYOTO DAY 2 — Arashiyama & Western Kyoto
 
 **Daytime:**
 - Morning: **Kinkaku-ji (Golden Pavilion)** — a gold-leafed temple reflected perfectly in a still pond. One of Japan's most iconic sights.
@@ -539,7 +488,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 12 — April 15 (Wednesday): DAY TRIP — HIROSHIMA & MIYAJIMA ISLAND
+### DAY 11 — April 15 (Tuesday): DAY TRIP — HIROSHIMA & MIYAJIMA ISLAND
 
 **⚠️ This is a long day. See substitutes below if the pace feels like too much.**
 
@@ -581,7 +530,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 13 — April 16 (Thursday): BUFFER DAY 🎯
+### DAY 12 — April 16 (Wednesday): BUFFER DAY 🎯
 
 **This is your flex day. No plans. Decide based on energy.** Options:
 
@@ -620,7 +569,7 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 ---
 
-### DAY 14 — April 17 (Friday): KYOTO → TOKYO (LAST EVENING)
+### DAY 13 — April 17 (Thursday): KYOTO → OSAKA (LAST EVENING)
 
 **Daytime:**
 - Morning: Any last Kyoto explorations, shopping, or revisiting a favorite spot
@@ -643,11 +592,11 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
   - Or return to Omoide Yokocho for one last smoky yakitori session
   - Or a quiet ramen shop — full circle from your first night
 - Pack everything. Organize souvenirs. Charge all devices.
-- Get to bed at a reasonable hour — departure tomorrow from **Narita** (need to leave by ~noon)
+- Get to bed at a reasonable hour — departure tomorrow from **Haneda** (need to leave by ~1 PM)
 
 ---
 
-### DAY 15 — April 18 (Saturday): DEPARTURE DAY
+### DAY 14 — April 18 (Friday): DEPARTURE DAY
 
 **Morning (your last few hours in Japan):**
 - **Tsukiji Outer Market** — farewell sushi/seafood breakfast
@@ -658,21 +607,21 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
   - **Uniqlo** — Japanese items not available in the US
 - Return to hotel, check out, grab bags
 
-**Getting to Narita:**
-- **Leave Shinagawa by ~12:00 PM** (arrive NRT by ~1:00 PM, 3.75 hours before 4:45 PM departure)
-- **Narita Express** from Shinagawa → Narita Airport (~50–60 min, **covered by JR Pass** ✓)
-  - This is a comfortable, reserved-seat train with luggage space
-  - No additional cost — your JR Pass is still active (expires Apr 21)
-- **Narita Airport:**
+**Getting to Haneda:**
+- Transfer to Haneda Airport from Shinagawa
+- **Keikyu Line** from Shinagawa to Haneda Terminal 3 (~15 min, ~500 yen)
+- Arrive by 1:30 PM for 3:50 PM departure
+- **Haneda Airport:**
   - Excellent **omiyage shops** in the terminal — last chance for Tokyo Banana, Royce chocolate, Kit Kat flavors, wagashi (traditional sweets)
   - Restaurant floor has surprisingly good food — eat your last Japanese meal here
   - Tax-free shopping available with passport
 
 **Departure:**
-- **UA 33:** NRT 4:45 PM JST → LAX 10:45 AM Pacific (10h, Boeing 787-9 Dreamliner, meal included)
-- **Layover:** 2h 20min at LAX (plane change). **Use Global Entry kiosks** for expedited customs.
-- **UA 1896:** LAX 1:05 PM Pacific → CLE 8:45 PM Eastern (4h 40min)
-- **HOME BY 8:45 PM** 🏠
+- **UA876:** HND 3:50 PM JST → SFO 9:35 AM Pacific (9h 45min, Boeing 777-200). Jacob 52B, Jessica 52A.
+- **Layover:** 4h 45min at SFO. **Use Global Entry kiosks** for expedited customs.
+- **UA1470:** SFO 2:20 PM Pacific → CLE 10:13 PM Eastern (4h 53min). Jacob 37C, Jessica 37B.
+- Confirmation: **I91ZHJ**
+- **HOME BY 10:13 PM** 🏠
 
 ---
 
@@ -682,35 +631,23 @@ You need TWO bus segments (fares as of Mar 2026 — verify at booking):
 
 | # | Date(s) | City | Recommended Pick | Type | Realistic $/Night | Nights | Est. Total |
 |---|---------|------|-----------------|------|-------------------|--------|------------|
-| 0 | Apr 4 | Minneapolis | Hotel (via united.com) | Hotel | ~$0–50 | 1 | ~$0–50 |
 | 1–3 | Apr 6–8 | Tokyo | Dormy Inn Asakusa | Business hotel | $100–130 | 3 | $300–390 |
 | 4 | Apr 9 | Takayama | Ryokan (see 5 options below) | Traditional inn | $120–200 | 1 | $120–200 |
 | 5 | Apr 10 | Takayama | Rickshaw Inn (see 5 options) | Guesthouse | $55–75 | 1 | $55–75 |
 | 6 | Apr 11 | Kanazawa | Kaname Inn (see 5 options) | Boutique hotel | $60–80 | 1 | $60–80 |
 | 7–9 | Apr 12–14 | Kyoto | Piece Hostel Sanjo (see 5 options) | Boutique hostel | $100–130 | 3 | $300–390 |
 | 10–11 | Apr 15–16 | Kyoto | Rinn machiya (see 5 options) | Townhouse | $65–110 | 2 | $130–220 |
-| 12 | Apr 17 | Tokyo | Toyoko Inn Shinagawa (see 5 options) | Budget hotel | $65–75 | 1 | $65–75 |
-| | | | | | **TOTAL** | **13 (+1 MSP)** | **~$1,030–1,480** |
+| | | | | | **TOTAL** | **11** | **~$965–1,355** |
 
 **Notes:**
-- Minneapolis hotel cost assumes $100 United Hotels credit applied (book through united.com hotel portal).
 - All prices are **per room/night** for 2 people sharing. Add taxes (see each section).
 - Kyoto lodging tax changed March 1, 2026 — new tiered system adds ~$8–20 total for 5 Kyoto nights.
 - **See [Japan-Accommodation-Picker.md](Japan-Accommodation-Picker.md) for the full 5-option comparison with booking links, designed for mobile collaboration.**
 - Previous budget of ~$940–990 was based on optimistic off-season pricing. Cherry blossom season adds 30–60% to most properties.
-- If you use the buffer day to leave Kyoto early (Apr 16 → Tokyo), you'll have 1 fewer Kyoto night and 1 more Tokyo night.
 
 ### Property Details — 5 Ranked Options Per Location
 
 > **Full comparison with booking links:** See [Japan-Accommodation-Picker.md](Japan-Accommodation-Picker.md) for a mobile-friendly version designed for easy collaboration and booking.
-
-#### Minneapolis: Hotel via United.com (1 night, Apr 4)
-- **Book on:** united.com hotel portal → search MSP hotels for April 4 → **apply $100 United Hotels credit**
-- **Why:** Overnight layover between CLE→MSP and MSP→HND Delta flights. Use your card perk for a free or nearly free night.
-- **Look for:** Hotels near MSP airport (Mall of America area) or downtown Minneapolis (Blue Line light rail accessible)
-- **Cost:** ~$0–50 after $100 credit
-
----
 
 #### Tokyo: 3 nights, Apr 6–8 (Asakusa/Kuramae area)
 
@@ -814,27 +751,6 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 - Best areas: Higashiyama (near temples, romantic), Nakagyo (central), Nishijin (quieter, cheapest)
 - Kyoto lodging tax: ~¥200–500/person/night = ~$5–13 total for 2 nights
 
----
-
-#### Tokyo Final Night: 1 night, Apr 17 (Near Shinagawa for Narita Express)
-
-**Note:** If switching to Apr 17 return flight, this night is eliminated. Book refundable!
-
-| Rank | Property | $/Night | Free Breakfast | Distance to NEX | Book At |
-|------|----------|---------|----------------|----------------|---------|
-| 1 | **Toyoko Inn Shinagawa** ⭐ | $65–75 | Yes (basic) | 1 min walk | [toyoko-inn.com](https://www.toyoko-inn.com/eng/search/detail/00054) |
-| 2 | **Sotetsu Fresa Inn Shinagawa** | $60–80 | No | 2 min walk | [sotetsu-hotels.com](https://sotetsu-hotels.com/en/fresa-inn/shinagawa-higashiguchi/) |
-| 3 | **APA Hotel Sengakuji** | $50–70 | No | 10 min walk | [apahotel.com](https://www.apahotel.com/en/hotel/shutoken/tokyo/shinagawa-sengakujiekimae/) |
-| 4 | **Dormy Inn Premium Gotanda** | $75–100 | Yes (full buffet) | 2 Yamanote stops | [hotespa.net](https://www.hotespa.net/hotels/gotanda/) |
-| 5 | **Hotel Mets Shinagawa** | $100–140 | No (Ecute food hall below) | Inside station | [hotelmets.jp](https://www.hotelmets.jp/en/shinagawa/) |
-
-- **Dormy Inn Gotanda** = onsen soak before 20 hrs of travel + free ramen 10 PM. Great bookend.
-- **Hotel Mets** = literally inside Shinagawa Station. Zero-stress departure.
-- Previous $55/night estimate was optimistic. **Realistic April: $65–75 for Toyoko Inn.**
-- Tokyo accommodation tax: ~¥100–200/person/night (~$1.50 total)
-
----
-
 ### Booking Priority (in order — do today)
 
 1. ⬜ **Takayama ryokan** — [Japanican.com](https://www.japanican.com/en/) (highest sell-out risk, peak cherry blossom)
@@ -843,8 +759,6 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 4. ⬜ **Tokyo Dormy Inn** — [Agoda](https://www.agoda.com) / [Booking.com](https://www.booking.com) (Apr 6–8, 3 nights)
 5. ⬜ **Kanazawa** — [kanameinn.com](https://www.kanameinn.com/) (Apr 11, 1 night)
 6. ⬜ **Takayama budget night** — [rickshawinn.com](http://www.rickshawinn.com/) (Apr 10, 1 night)
-7. ⬜ **Tokyo final night** — [toyoko-inn.com](https://www.toyoko-inn.com/eng/) (Apr 17 — may be eliminated if flight changes)
-8. ⬜ **Minneapolis hotel** — united.com hotel portal (Apr 4 — apply $100 credit)
 
 ---
 
@@ -857,7 +771,7 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 | **Price** | ¥80,000/person (~$530 at ¥150/$1 — verify current rate and price at japanrailpass.net). As of Mar 2026 pricing. |
 | **Purchase** | Online at japanrailpass.net BEFORE departure. You'll get an exchange voucher. |
 | **Activate** | Day 5 (April 8) at Tokyo Station JR counter. Bring voucher + passport. |
-| **Expires** | April 21 (14 days from activation) — covers everything through departure Apr 18, including Narita Express to NRT |
+| **Expires** | April 21 (14 days from activation) — covers everything through departure Apr 18 |
 | **Covers** | All JR trains including Shinkansen (Hikari, Kodama, Hakutaka, Tsurugi, Kagayaki, Sakura, etc.), JR local/rapid trains, JR ferry to Miyajima, Tokyo Monorail to Haneda |
 | **Does NOT cover** | **Nozomi/Mizuho Shinkansen** (use Hikari instead — same route, ~10–20 min slower), city subways (Tokyo Metro, Osaka Metro), private railways (Keihan, Keikyu, Odakyu, etc.), Nohi Bus, Hakone loop transport |
 
@@ -877,7 +791,7 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 | Kyoto → Osaka | JR Special Rapid | ~15 min | ✅ Yes |
 | Kyoto → Uji | JR Nara Line | ~20 min | ✅ Yes |
 | Hamamatsucho → Haneda | Tokyo Monorail | ~13–18 min | ✅ Yes (covered by JR Pass) |
-| Tokyo/Shinagawa → Narita Airport | Narita Express | ~50–60 min | ✅ Yes (covered by JR Pass) |
+| Shinagawa → Haneda Airport | Keikyu Airport Express | ~15 min | ❌ No (~¥500, not JR Pass) |
 
 #### JR Pass Value — Honest Calculation for Your Itinerary
 
@@ -893,16 +807,15 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 | Hiroshima ↔ Miyajimaguchi + JR ferry RT | ¥1,240 |
 | Hiroshima → Kyoto (Hikari reserved) | ¥11,420 |
 | Kyoto → Tokyo (Hikari reserved) | ¥14,170 |
-| Narita Express Shinagawa → NRT (departure day) | ¥3,250 |
 | Day trip rides (Nara/Osaka/Uji RT) | ~¥1,500 |
 | Misc JR local rides | ~¥2,000 |
-| **TOTAL** | **~¥77,630** |
+| **TOTAL** | **~¥74,380** |
 
-**JR Pass cost: ¥80,000** → the pass is a **~¥2,370 financial overpay** versus buying each ticket individually. This is a **very small convenience premium** — essentially break-even.
+**JR Pass cost: ¥80,000** → the pass is a **~¥5,620 financial overpay** versus buying each ticket individually. This is a **small convenience premium** worth paying.
 
-**Key insight:** Departing from Narita (NRT) instead of Haneda means the JR Pass now covers the **Narita Express** (~¥3,250) instead of the Tokyo Monorail (¥520), closing the gap significantly. The Hiroshima day trip (~¥22,840 roundtrip) is the other big value driver. **If you skip Hiroshima**, the point-to-point total drops to ~¥54,790 and the JR Pass becomes a **¥25,210 overpay** — in that case, buy individual tickets or a regional pass instead.
+**Key insight:** Departing from Haneda (HND) means the Keikyu Line to the airport (~¥500/pp) is **not** JR Pass covered — but it's cheap either way. The Hiroshima day trip (~¥22,840 roundtrip) is the primary value driver. **If you skip Hiroshima**, the point-to-point total drops to ~¥51,540 and the JR Pass becomes a **¥28,460 overpay** — in that case, buy individual tickets or a regional pass instead.
 
-**Why the pass is worth it:** At only ~¥2,370 overpay (~$16/person), the JR Pass is essentially break-even AND eliminates buying ~15+ individual tickets, allows spontaneous day trips (hop on any JR train, any time), and provides free reserved-seat bookings at any JR counter. Easy decision.
+**Why the pass is worth it:** At only ~¥5,620 overpay (~$37/person), the JR Pass eliminates buying ~15+ individual tickets, allows spontaneous day trips (hop on any JR train, any time), and provides free reserved-seat bookings at any JR counter. Easy decision.
 
 ### Suica / Pasmo IC Card
 
@@ -921,7 +834,7 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 | Nohi Bus | Takayama → Shirakawa-go → Kanazawa | **¥5,600**/person (2 × ¥2,800; as of Mar 2026) | **MUST PRE-BOOK** at nouhibus.co.jp or japanbusonline.com — sells out! |
 | City subways | Tokyo Metro, Kyoto buses, Osaka Metro | IC card | ¥200–400 per ride, use IC card |
 | Keikyu Line | Haneda → Asakusa (arrival day) | ~¥500 | Airport train on arrival, use IC card. Through-service to Asakusa via Toei Asakusa Line. |
-| Narita Express | Shinagawa → NRT (departure day) | **FREE (JR Pass)** | ~50–60 min, reserved seats, luggage space. JR Pass covers this. |
+| Keikyu Airport Express | Shinagawa → HND Terminal 3 (departure day) | **~¥500/person** | ~15 min. NOT covered by JR Pass. Use IC card. |
 
 ### Luggage Forwarding (Takkyubin) — GAME CHANGER
 
@@ -944,16 +857,15 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 
 ## 6. BUDGET SUMMARY
 
-### Detailed Budget — 2 People, 15 Days, "In Between" Tier
+### Detailed Budget — 2 People, 14 Days, "In Between" Tier
 
 | Category | Cost (2 people) | Per Person | Notes |
 |----------|------|-----------|-------|
-| **Flights — Outbound (Delta cash)** | $1,276 | $638 | CLE → MSP → HND |
-| **Flights — Return (United award)** | ~153K miles + ~$100 taxes | ~76.5K miles + ~$50 | NRT → LAX → CLE |
-| **Miles purchase (if needed)** | $0–490 | $0–245 | Only if billing cycle miles don't cover gap |
+| **Flights — Outbound (Delta cash)** | $1,550 | $775 | CLE → DTW → HND. Confirmation: HBPF75 |
+| **Flights — Return (United award)** | 123,600 miles + ~$98 taxes | 61,800 miles + ~$49 | HND → SFO → CLE. Confirmation: I91ZHJ |
 | **14-Day JR Pass × 2** | $1,060 | $530 | ¥80,000/person at ~¥150/$1 (verify rate at japanrailpass.net) |
 | **Local transport** | $210 | $105 | IC cards, Nohi Bus (2×$37), Hakone Free Pass (2×$40), city subways |
-| **Accommodation (13 nights + 1 MSP)** | $1,030–1,480 | $515–740 | See accommodation table — realistic April pricing (MSP offset by $100 United credit) |
+| **Accommodation (11 nights)** | $965–1,355 | $483–678 | See accommodation table — realistic April pricing |
 | **Food (13 full days × 2)** | $1,040 | $520 | ~$40/day/person average (see breakdown) |
 | **Activities & entrance fees** | $250 | $125 | TeamLab, temples, museums, Hakone attractions |
 | **Pocket WiFi or eSIM** | $50 | $25 | 1 shared device, ~$3.50/day |
@@ -1003,9 +915,9 @@ Sleep in a 100+ year old Kyoto townhouse. Sliding shoji screens, tatami mats, in
 - Sharing 1 pocket WiFi / eSIM device
 - Takkyubin instead of taxis with heavy luggage
 - Free attractions (Senso-ji, Fushimi Inari, Meiji Shrine, city walking, parks)
-- JR Pass covers Narita Express on departure day (~¥3,250 value) — essentially break-even (see §5)
+- Keikyu Line to Haneda on departure day (~¥500/person, not JR Pass) — negligible extra cost (see §5)
 - Delta outbound ($638/pp) saves ~$850/pp vs direct United cash fares
-- $100 United Hotels credit covers Minneapolis overnight — the layover is free entertainment
+- Outbound flights booked as cash on Delta ($775/person)
 - Miles cover the return flight — no cash needed for the way home
 
 ---
@@ -1183,22 +1095,20 @@ Japan is **extremely safe**. You can leave belongings at a café table while ord
 ## 10. PRE-DEPARTURE CHECKLIST
 
 ### DO THIS TODAY (March 4)
-- ⬜ Book Delta outbound on Google Flights/Kayak ($638/pp, CLE → MSP → HND, Apr 4–6)
+- ⬜ Book Delta outbound ($775/pp, CLE → DTW → HND, Apr 5–6). Confirmation: HBPF75
 - ⬜ Book Takayama ryokan on Japanican.com (highest sell-out risk)
 - ⬜ Book Piece Hostel Sanjo private room on piecekyoto.com (private rooms go fast)
 - ⬜ Reserve Nohi Bus at nouhibus.co.jp (Takayama → Shirakawa-go → Kanazawa)
 
 ### THIS WEEK
-- ⬜ Book Minneapolis hotel on united.com hotel portal (1 night, Apr 4 — apply $100 credit)
 - ⬜ Book Dormy Inn Asakusa on Agoda/Booking.com (3 nights, Apr 6–8)
 - ⬜ Book K's House Takayama on kshouse.jp (1 night, Apr 10)
 - ⬜ Book Kaname Inn Tatemachi on kaname-inn.com (1 night, Apr 11)
 - ⬜ Purchase 14-day JR Pass at japanrailpass.net (2 passes)
 - ⬜ Book Kyoto Airbnb machiya on Airbnb (2 nights, Apr 15–16)
-- ⬜ Book Toyoko Inn Shinagawa on toyoko-inn.com (1 night, Apr 17)
 
 ### WHEN MILES POST (~Mar 10–14)
-- ⬜ Book United award return on united.com (NRT → LAX → CLE, Apr 18, ~76.5K miles/person)
+- ⬜ Book United award return on united.com (HND → SFO → CLE, Apr 18, ~61.8K miles/person). Confirmation: I91ZHJ
 - ⬜ If miles still short, buy remaining miles on united.com (instant posting)
 
 ### 2–4 WEEKS BEFORE
@@ -1307,9 +1217,9 @@ Print or screenshot this for easy access:
 ┌──────────────────────────────────────────────────┐
 │           JAPAN TRIP QUICK REFERENCE              │
 ├──────────────────────────────────────────────────┤
-│ DATES: Apr 4–18, 2026 (15 days)                   │
-│ OUT: Delta CLE→MSP(overnight)→HND                │
-│ BACK: United NRT→LAX→CLE (award miles)            │
+│ DATES: Apr 5–18, 2026 (14 days)                  │
+│ OUT: Delta CLE→DTW→HND (HBPF75)                 │
+│ BACK: United HND→SFO→CLE (I91ZHJ)               │
 │                                                   │
 │ EMERGENCY: Police 110 / Ambulance 119             │
 │ JNTO Hotline: 050-3816-2787 (24/7)               │
@@ -1318,17 +1228,15 @@ Print or screenshot this for easy access:
 │ JR PASS: Activate Apr 8 / Expires Apr 21          │
 │                                                   │
 │ HOTELS:                                           │
-│  Apr 4:    Hotel (Minneapolis — layover)          │
 │  Apr 6–8:  Dormy Inn Asakusa (Tokyo)              │
 │  Apr 9:    Ryokan (Takayama)                      │
-│  Apr 10:   K's House (Takayama)                   │
+│  Apr 10:   Guesthouse (Takayama)                  │
 │  Apr 11:   Kaname Inn (Kanazawa)                  │
 │  Apr 12–14: Piece Hostel Sanjo (Kyoto)            │
-│  Apr 15–16: Airbnb Machiya (Kyoto)                │
-│  Apr 17:   Toyoko Inn (Shinagawa/Tokyo)           │
+│  Apr 15–16: Machiya (Kyoto)                       │
 │                                                   │
-│ DEPARTURE: Narita Express to NRT (JR Pass)        │
-│            UA 33 NRT 4:45PM → LAX → CLE 8:45PM   │
+│ DEPARTURE: Keikyu to HND from Shinagawa           │
+│            UA876 HND 3:50PM → SFO → CLE 10:13PM  │
 │                                                   │
 │ KEY PHRASES:                                      │
 │  Hello = Konnichiwa                               │
@@ -1385,4 +1293,4 @@ Beyond the basics — useful phrases for specific situations:
 ---
 
 *Have an incredible trip! 🗼🌸*
-*Last updated & verified: March 4, 2026 (Pass 5 — accommodation overhaul: 5 ranked options per location with booking links and realistic cherry blossom pricing. K's House Takayama confirmed closed, replaced with alternatives. Kyoto lodging tax update (Mar 1, 2026) noted. Budget updated to $5,316–6,256. Separate collaboration doc created: Japan-Accommodation-Picker.md. Flights unchanged: Delta outbound CLE→MSP→HND $638/pp + United award return NRT→LAX→CLE ~153K miles.)*
+*Last updated & verified: March 7, 2026 (Pass 6 — restructured to 14-day trip. Removed Minneapolis layover. Flights updated: Delta CLE→DTW→HND $775/pp (HBPF75) + United award return HND→SFO→CLE 61.8K miles/pp (I91ZHJ). Removed Tokyo Final Night. Budget and accommodation tables updated to match.)*

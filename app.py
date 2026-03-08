@@ -2235,13 +2235,14 @@ def _migrate_sumo_bookahead_transit(app):
     print("Migration complete: sumo event added, book-ahead flags set, transit tips added.")
 
 
-def create_app():
+def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
+    Config.validate_production()
 
     db.init_app(app)
     allowed = os.environ.get('CORS_ORIGINS', '*')
-    socketio.init_app(app, cors_allowed_origins=allowed, async_mode='eventlet')
+    socketio.init_app(app, cors_allowed_origins=allowed, async_mode='gevent')
 
     # Register blueprints
     from blueprints.itinerary import itinerary_bp
@@ -2367,23 +2368,24 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        _run_migrations(app)
-        _seed_checklist_decisions(app)
-        _fix_booking_urls(app)
-        _seed_guide_urls(app)
-        _seed_location_coords(app)
-        _restructure_osaka(app)
-        _seed_osaka_and_substitutes(app)
-        _revise_itinerary_activities(app)
-        _migrate_add_osaka_day(app)
-        _migrate_remove_kanazawa(app)
-        _fix_checklist_consistency(app)
-        _migrate_14day_restructure(app)
-        _migrate_consolidate_kyoto(app)
-        _migrate_add_addresses_and_cleanup_transport(app)
-        _migrate_data_cleanup(app)
-        _migrate_enrich_activities(app)
-        _migrate_sumo_bookahead_transit(app)
+        if run_data_migrations:
+            _run_migrations(app)
+            _seed_checklist_decisions(app)
+            _fix_booking_urls(app)
+            _seed_guide_urls(app)
+            _seed_location_coords(app)
+            _restructure_osaka(app)
+            _seed_osaka_and_substitutes(app)
+            _revise_itinerary_activities(app)
+            _migrate_add_osaka_day(app)
+            _migrate_remove_kanazawa(app)
+            _fix_checklist_consistency(app)
+            _migrate_14day_restructure(app)
+            _migrate_consolidate_kyoto(app)
+            _migrate_add_addresses_and_cleanup_transport(app)
+            _migrate_data_cleanup(app)
+            _migrate_enrich_activities(app)
+            _migrate_sumo_bookahead_transit(app)
 
     return app
 

@@ -16,21 +16,24 @@ from models import db, Trip, Location, Day, Activity, AccommodationLocation, \
     AccommodationOption, Flight, TransportRoute, BudgetItem, ChecklistItem, \
     ChecklistOption, ReferenceContent
 
-# Look in source_data/ first (repo), then fall back to ../Japan/ (local dev)
+# Source data lives in source_data/ — no fallback paths
 _base = os.path.dirname(__file__)
-_source = os.path.join(_base, 'source_data')
-_japan = os.path.join(_base, '..', 'Japan')
+MASTER_PLAN = os.path.join(_base, 'source_data', 'Japan-Master-Travel-Plan.md')
+ACCOMMODATION_PICKER = os.path.join(_base, 'source_data', 'Japan-Accommodation-Picker.md')
 
-if os.path.isdir(_source):
-    MASTER_PLAN = os.path.join(_source, 'Japan-Master-Travel-Plan.md')
-    ACCOMMODATION_PICKER = os.path.join(_source, 'Japan-Accommodation-Picker.md')
-else:
-    MASTER_PLAN = os.path.join(_japan, 'Japan-Master-Travel-Plan.md')
-    ACCOMMODATION_PICKER = os.path.join(_japan, 'Japan-Accommodation-Picker.md')
+for _path in (MASTER_PLAN, ACCOMMODATION_PICKER):
+    if not os.path.exists(_path):
+        print(f"FATAL: required source file missing: {_path}", file=sys.stderr)
+        sys.exit(1)
 
 
 def main():
-    app = create_app()
+    # Ensure DB directory exists (required when RAILWAY_VOLUME_MOUNT_PATH is set)
+    volume = os.environ.get('RAILWAY_VOLUME_MOUNT_PATH')
+    if volume:
+        os.makedirs(os.path.join(volume, 'data'), exist_ok=True)
+
+    app = create_app(run_data_migrations=False)
     with app.app_context():
         print("Dropping and recreating all tables...")
         db.drop_all()
@@ -80,13 +83,12 @@ def import_trip():
     print("  Importing trip...")
     trip = Trip(
         name='Japan 2026 — Cherry Blossoms',
-        start_date=date(2026, 4, 4),
+        start_date=date(2026, 4, 5),
         end_date=date(2026, 4, 18),
         num_people=2,
         budget_target_low=5316,
         budget_target_high=6256,
-        notes='15-day cherry blossom trip. Cleveland → Minneapolis → Tokyo → '
-              'Alps → Kyoto → Home'
+        notes='14-day cherry blossom trip. Cleveland -> Tokyo -> Alps -> Kyoto -> Osaka -> Home'
     )
     db.session.add(trip)
 
@@ -94,8 +96,6 @@ def import_trip():
 def import_locations(master):
     print("  Importing locations...")
     locations = [
-        ('Minneapolis', 'Midwest US', 'Quick overnight — explore a fun city',
-         'Overnight layover between CLE and HND', '2026-04-04', '2026-04-05', None),
         ('Tokyo', 'Kanto', 'Electric, endless, overwhelming (in the best way)',
          'Fly in/out here. World\'s largest metro area.', '2026-04-06', '2026-04-08',
          'https://www.japan-guide.com/e/e2164.html'),
@@ -149,19 +149,19 @@ def import_days(master):
 
     # Day-to-location mapping
     day_locations = {
-        1: 'Minneapolis', 2: 'Minneapolis', 3: 'Tokyo', 4: 'Tokyo',
-        5: 'Hakone', 6: 'Takayama', 7: 'Takayama', 8: 'Kanazawa',
-        9: 'Kyoto', 10: 'Kyoto', 11: 'Kyoto', 12: 'Kyoto',
-        13: 'Kyoto', 14: 'Tokyo', 15: 'Tokyo'
+        1: 'Tokyo', 2: 'Tokyo', 3: 'Tokyo',
+        4: 'Hakone', 5: 'Takayama', 6: 'Takayama', 7: 'Kanazawa',
+        8: 'Kyoto', 9: 'Kyoto', 10: 'Kyoto', 11: 'Kyoto',
+        12: 'Kyoto', 13: 'Osaka', 14: 'Osaka'
     }
 
     # Day themes
     day_themes = {
-        1: 'Travel Day', 2: 'Travel Day', 3: 'Arrival Day',
-        4: 'Full Day', 5: 'Day Trip', 6: 'Travel + Explore',
-        7: 'Full Day', 8: 'Travel Day', 9: 'Travel + Explore',
-        10: 'Full Day', 11: 'Full Day', 12: 'Day Trip',
-        13: 'Buffer Day', 14: 'Travel + Last Evening', 15: 'Departure'
+        1: 'Travel Day', 2: 'Arrival Day', 3: 'Full Day',
+        4: 'Day Trip', 5: 'Travel + Explore', 6: 'Full Day',
+        7: 'Travel Day', 8: 'Travel + Explore', 9: 'Full Day',
+        10: 'Full Day', 11: 'Day Trip', 12: 'Buffer Day',
+        13: 'Travel + Last Evening', 14: 'Departure'
     }
 
     # Find all day sections
@@ -192,7 +192,7 @@ def import_days(master):
             title=title,
             location_id=loc_id,
             theme=day_themes.get(day_num, 'Full Day'),
-            is_buffer_day=(day_num == 13),
+            is_buffer_day=(day_num == 12),
         )
         db.session.add(day)
         db.session.flush()
@@ -341,29 +341,38 @@ def clean_title(title):
 def import_flights():
     print("  Importing flights...")
     flights = [
-        Flight(direction='outbound', leg_number=1, flight_number='DL 5132',
-               airline='Delta', route_from='CLE', route_to='MSP',
-               depart_date=date(2026, 4, 4), depart_time='Per ticketed itinerary',
-               duration='~2h 30min', aircraft='Regional jet',
-               cost_type='cash', cost_amount='$638/person ($1,276 total)'),
-        Flight(direction='outbound', leg_number=2, flight_number='DL 121',
-               airline='Delta', route_from='MSP', route_to='HND',
-               depart_date=date(2026, 4, 5), depart_time='Per ticketed itinerary',
-               arrive_date=date(2026, 4, 6), arrive_time='~3-5 PM JST',
-               duration='~12-13h nonstop', aircraft='Boeing 767 or A330',
-               cost_type='cash', cost_amount='Included in outbound'),
-        Flight(direction='return', leg_number=1, flight_number='UA 33',
-               airline='United', route_from='NRT', route_to='LAX',
-               depart_date=date(2026, 4, 18), depart_time='4:45 PM JST',
-               arrive_date=date(2026, 4, 18), arrive_time='10:45 AM Pacific',
-               duration='10h 0min', aircraft='Boeing 787-9 Dreamliner',
-               cost_type='miles', cost_amount='~76,500 miles/person'),
-        Flight(direction='return', leg_number=2, flight_number='UA 1896',
-               airline='United', route_from='LAX', route_to='CLE',
-               depart_date=date(2026, 4, 18), depart_time='1:05 PM Pacific',
-               arrive_date=date(2026, 4, 18), arrive_time='8:45 PM Eastern',
-               duration='4h 40min', aircraft='Boeing 737-900',
-               cost_type='miles', cost_amount='Included in return'),
+        Flight(direction='outbound', leg_number=1, flight_number='DL5392',
+               airline='Delta (Endeavor Air)', route_from='CLE', route_to='DTW',
+               depart_date=date(2026, 4, 5), depart_time='10:30 AM',
+               arrive_date=date(2026, 4, 5), arrive_time='11:26 AM',
+               duration='56 min', aircraft='CRJ-900',
+               cost_type='cash', cost_amount='$775.00/person',
+               booking_status='booked', confirmation_number='HBPF75',
+               notes='Main Basic (E class). Seats assigned at gate. Operated by Endeavor Air.'),
+        Flight(direction='outbound', leg_number=2, flight_number='DL275',
+               airline='Delta', route_from='DTW', route_to='HND',
+               depart_date=date(2026, 4, 5), depart_time='2:05 PM',
+               arrive_date=date(2026, 4, 6), arrive_time='4:15 PM',
+               duration='13h 10min', aircraft='Boeing 767-400ER',
+               cost_type='cash', cost_amount='$775.00/person',
+               booking_status='booked', confirmation_number='HBPF75',
+               notes='Main Basic (E class). Seats assigned at gate.'),
+        Flight(direction='return', leg_number=1, flight_number='UA876',
+               airline='United', route_from='HND', route_to='SFO',
+               depart_date=date(2026, 4, 18), depart_time='3:50 PM',
+               arrive_date=date(2026, 4, 18), arrive_time='9:35 AM',
+               duration='9h 45min', aircraft='Boeing 777-200',
+               cost_type='miles', cost_amount='61,800 miles + $49.03/person',
+               booking_status='booked', confirmation_number='I91ZHJ',
+               notes='Jessica: seat 52A / Jacob: seat 52B (window pair, 2-seat section)'),
+        Flight(direction='return', leg_number=2, flight_number='UA1470',
+               airline='United', route_from='SFO', route_to='CLE',
+               depart_date=date(2026, 4, 18), depart_time='2:20 PM',
+               arrive_date=date(2026, 4, 18), arrive_time='10:13 PM',
+               duration='4h 53min', aircraft=None,
+               cost_type='miles', cost_amount='61,800 miles + $49.03/person',
+               booking_status='booked', confirmation_number='I91ZHJ',
+               notes='Jessica: seat 37B / Jacob: seat 37C'),
     ]
     for f in flights:
         db.session.add(f)
@@ -382,7 +391,7 @@ def import_transport(master):
         ('Kyoto', 'Hiroshima', 'Shinkansen', 'Hikari', '~1h 45min', True, '¥11,420'),
         ('Hiroshima', 'Miyajima', 'JR Ferry', None, '~10 min', True, '¥360 RT'),
         ('Kyoto', 'Tokyo', 'Shinkansen', 'Hikari', '~2h 15min', True, '¥14,170'),
-        ('Shinagawa', 'Narita Airport', 'Narita Express', 'N\'EX', '~50-60 min', True, '¥3,250'),
+        ('Shinagawa', 'Haneda Airport', 'Keikyu Line', 'Keikyu Airport Express', '~15 min', False, '~¥500'),
     ]
     for i, (fr, to, ttype, name, dur, jr, cost) in enumerate(routes, 1):
         route = TransportRoute(
@@ -401,9 +410,6 @@ def import_accommodations(picker):
 
     # Location data (manually mapped from the picker file structure)
     location_data = [
-        {'name': 'Minneapolis', 'check_in': '2026-04-04',
-         'check_out': '2026-04-05', 'nights': 1, 'sort': 0,
-         'notes': 'Book through united.com hotel portal. Apply $100 credit.'},
         {'name': 'Tokyo (Asakusa area)', 'check_in': '2026-04-06',
          'check_out': '2026-04-09', 'nights': 3, 'sort': 1,
          'notes': 'Tokyo accommodation tax: ~¥100-200/person/night'},
@@ -422,9 +428,6 @@ def import_accommodations(picker):
         {'name': 'Kyoto Machiya', 'check_in': '2026-04-15',
          'check_out': '2026-04-17', 'nights': 2, 'sort': 6,
          'notes': 'Traditional townhouse. Most romantic accommodation of the trip.'},
-        {'name': 'Tokyo Final Night', 'check_in': '2026-04-17',
-         'check_out': '2026-04-18', 'nights': 1, 'sort': 7,
-         'notes': 'Near Shinagawa for Narita Express. May be eliminated if flight changes.'},
     ]
 
     for loc_info in location_data:
@@ -451,7 +454,6 @@ def import_accommodation_options():
 
     # Hardcoded from the master plan tables (parsed from the actual data)
     options_data = {
-        'Minneapolis': [],  # Book via united.com, no fixed options
         'Tokyo (Asakusa area)': [
             {'rank': 1, 'name': 'Nui. Hostel & Bar Lounge', 'type': 'Design hostel',
              'price_low': 65, 'price_high': 85,
@@ -594,30 +596,6 @@ def import_accommodation_options():
              'standout': 'Private hinoki bath, tea ceremony sets.',
              'url': 'https://nazuna.co/en/'},
         ],
-        'Tokyo Final Night': [
-            {'rank': 1, 'name': 'Toyoko Inn Shinagawa', 'type': 'Budget hotel',
-             'price_low': 65, 'price_high': 75,
-             'standout': '1 min walk to Narita Express. Free basic breakfast.',
-             'url': 'https://www.toyoko-inn.com/eng/search/detail/00054',
-             'breakfast': True},
-            {'rank': 2, 'name': 'Sotetsu Grand Fresa Shinagawa Seaside', 'type': 'Business hotel',
-             'price_low': 60, 'price_high': 80,
-             'standout': 'Overlooks Tokyo Bay. 5 min to Shinagawa via Rinkai Line.',
-             'url': 'https://sotetsu-hotels.com/en/grand-fresa/shinagawa-seaside/'},
-            {'rank': 3, 'name': 'APA Hotel Sengakuji', 'type': 'Budget hotel',
-             'price_low': 50, 'price_high': 70,
-             'standout': 'Cheapest option. 10 min walk to Shinagawa.',
-             'url': 'https://www.apahotel.com/en/hotel/shutoken/tokyo/shinagawa-sengakujiekimae/'},
-            {'rank': 4, 'name': 'Dormy Inn Meguro Aobadai', 'type': 'Business hotel',
-             'price_low': 75, 'price_high': 100,
-             'standout': 'Onsen soak before 20 hrs of travel + free ramen 10 PM.',
-             'url': 'https://en.dormy-hotels.com/hotel/kanto/tokyo/12849/',
-             'has_onsen': True, 'breakfast': True},
-            {'rank': 5, 'name': 'JR-East Hotel Mets Premier Gotanda', 'type': 'Station hotel',
-             'price_low': 100, 'price_high': 140,
-             'standout': '1 min from Gotanda Stn. JR direct to Shinagawa (3 min).',
-             'url': 'https://www.hotelmets.jp/en/gotanda/'},
-        ],
     }
 
     for loc in locations:
@@ -648,12 +626,11 @@ def import_accommodation_options():
 def import_budget(master):
     print("  Importing budget...")
     items = [
-        ('Flights', 'Outbound (Delta cash)', 1276, 1276, 'CLE → MSP → HND'),
-        ('Flights', 'Return (United award)', 100, 100, '~153K miles + taxes'),
-        ('Flights', 'Miles purchase (if needed)', 0, 490, 'Only if billing cycle gap'),
+        ('Flights', 'Outbound (Delta cash)', 1550, 1550, 'CLE -> DTW -> HND, $775/person'),
+        ('Flights', 'Return (United award)', 100, 100, '~61.8K miles/person + $49.03 taxes'),
         ('Transport', '14-Day JR Pass × 2', 1060, 1060, '¥80,000/person'),
         ('Transport', 'Local transport', 210, 210, 'IC cards, Nohi Bus, Hakone Pass'),
-        ('Accommodation', '13 nights + 1 MSP', 1030, 1480, 'Realistic April pricing'),
+        ('Accommodation', '12 nights', 1030, 1480, 'Realistic April pricing'),
         ('Food', '13 full days × 2 people', 1040, 1040, '~$40/day/person average'),
         ('Activities', 'Entrance fees & experiences', 250, 250, 'TeamLab, temples, museums'),
         ('Connectivity', 'Pocket WiFi or eSIM', 50, 50, '1 shared device'),
@@ -674,20 +651,18 @@ def import_checklists(master):
     # (category, title, priority, sort_order, item_type, accommodation_location_name)
     checklists = [
         # Today — booking decisions linked to accommodations
-        ('pre_departure_today', 'Book Delta outbound CLE → MSP → HND', 'today', 1, 'decision', None),
+        ('pre_departure_today', 'Book Delta outbound CLE -> DTW -> HND', 'today', 1, 'decision', None),
         ('pre_departure_today', 'Book Takayama ryokan', 'today', 2, 'decision', 'Takayama Ryokan'),
         ('pre_departure_today', 'Book Piece Hostel Sanjo private room', 'today', 3, 'decision', 'Kyoto (3 nights)'),
         ('pre_departure_today', 'Reserve Nohi Bus (Takayama → Kanazawa)', 'today', 4, 'decision', None),
         # This week — accommodation decisions
-        ('pre_departure_week', 'Book Minneapolis hotel', 'this_week', 5, 'decision', 'Minneapolis'),
-        ('pre_departure_week', 'Book Tokyo hotel (Asakusa, 3 nights)', 'this_week', 6, 'decision', 'Tokyo (Asakusa area)'),
+        ('pre_departure_week', 'Book Tokyo hotel (Asakusa, 3 nights)', 'this_week', 5, 'decision', 'Tokyo (Asakusa area)'),
         ('pre_departure_week', 'Book Takayama budget night', 'this_week', 7, 'decision', 'Takayama Budget'),
         ('pre_departure_week', 'Book Kanazawa hotel (1 night)', 'this_week', 8, 'decision', 'Kanazawa'),
         ('pre_departure_week', 'Purchase 14-day JR Pass', 'this_week', 9, 'decision', None),
         ('pre_departure_week', 'Book Kyoto machiya (2 nights)', 'this_week', 10, 'decision', 'Kyoto Machiya'),
-        ('pre_departure_week', 'Book Tokyo final night hotel', 'this_week', 11, 'decision', 'Tokyo Final Night'),
         # When miles post
-        ('pre_departure_miles', 'Book United award return NRT → LAX → CLE', 'miles', 12, 'decision', None),
+        ('pre_departure_miles', 'Book United award return HND -> SFO -> CLE', 'miles', 11, 'decision', None),
         ('pre_departure_miles', 'Buy remaining miles if needed', 'miles', 13, 'task', None),
         # 2-4 weeks before — research decisions
         ('pre_departure_month', 'Reserve pocket WiFi or purchase eSIM', 'month', 14, 'decision', None),
@@ -742,10 +717,10 @@ def _import_checklist_options():
     print("  Importing checklist options...")
 
     options_data = {
-        'Book Delta outbound CLE → MSP → HND': [
-            {'name': 'Delta CLE → MSP → HND', 'desc': 'Delta via Minneapolis hub',
-             'why': 'Direct booking, earn SkyMiles. ~$638/pp.',
-             'url': 'https://www.delta.com/', 'price': '~$638/pp'},
+        'Book Delta outbound CLE -> DTW -> HND': [
+            {'name': 'Delta CLE -> DTW -> HND', 'desc': 'Delta via Detroit hub',
+             'why': 'Direct booking, earn SkyMiles. ~$775/pp.',
+             'url': 'https://www.delta.com/', 'price': '~$775/pp'},
         ],
         'Reserve Nohi Bus (Takayama → Kanazawa)': [
             {'name': 'Nohi Bus (Official)', 'desc': 'Direct highway bus, 2hr 15min',
@@ -766,7 +741,7 @@ def _import_checklist_options():
              'why': 'Available since 2023 but ~10% more expensive. No shipping needed.',
              'url': 'https://www.japanrailpass.net/en/purchase.html', 'price': '~¥55,000/pp'},
         ],
-        'Book United award return NRT → LAX → CLE': [
+        'Book United award return HND -> SFO -> CLE': [
             {'name': 'United MileagePlus Award', 'desc': 'Book with United miles',
              'why': 'Use accumulated miles. Check saver availability.',
              'url': 'https://www.united.com/en/us/awardtravel', 'price': '~35K-70K miles + taxes'},

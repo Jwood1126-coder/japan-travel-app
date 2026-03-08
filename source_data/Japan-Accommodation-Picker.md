@@ -1,5 +1,5 @@
 # JAPAN TRIP — ACCOMMODATION PICKER
-## April 6–17, 2026 | 12 Nights in Japan (+1 Minneapolis)
+## April 6–17, 2026 | 11 Nights in Japan
 ### For: Jake & Wife | Budget Target: ~$1,100–1,400 total (realistic)
 
 **How to use this doc:** Pick ONE option per location. Check the booking links, compare live prices, and mark your choice. Track booking status with the checkboxes.
@@ -10,18 +10,6 @@
 - Add **onsen tax** where noted (¥150/person/night = ~$2)
 - Prices are estimates for April 2026 cherry blossom season — **check live rates**
 - Book refundable where possible in case plans change
-
----
-
-## 0. MINNEAPOLIS | Apr 4 | 1 night
-
-Book through **united.com hotel portal** → apply **$100 United Hotels credit**.
-Search: MSP hotels, April 4. Look near airport (Mall of America) or downtown (Blue Line).
-**Expected cost after credit: $0–50**
-
-⬜ **Booked?** No
-**Hotel name:** ____________
-**Confirmation #:** ____________
 
 ---
 
@@ -179,47 +167,19 @@ Search: MSP hotels, April 4. Look near airport (Mall of America) or downtown (Bl
 
 ---
 
-## 7. TOKYO FINAL NIGHT | Apr 17 | 1 night
-
-**Note:** If switching to Apr 17 return flight, this night is ELIMINATED. Book refundable!
-
-| # | Hotel | Type | $/Night | Free Breakfast | Walk to Shinagawa NEX | Links |
-|---|-------|------|---------|----------------|----------------------|-------|
-| 1 | **Toyoko Inn Shinagawa Takanawaguchi** | Budget hotel | $65–75 | Yes (basic) | 1 min | [Official](https://www.toyoko-inn.com/eng/search/detail/00054) / [Booking.com](https://www.booking.com/hotel/jp/toyoko-inn-shinagawa-eki-takanawaguchi.html) |
-| 2 | **Sotetsu Fresa Inn Shinagawa** | Business hotel | $60–80 | No | 2 min | [Official](https://sotetsu-hotels.com/en/fresa-inn/shinagawa-higashiguchi/) / [Booking.com](https://www.booking.com/hotel/jp/sotetsu-fresa-inn-shinagawa-higashiguchi.html) |
-| 3 | **APA Hotel Sengakuji** | Budget hotel | $50–70 | No | 10 min walk | [Official](https://www.apahotel.com/en/hotel/shutoken/tokyo/shinagawa-sengakujiekimae/) / [Booking.com](https://www.booking.com/hotel/jp/apa-shinagawa-sengakuji-ekimae.html) |
-| 4 | **Dormy Inn Premium Gotanda** | Onsen hotel | $75–100 | Yes (full buffet) | 2 stops on Yamanote | [Official](https://www.hotespa.net/hotels/gotanda/) / [Booking.com](https://www.booking.com/hotel/jp/dormy-inn-premium-gotanda.html) |
-| 5 | **Hotel Mets Shinagawa** | Station hotel | $100–140 | No (Ecute food hall below) | 0 min (inside station) | [Official](https://www.hotelmets.jp/en/shinagawa/) / [Booking.com](https://www.booking.com/hotel/jp/jr-east-mets-shinagawa.html) |
-
-**Quick notes:**
-- **Toyoko Inn** = free breakfast + 1 min to train. Best pure value.
-- **Dormy Inn Gotanda** = onsen soak before 20 hrs of travel + free ramen at 10 PM. Great bookend.
-- **Hotel Mets** = literally inside the station. Zero-stress departure morning.
-- **APA** = cheapest, has upper-floor public bath
-- Tokyo accommodation tax: ~¥100–200/person/night (~$1.50 total)
-
-⬜ **Booked?** No
-**Our pick:** ____________
-**Confirmation #:** ____________
-**Notes:** ____________
-
----
-
 ## BUDGET CALCULATOR
 
 Fill in your picks to see the total:
 
 | Location | Nights | Hotel | Cost/Night | Subtotal |
 |----------|--------|-------|------------|----------|
-| Minneapolis | 1 | ____________ | $_______ | $_______ |
 | Tokyo | 3 | ____________ | $_______ | $_______ |
 | Takayama Ryokan | 1 | ____________ | $_______ | $_______ |
 | Takayama Budget | 1 | ____________ | $_______ | $_______ |
 | Kanazawa | 1 | ____________ | $_______ | $_______ |
 | Kyoto Hostel/Hotel | 3 | ____________ | $_______ | $_______ |
 | Kyoto Machiya | 2 | ____________ | $_______ | $_______ |
-| Tokyo Final | 1 | ____________ | $_______ | $_______ |
-| **TOTAL** | **13** | | | **$_______** |
+| **TOTAL** | **11** | | | **$_______** |
 | Taxes/fees (est.) | | | | **+$40–80** |
 | **GRAND TOTAL** | | | | **$_______** |
 
@@ -242,8 +202,6 @@ Fill in your picks to see the total:
 4. ⬜ **Tokyo Dormy Inn / hostel** — popular but more rooms available
 5. ⬜ **Kanazawa** — smaller city, easier to book
 6. ⬜ **Takayama budget night** — small town but budget places less competitive
-7. ⬜ **Tokyo final night** — may be eliminated if switching to Apr 17 flight
-8. ⬜ **Minneapolis hotel** — book via united.com to use $100 credit
 
 ---
 
