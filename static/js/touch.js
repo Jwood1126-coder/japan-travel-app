@@ -35,6 +35,42 @@
             }
         }, { passive: false });
 
+        // --- Mouse event support (desktop drag via handle) ---
+        container.addEventListener('mousedown', function(e) {
+            const handle = e.target.closest('.drag-handle');
+            if (!handle) return;
+            const item = handle.closest(options.itemSelector);
+            if (!item) return;
+            e.preventDefault();
+            startDrag(item, e);
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (!isDragging || !dragClone) return;
+            e.preventDefault();
+            var y = e.clientY - offsetY;
+            dragClone.style.top = y + 'px';
+
+            var items = getItems();
+            for (var i = 0; i < items.length; i++) {
+                var it = items[i];
+                if (it === dragItem || it.classList.contains('drag-original-hidden')) continue;
+                var r = it.getBoundingClientRect();
+                var mid = r.top + r.height / 2;
+                if (e.clientY < mid) {
+                    it.parentNode.insertBefore(placeholder, it);
+                    break;
+                } else if (i === items.length - 1) {
+                    it.parentNode.insertBefore(placeholder, it.nextSibling);
+                }
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (!isDragging) return;
+            onTouchEnd();
+        });
+
         function onTouchStart(e) {
             // Don't intercept touches on interactive elements
             const tag = e.target.tagName;
