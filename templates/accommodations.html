@@ -45,6 +45,15 @@
     </div>
     {% endif %}
 
+    {# Show important notes for booked/confirmed options #}
+    {% for option in loc.options %}
+    {% if option.booking_status in ('booked', 'confirmed') and option.user_notes %}
+    <div class="booking-alert-note">
+        <strong>Note:</strong> {{ option.user_notes }}
+    </div>
+    {% endif %}
+    {% endfor %}
+
     {% for option in loc.options %}
     <div class="option-card {% if option.is_selected %}selected{% endif %} {% if option.booking_status in ('booked', 'confirmed') %}status-booked{% endif %} {% if option.is_eliminated %}eliminated{% endif %} swipe-enabled"
          data-option-id="{{ option.id }}" data-location-id="{{ loc.id }}">

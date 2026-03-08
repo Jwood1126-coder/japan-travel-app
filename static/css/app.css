@@ -1098,6 +1098,22 @@ body {
     color: #6ee7b7;
 }
 
+.booking-alert-note {
+    background: #fffbeb;
+    color: #92400e;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+    border-left: 4px solid #f59e0b;
+}
+
+[data-theme="dark"] .booking-alert-note {
+    background: #451a03;
+    color: #fcd34d;
+}
+
 .location-tab.booked {
     background: #ecfdf5;
     border: 1px solid var(--jr-green);
