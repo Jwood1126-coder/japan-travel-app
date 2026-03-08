@@ -2537,6 +2537,100 @@ def _migrate_add_neighborhood_descriptions(app):
     print("  Migration complete: neighborhood descriptions added to all accommodation options.")
 
 
+def _migrate_add_maps_urls(app):
+    """Add Google Maps search URLs to every accommodation option.
+    Idempotent — skips if already applied (checks sentinel option)."""
+    from models import AccommodationOption
+
+    sentinel = AccommodationOption.query.filter_by(name='Dormy Inn Asakusa').first()
+    if sentinel and sentinel.maps_url:
+        return
+
+    print("Running migration: add Google Maps URLs to all accommodation options...")
+
+    maps_urls = {
+        # Tokyo — Asakusa / Kuramae
+        'Nui. Hostel & Bar Lounge':
+            'https://www.google.com/maps/search/?api=1&query=Nui+Hostel+Bar+Lounge+Kuramae+Tokyo+Japan',
+        'Dormy Inn Asakusa':
+            'https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Asakusa+Tokyo+Japan',
+        'CITAN Hostel':
+            'https://www.google.com/maps/search/?api=1&query=CITAN+Hostel+Nihonbashi+Tokyo+Japan',
+        'THE GATE HOTEL Kaminarimon':
+            'https://www.google.com/maps/search/?api=1&query=THE+GATE+HOTEL+Kaminarimon+Asakusa+Tokyo+Japan',
+        # Tokyo — Shinjuku
+        'Anshin Oyado Tokyo Man Shinjuku':
+            'https://www.google.com/maps/search/?api=1&query=Anshin+Oyado+Tokyo+Man+Shinjuku+Japan',
+        "La'gent Hotel Shinjuku Kabukicho":
+            'https://www.google.com/maps/search/?api=1&query=Lagent+Hotel+Shinjuku+Kabukicho+Tokyo+Japan',
+        'DOMO HOTEL':
+            'https://www.google.com/maps/search/?api=1&query=DOMO+HOTEL+Shinjuku+Tokyo+Japan',
+        'Mitsui Garden Hotel Jingugaien PREMIER':
+            'https://www.google.com/maps/search/?api=1&query=Mitsui+Garden+Hotel+Jingugaien+Tokyo+Premier+Japan',
+        'HOTEL GROOVE SHINJUKU (PARKROYAL)':
+            'https://www.google.com/maps/search/?api=1&query=Hotel+Groove+Shinjuku+Parkroyal+Kabukicho+Tower+Tokyo+Japan',
+        # Takayama Ryokan
+        'Tanabe Ryokan':
+            'https://www.google.com/maps/search/?api=1&query=Tanabe+Ryokan+Takayama+Japan',
+        'Sumiyoshi Ryokan':
+            'https://www.google.com/maps/search/?api=1&query=Sumiyoshi+Ryokan+Takayama+Japan',
+        'Ryokan Asunaro':
+            'https://www.google.com/maps/search/?api=1&query=Ryokan+Asunaro+Takayama+Japan',
+        'Oyado Koto no Yume':
+            'https://www.google.com/maps/search/?api=1&query=Oyado+Koto+no+Yume+Takayama+Japan',
+        'Honjin Hiranoya Annex':
+            'https://www.google.com/maps/search/?api=1&query=Honjin+Hiranoya+Annex+Takayama+Japan',
+        # Takayama Budget
+        'Rickshaw Inn':
+            'https://www.google.com/maps/search/?api=1&query=Rickshaw+Inn+Takayama+Japan',
+        'Takayama Oasis':
+            'https://www.google.com/maps/search/?api=1&query=Takayama+Oasis+Hostel+Japan',
+        'J-Hoppers Takayama':
+            'https://www.google.com/maps/search/?api=1&query=J-Hoppers+Takayama+Japan',
+        'Guesthouse Tomaru':
+            'https://www.google.com/maps/search/?api=1&query=Guesthouse+Tomaru+Takayama+Japan',
+        'Hostel Murasaki':
+            'https://www.google.com/maps/search/?api=1&query=Hostel+Murasaki+Takayama+Japan',
+        # Kanazawa
+        'Minn Kanazawa':
+            'https://www.google.com/maps/search/?api=1&query=Minn+Kanazawa+Japan',
+        'Kaname Inn Tatemachi':
+            'https://www.google.com/maps/search/?api=1&query=Kaname+Inn+Tatemachi+Kanazawa+Japan',
+        'Dormy Inn Kanazawa':
+            'https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Kanazawa+Japan',
+        'Hotel Intergate Kanazawa':
+            'https://www.google.com/maps/search/?api=1&query=Hotel+Intergate+Kanazawa+Japan',
+        'HATCHi Kanazawa':
+            'https://www.google.com/maps/search/?api=1&query=HATCHi+Kanazawa+Japan',
+        # Kyoto 3 nights
+        "K's House Kyoto":
+            'https://www.google.com/maps/search/?api=1&query=Ks+House+Kyoto+Japan',
+        'Piece Hostel Sanjo':
+            'https://www.google.com/maps/search/?api=1&query=Piece+Hostel+Sanjo+Kyoto+Japan',
+        'Len Kyoto Kawaramachi':
+            'https://www.google.com/maps/search/?api=1&query=Len+Kyoto+Kawaramachi+Japan',
+        'Dormy Inn Premium Kyoto':
+            'https://www.google.com/maps/search/?api=1&query=Dormy+Inn+Premium+Kyoto+Japan',
+        'Hotel Ethnography Gion':
+            'https://www.google.com/maps/search/?api=1&query=Hotel+Ethnography+Gion+Kyoto+Japan',
+        # Kyoto Machiya
+        'Rinn Kyoto (Nishijin)':
+            'https://www.google.com/maps/search/?api=1&query=Rinn+Kyoto+Nishijin+Japan',
+        'Rinn Kyoto (Gion)':
+            'https://www.google.com/maps/search/?api=1&query=Rinn+Kyoto+Gion+Japan',
+        'Nazuna Kyoto':
+            'https://www.google.com/maps/search/?api=1&query=Nazuna+Kyoto+Japan',
+    }
+
+    for name, url in maps_urls.items():
+        opt = AccommodationOption.query.filter_by(name=name).first()
+        if opt and not opt.maps_url:
+            opt.maps_url = url
+
+    db.session.commit()
+    print("  Migration complete: Google Maps URLs added to all accommodation options.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -2692,6 +2786,7 @@ def create_app(run_data_migrations=True):
             _migrate_add_booking_resources(app)
             _migrate_swap_tokyo_hotel_links(app)
             _migrate_add_neighborhood_descriptions(app)
+            _migrate_add_maps_urls(app)
 
     return app
 
