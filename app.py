@@ -2668,7 +2668,7 @@ def _migrate_book_sotetsu_fresa(app):
         booking_status='booked',
         confirmation_number='976558450',
         address='7-27-9 Shinjuku Shinjuku-ku, Tokyo, 160-0022, Japan',
-        check_in_info='After 3:00 PM (15:00)',
+        check_in_info='After 3:00 PM (15:00) — MUST ARRIVE BY 9PM or call hotel!',
         check_out_info='Before 11:00 AM',
         user_notes='Higashi-Shinjuku / Kabukicho — Right at Higashi-Shinjuku Station (Oedo Line). 5 min walk to Kabukicho, Golden Gai, and Omoide Yokocho. The nightlife heart of Tokyo is at your doorstep. Contact: +81-3-6892-2032. Note: arrive before 9pm on check-in day or contact hotel directly.',
     )
@@ -2687,6 +2687,67 @@ def _migrate_book_sotetsu_fresa(app):
 
     db.session.commit()
     print("  Migration complete: Sotetsu Fresa Inn booked, La'gent eliminated.")
+
+
+def _migrate_update_itinerary_for_sotetsu(app):
+    """Update itinerary activities that reference Dormy Inn / Asakusa hotel
+    to reference the booked Sotetsu Fresa Inn Higashi-Shinjuku.
+    Idempotent — skips if already updated."""
+    from models import Activity
+
+    sentinel = Activity.query.filter_by(title='Check into Sotetsu Fresa Inn Higashi-Shinjuku').first()
+    if sentinel:
+        return
+
+    print("Running migration: update itinerary activities for Sotetsu Fresa Inn...")
+
+    updates = {
+        'Keikyu Line to Asakusa': {
+            'title': 'Train to Higashi-Shinjuku',
+            'description': 'Keikyu Line to Daimon Station, transfer to Toei Oedo Line to Higashi-Shinjuku. ~50 min, ~¥800. Use IC card.',
+        },
+        'Check into Dormy Inn Asakusa': {
+            'title': 'Check into Sotetsu Fresa Inn Higashi-Shinjuku',
+            'description': 'Drop bags and freshen up. Twin non-smoking room, 227 sq ft. Address: 7-27-9 Shinjuku. ⚠️ MUST arrive before 9 PM or call +81-3-6892-2032.',
+        },
+        'Rooftop onsen bath at Dormy Inn': {
+            'title': 'Explore Kabukicho at night',
+            'description': 'Hotel is steps from Kabukicho. Walk Golden Gai (tiny bars), Omoide Yokocho (Memory Lane yakitori), or just soak in the neon. Perfect jet-lag cure.',
+        },
+        'Free late-night ramen at Dormy Inn': {
+            'title': 'Late-night ramen near hotel',
+            'description': 'Fuunji (tsukemen, 5 min walk) or any of dozens of ramen shops near Shinjuku. Open late.',
+        },
+        'Send luggage ahead via takkyubin': {
+            'description': 'IMPORTANT: At Sotetsu Fresa Inn front desk, send big bags to your Kyoto hotel. Arrives in 1-2 days. Pack daypacks only for the Alps leg (Takayama/Kanazawa = 3 nights). Ask for "takkyubin".',
+        },
+        'Last free late-night ramen at Dormy Inn': {
+            'title': 'Last night in Shinjuku',
+            'description': 'Final evening in Tokyo. Revisit Golden Gai or grab late-night ramen near the hotel.',
+        },
+        'Check out of Dormy Inn Asakusa': {
+            'title': 'Check out of Sotetsu Fresa Inn',
+            'description': 'Check out by 11:00 AM. Luggage storage available at front desk (from 7 AM, pick up before 10 PM).',
+        },
+    }
+
+    for old_title, changes in updates.items():
+        act = Activity.query.filter_by(title=old_title).first()
+        if act:
+            if 'title' in changes:
+                act.title = changes['title']
+            if 'description' in changes:
+                act.description = changes['description']
+            if 'address' in changes:
+                act.address = changes['address']
+
+    # Update Senso-ji description to reflect distance from new hotel
+    sensoji = Activity.query.filter_by(title='Senso-ji Temple at night').first()
+    if sensoji and 'Dormy Inn' in (sensoji.description or ''):
+        sensoji.description = 'Beautifully illuminated, almost empty at night. Completely different atmosphere than daytime. ~25 min subway from Higashi-Shinjuku (Oedo Line to Kuramae, walk 10 min).'
+
+    db.session.commit()
+    print("  Migration complete: itinerary updated for Sotetsu Fresa Inn.")
 
 
 def create_app(run_data_migrations=True):
@@ -2846,6 +2907,7 @@ def create_app(run_data_migrations=True):
             _migrate_add_neighborhood_descriptions(app)
             _migrate_add_maps_urls(app)
             _migrate_book_sotetsu_fresa(app)
+            _migrate_update_itinerary_for_sotetsu(app)
 
     return app
 
