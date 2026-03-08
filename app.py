@@ -2235,6 +2235,133 @@ def _migrate_sumo_bookahead_transit(app):
     print("Migration complete: sumo event added, book-ahead flags set, transit tips added.")
 
 
+def _migrate_add_shinjuku_hotels(app):
+    """Add 5 Shinjuku hotel options to Tokyo location and neighborhood tags to all options.
+    Idempotent — skips if Anshin Oyado already exists."""
+    from models import AccommodationLocation, AccommodationOption
+
+    if AccommodationOption.query.filter_by(name='Anshin Oyado Tokyo Man Shinjuku').first():
+        return
+
+    print("Running migration: add Shinjuku hotels + neighborhood tags to all accommodations...")
+
+    # Rename Tokyo location to drop the Asakusa-only label
+    tok_loc = AccommodationLocation.query.filter_by(
+        location_name='Tokyo (Asakusa area)').first()
+    if tok_loc:
+        tok_loc.location_name = 'Tokyo'
+    tok_loc = tok_loc or AccommodationLocation.query.filter_by(location_name='Tokyo').first()
+    if not tok_loc:
+        return
+
+    # Add neighborhood to property_type for all existing options across every location
+    neighborhood_by_name = {
+        # Tokyo (Asakusa)
+        'Nui. Hostel & Bar Lounge':     'Design Hostel · Kuramae / Asakusa',
+        'Dormy Inn Asakusa':            'Business Hotel · Asakusa',
+        'Airbnb apartment':             'Apartment · Asakusa / Kuramae',
+        'CITAN Hostel':                 'Design Hostel · Nihonbashi',
+        'THE GATE HOTEL Kaminarimon':   'Boutique Hotel · Asakusa',
+        # Takayama Ryokan
+        'Tanabe Ryokan':                'Traditional Ryokan · Central Takayama',
+        'Sumiyoshi Ryokan':             'Traditional Ryokan · River District',
+        'Ryokan Asunaro':               'Traditional Ryokan · Central Takayama',
+        'Oyado Koto no Yume':           'Traditional Ryokan · Central Takayama',
+        'Honjin Hiranoya Annex':        'Premium Ryokan · Historic Center',
+        # Takayama Budget
+        'Rickshaw Inn':                 'Guesthouse · Near Sanmachi Suji',
+        'Takayama Oasis':               'Guesthouse · Central Takayama',
+        'J-Hoppers Takayama':           'Hostel · Central Takayama',
+        'Guesthouse Tomaru':            'Guesthouse · Near Old Town',
+        'Hostel Murasaki':              'Hostel · Near Old Town',
+        # Kanazawa
+        'Minn Kanazawa':                'Apartment Hotel · Near Omicho Market',
+        'Kaname Inn Tatemachi':         'Boutique Inn · Tatemachi',
+        'Dormy Inn Kanazawa':           'Business Hotel · Central Kanazawa',
+        'Hotel Intergate Kanazawa':     'Upscale Hotel · Near Omicho Market',
+        'HATCHi Kanazawa':              'Design Hotel · Near Kenroku-en',
+        # Kyoto 3 nights
+        "K's House Kyoto":              'Hostel · Kyoto Station',
+        'Piece Hostel Sanjo':           'Boutique Hostel · Sanjo / Central',
+        'Len Kyoto Kawaramachi':        'Design Hostel · Kawaramachi',
+        'Dormy Inn Premium Kyoto':      'Business Hotel · Kyoto Station',
+        'Hotel Ethnography Gion':       'Boutique Hotel · Gion',
+        # Kyoto Machiya
+        'Rinn Kyoto (Nishijin)':        'Licensed Machiya · Nishijin',
+        'Rinn Kyoto (Gion)':            'Licensed Machiya · Gion',
+        'Machiya Residence Inn':        'Licensed Machiya · Various Neighborhoods',
+        'Airbnb machiya':               'Machiya · Higashiyama / Nakagyo',
+        'Nazuna Kyoto':                 'Luxury Machiya · Central Kyoto',
+    }
+    for opt in AccommodationOption.query.all():
+        if opt.name in neighborhood_by_name:
+            opt.property_type = neighborhood_by_name[opt.name]
+
+    # Add 5 new Shinjuku hotel options (ranks 6-10 under Tokyo)
+    nights = tok_loc.num_nights
+    new_hotels = [
+        {
+            'rank': 6,
+            'name': 'Anshin Oyado Tokyo Man Shinjuku',
+            'type': 'Business Hotel · Shinjuku West',
+            'price': 76,
+            'standout': 'STEAL: 41% below normal price. Onsen + sauna included. 4.2★ · 2,100+ reviews. Best value in Shinjuku.',
+            'url': 'https://www.booking.com/searchresults.html?ss=Anshin+Oyado+Tokyo+Man+Shinjuku&checkin=2026-04-06&checkout=2026-04-09&group_adults=2',
+            'has_onsen': True,
+        },
+        {
+            'rank': 7,
+            'name': "La'gent Hotel Shinjuku Kabukicho",
+            'type': '3-star Hotel · Shinjuku / Kabukicho',
+            'price': 175,
+            'standout': 'Right in Kabukicho entertainment district. Walk to Golden Gai + Omoide Yokocho at night. 4.3★ · 501 reviews.',
+            'url': 'https://www.booking.com/searchresults.html?ss=Lagent+Hotel+Shinjuku+Kabukicho&checkin=2026-04-06&checkout=2026-04-09&group_adults=2',
+        },
+        {
+            'rank': 8,
+            'name': 'DOMO HOTEL',
+            'type': 'Boutique Hotel · Shinjuku',
+            'price': 152,
+            'standout': 'Hidden gem: flagged "GREAT PRICE with excellent reviews". 4.5★ · newer property with very high guest satisfaction.',
+            'url': 'https://www.booking.com/searchresults.html?ss=DOMO+HOTEL+Shinjuku+Tokyo&checkin=2026-04-06&checkout=2026-04-09&group_adults=2',
+        },
+        {
+            'rank': 9,
+            'name': 'Mitsui Garden Hotel Jingugaien PREMIER',
+            'type': '5-star Hotel · Jingugaien / Harajuku',
+            'price': 291,
+            'standout': 'GREAT PRICE for a 5-star. Public bath, fitness center. Upscale Jingugaien neighborhood near Yoyogi Park. 4.3★ · 1,700+ reviews.',
+            'url': 'https://www.booking.com/searchresults.html?ss=Mitsui+Garden+Hotel+Jingugaien+Tokyo+Premier&checkin=2026-04-06&checkout=2026-04-09&group_adults=2',
+            'has_onsen': True,
+        },
+        {
+            'rank': 10,
+            'name': 'HOTEL GROOVE SHINJUKU (PARKROYAL)',
+            'type': 'Luxury Hotel · Shinjuku / Kabukicho Tower',
+            'price': 434,
+            'standout': 'Inside the Tokyu Kabukicho Tower (2023). Best cyberpunk Tokyo view at night. Bar + restaurant. 4.5★ · "Excellent location".',
+            'url': 'https://www.booking.com/searchresults.html?ss=Hotel+Groove+Shinjuku+Parkroyal&checkin=2026-04-06&checkout=2026-04-09&group_adults=2',
+        },
+    ]
+    for h in new_hotels:
+        db.session.add(AccommodationOption(
+            location_id=tok_loc.id,
+            rank=h['rank'],
+            name=h['name'],
+            property_type=h['type'],
+            price_low=h['price'],
+            price_high=h['price'],
+            total_low=h['price'] * nights,
+            total_high=h['price'] * nights,
+            standout=h['standout'],
+            booking_url=h['url'],
+            has_onsen=h.get('has_onsen', False),
+        ))
+
+    db.session.commit()
+    print("  Migration complete: 5 Shinjuku hotels added, neighborhood tags applied to all options.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -2386,6 +2513,7 @@ def create_app(run_data_migrations=True):
             _migrate_data_cleanup(app)
             _migrate_enrich_activities(app)
             _migrate_sumo_bookahead_transit(app)
+            _migrate_add_shinjuku_hotels(app)
 
     return app
 

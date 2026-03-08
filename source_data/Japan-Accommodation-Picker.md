@@ -13,23 +13,35 @@
 
 ---
 
-## 1. TOKYO (Asakusa area) | Apr 6–8 | 3 nights
+## 1. TOKYO | Apr 6–9 | 3 nights
 
-| # | Hotel | Type | $/Night | 3-Night Total | Breakfast | Onsen | Links |
-|---|-------|------|---------|---------------|-----------|-------|-------|
-| 1 | **Nui. Hostel & Bar Lounge** | Design hostel | $65–85 | $195–255 | No | No | [Official](https://backpackersjapan.co.jp/nuihostel/) / [Booking.com](https://www.booking.com/hotel/jp/nui-hostel-bar-lounge.html) |
-| 2 | **Dormy Inn Asakusa** | Business hotel | $100–130 | $300–390 | Extra ~$12/pp | Rooftop! | [Official](https://www.hotespa.net/hotels/asakusa/) / [Agoda](https://www.agoda.com/dormy-inn-asakusa/hotel/tokyo-jp.html) |
-| 3 | **Airbnb (Kuramae/Asakusa)** | Apartment | $80–110 | $290–380* | No | No | [Airbnb search](https://www.airbnb.com/s/Asakusa--Tokyo/homes?adults=2&checkin=2026-04-06&checkout=2026-04-09) |
-| 4 | **CITAN Hostel** | Boutique hostel | $85–120 | $255–360 | No | No | [Official](https://backpackersjapan.co.jp/citan/) / [Booking.com](https://www.booking.com/hotel/jp/citan.html) |
-| 5 | **THE GATE HOTEL Kaminarimon** | Upscale hotel | $180–250 | $540–750 | Extra ~$25/pp | No | [Official](https://www.gate-hotel.jp/asakusa-kaminarimon/en/) / [Booking.com](https://www.booking.com/hotel/jp/the-gate-kaminarimon-by-hulic.html) |
+| # | Hotel | Neighborhood | $/Night | 3-Night Total | Onsen | Links |
+|---|-------|-------------|---------|---------------|-------|-------|
+| 1 | **Nui. Hostel & Bar Lounge** | Kuramae / Asakusa | $65–85 | $195–255 | No | [Official](https://backpackersjapan.co.jp/nuihostel/) / [Booking.com](https://www.booking.com/hotel/jp/nui-hostel-bar-lounge.html) |
+| 2 | **Dormy Inn Asakusa** | Asakusa | $100–130 | $300–390 | Rooftop! | [Official](https://www.hotespa.net/hotels/asakusa/) / [Agoda](https://www.agoda.com/dormy-inn-asakusa/hotel/tokyo-jp.html) |
+| 3 | **Airbnb (Kuramae/Asakusa)** | Asakusa / Kuramae | $80–110 | $290–380* | No | [Airbnb search](https://www.airbnb.com/s/Asakusa--Tokyo/homes?adults=2&checkin=2026-04-06&checkout=2026-04-09) |
+| 4 | **CITAN Hostel** | Nihonbashi | $85–120 | $255–360 | No | [Official](https://backpackersjapan.co.jp/citan/) / [Booking.com](https://www.booking.com/hotel/jp/citan.html) |
+| 5 | **THE GATE HOTEL Kaminarimon** | Asakusa | $180–250 | $540–750 | No | [Official](https://www.gate-hotel.jp/asakusa-kaminarimon/en/) / [Booking.com](https://www.booking.com/hotel/jp/the-gate-kaminarimon-by-hulic.html) |
+| 6 | **Anshin Oyado Tokyo Man Shinjuku** ⭐ | Shinjuku West | $76 | $228 | Yes + Sauna | [Booking.com](https://www.booking.com/searchresults.html?ss=Anshin+Oyado+Tokyo+Man+Shinjuku&checkin=2026-04-06&checkout=2026-04-09&group_adults=2) |
+| 7 | **La'gent Hotel Shinjuku Kabukicho** | Shinjuku / Kabukicho | $175 | $525 | No | [Booking.com](https://www.booking.com/searchresults.html?ss=Lagent+Hotel+Shinjuku+Kabukicho&checkin=2026-04-06&checkout=2026-04-09&group_adults=2) |
+| 8 | **DOMO HOTEL** | Shinjuku | $152 | $456 | No | [Booking.com](https://www.booking.com/searchresults.html?ss=DOMO+HOTEL+Shinjuku+Tokyo&checkin=2026-04-06&checkout=2026-04-09&group_adults=2) |
+| 9 | **Mitsui Garden Hotel Jingugaien PREMIER** | Jingugaien / Harajuku | $291 | $873 | Yes | [Booking.com](https://www.booking.com/searchresults.html?ss=Mitsui+Garden+Hotel+Jingugaien+Tokyo+Premier&checkin=2026-04-06&checkout=2026-04-09&group_adults=2) |
+| 10 | **HOTEL GROOVE SHINJUKU (PARKROYAL)** | Shinjuku / Kabukicho Tower | $434 | $1,302 | No | [Booking.com](https://www.booking.com/searchresults.html?ss=Hotel+Groove+Shinjuku+Parkroyal&checkin=2026-04-06&checkout=2026-04-09&group_adults=2) |
 
 *Airbnb total includes service fee (~14%) + cleaning fee ($15–30)
 
-**Quick notes:**
+**Quick notes — Asakusa options (quieter, traditional vibe):**
 - **Dormy Inn** = free late-night ramen 9:30 PM + rooftop onsen. Best all-around.
 - **Nui.** = trendy Kuramae warehouse conversion, great bar. No private bathroom.
 - **CITAN** = same company as Nui., has private bathrooms. 10 min subway from Asakusa.
 - **THE GATE** = Skytree views from rooftop terrace. The splurge.
+
+**Quick notes — Shinjuku options (lively nightlife vibe):**
+- **Anshin Oyado #6** ⭐ = STEAL — 41% below normal, onsen+sauna, 4.2★. Best pure value in this list.
+- **La'gent #7** = best Kabukicho location. Walk out the door into Golden Gai + Omoide Yokocho.
+- **DOMO #8** = hidden gem flagged "great price + excellent reviews". 4.5★ newer property.
+- **Mitsui Garden #9** = only 5-star on the list flagged as "GREAT PRICE". Public bath, upscale neighborhood.
+- **Hotel Groove #10** = inside Tokyu Kabukicho Tower (2023). The cyberpunk luxury pick. Bar + restaurant.
 - Tokyo accommodation tax: ~¥100–200/person/night (~$1–3 total for 3 nights)
 
 ⬜ **Booked?** No
