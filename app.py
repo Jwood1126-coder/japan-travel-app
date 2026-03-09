@@ -2750,6 +2750,150 @@ def _migrate_update_itinerary_for_sotetsu(app):
     print("  Migration complete: itinerary updated for Sotetsu Fresa Inn.")
 
 
+def _migrate_book_takanoyu(app):
+    """Book TAKANOYU Airbnb as Takayama accommodation (Apr 9-12, 3 nights).
+    Idempotent — skips if TAKANOYU already exists."""
+    from models import AccommodationOption, AccommodationLocation, ChecklistItem
+
+    existing = AccommodationOption.query.filter(
+        AccommodationOption.name.ilike('%TAKANOYU%')).first()
+    if existing:
+        return
+
+    print("Running migration: book TAKANOYU Takayama Airbnb...")
+
+    tak_loc = AccommodationLocation.query.filter_by(location_name='Takayama').first()
+    if not tak_loc:
+        return
+
+    # Add TAKANOYU as booked option
+    takanoyu = AccommodationOption(
+        location_id=tak_loc.id,
+        rank=0,
+        name='TAKANOYU, Traditional Style, Spa & Sauna',
+        property_type='Airbnb Private Room · Traditional Bathhouse Inn',
+        price_low=None,
+        price_high=None,
+        total_low=None,
+        total_high=None,
+        breakfast_included=False,
+        has_onsen=True,
+        standout='BOOKED via Airbnb. Traditional bathhouse inn hosted by Hiroto. Two indoor baths (41/43°C), open-air bath (38°C), wood-fired wet sauna, cold plunge. Tattoo-friendly. ~20 min walk or 5 min drive from JR Takayama Station.',
+        booking_url='https://takanoyu.jimdofree.com/',
+        alt_booking_url='https://www.airbnb.com/s/Takayama--Gifu--Japan/homes?query=takanoyu',
+        maps_url='https://www.google.com/maps/search/?api=1&query=TAKANOYU+107+Soyujimachi+Takayama+Gifu+Japan',
+        is_selected=True,
+        booking_status='booked',
+        confirmation_number='Airbnb (confirmed by host Hiroto)',
+        address='107 Soyujimachi, Takayama, Gifu 506-0834, Japan',
+        check_in_info='3:00 PM (Thursday, April 9)',
+        check_out_info='11:00 AM (Sunday, April 12)',
+        user_notes='Soyujimachi area, Takayama — ~20 min walk or 5 min drive from JR Takayama Station. '
+                   'Traditional bathhouse with indoor baths, open-air rotenburo, wood-fired wet sauna, and cold plunge. '
+                   'Bathhouse hours: 1:00 PM - 10:00 PM (closed Wednesdays). Tattoo-friendly. '
+                   'Private room in a traditional Japanese home. Host: Hiroto. 2 adults, 3 nights.',
+    )
+    db.session.add(takanoyu)
+
+    # Deselect all other Takayama options (don't delete — user said don't delete data)
+    for opt in AccommodationOption.query.filter_by(location_id=tak_loc.id).all():
+        if 'TAKANOYU' not in (opt.name or '').upper():
+            opt.is_selected = False
+
+    # Update checklist items for Takayama booking
+    for ci in ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Takayama ryokan%')
+    ).all():
+        ci.is_completed = True
+        ci.status = 'booked'
+        ci.title = 'Book Takayama accommodation (TAKANOYU Airbnb)'
+
+    for ci in ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Takayama budget%')
+    ).all():
+        ci.is_completed = True
+        ci.status = 'booked'
+        ci.title = 'Book Takayama budget night (covered by TAKANOYU 3-night stay)'
+
+    db.session.commit()
+    print("  Migration complete: TAKANOYU booked for Takayama (Apr 9-12).")
+
+
+def _migrate_update_itinerary_for_takanoyu(app):
+    """Update itinerary activities to reference booked TAKANOYU accommodation.
+    Idempotent — skips if already updated."""
+    from models import Activity, Day
+
+    sentinel = Activity.query.filter(
+        Activity.title.ilike('%Check into TAKANOYU%')).first()
+    if sentinel:
+        return
+
+    print("Running migration: update itinerary for TAKANOYU...")
+
+    # Day 5 (Apr 9): Check into ryokan → Check into TAKANOYU
+    day5 = Day.query.filter_by(day_number=5).first()
+    if day5:
+        for act in Activity.query.filter_by(day_id=day5.id).all():
+            if act.title == 'Check into ryokan':
+                act.title = 'Check into TAKANOYU'
+                act.description = (
+                    'Airbnb private room in a traditional bathhouse inn. '
+                    'Address: 107 Soyujimachi, Takayama (~20 min walk or 5 min taxi from station). '
+                    'Check-in at 3:00 PM. Host: Hiroto. Drop bags and settle in.'
+                )
+                act.address = '107 Soyujimachi, Takayama, Gifu 506-0834, Japan'
+                act.maps_url = 'https://www.google.com/maps/search/?api=1&query=TAKANOYU+107+Soyujimachi+Takayama+Gifu+Japan'
+            elif act.title == 'Multi-course kaiseki dinner at ryokan':
+                act.title = 'Dinner out in Takayama old town'
+                act.description = (
+                    'TAKANOYU does not include dinner. Head to the old town for Hida beef — '
+                    'try grilled wagyu, hoba miso, or Hida beef sushi. Many restaurants along Sanmachi Suji.'
+                )
+            elif act.title == 'Onsen bath at ryokan':
+                act.title = 'Evening soak at TAKANOYU bathhouse'
+                act.description = (
+                    'Two indoor baths (41°C and 43°C), open-air rotenburo (38°C), '
+                    'wood-fired wet sauna, and cold plunge. Bathhouse open 1 PM - 10 PM. Tattoo-friendly!'
+                )
+
+    # Day 6 (Apr 10): Update ryokan breakfast reference
+    day6 = Day.query.filter_by(day_number=6).first()
+    if day6:
+        for act in Activity.query.filter_by(day_id=day6.id).all():
+            if 'Ryokan breakfast' in (act.title or ''):
+                act.title = 'Breakfast at morning market or local spot'
+                act.description = (
+                    'TAKANOYU does not include breakfast. Grab something at Miyagawa Morning Market '
+                    '(local farmers, pickles, snacks) or find a kissaten (retro coffee shop) nearby.'
+                )
+
+    # Day 7 (Apr 11): Update afternoon onsen reference
+    day7 = Day.query.filter_by(day_number=7).first()
+    if day7:
+        for act in Activity.query.filter_by(day_id=day7.id).all():
+            if 'Afternoon onsen soak' in (act.title or ''):
+                act.title = 'Afternoon soak at TAKANOYU'
+                act.description = (
+                    'Head back to your bathhouse inn for a relaxing soak. '
+                    'Indoor baths, open-air rotenburo, wood-fired sauna, cold plunge. Open 1 PM - 10 PM.'
+                )
+
+    # Day 8 (Apr 12): Update check-out
+    day8 = Day.query.filter_by(day_number=8).first()
+    if day8:
+        for act in Activity.query.filter_by(day_id=day8.id).all():
+            if 'Check out of Takayama accommodation' in (act.title or ''):
+                act.title = 'Check out of TAKANOYU (by 11:00 AM)'
+                act.description = (
+                    'Pack up and check out by 11 AM. ~20 min walk or quick taxi to Takayama Bus Center '
+                    'for the Nohi Bus to Shirakawa-go.'
+                )
+
+    db.session.commit()
+    print("  Migration complete: itinerary updated for TAKANOYU.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -2910,6 +3054,8 @@ def create_app(run_data_migrations=True):
             _migrate_add_maps_urls(app)
             _migrate_book_sotetsu_fresa(app)
             _migrate_update_itinerary_for_sotetsu(app)
+            _migrate_book_takanoyu(app)
+            _migrate_update_itinerary_for_takanoyu(app)
 
     return app
 
