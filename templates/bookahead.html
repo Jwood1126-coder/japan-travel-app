@@ -61,10 +61,34 @@
             {{ icon_pin(14) }} Navigate
         </a>
         {% endif %}
+        <button class="unflag-bookahead-btn" onclick="unflagBookAhead({{ a.id }}, this)" title="Remove from Book Ahead">&#x2715; Not needed</button>
     </div>
 </div>
 {% endfor %}
 {% else %}
 <p class="empty-state">No activities flagged for advance booking.</p>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function unflagBookAhead(id, btn) {
+    if (!confirm('Remove this from Book Ahead? It will still appear in Activities.')) return;
+    try {
+        const resp = await fetch(`/api/activities/${id}/unflag-bookahead`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.ok) {
+            const card = btn.closest('.book-ahead-card');
+            card.style.transition = 'opacity 0.3s, max-height 0.3s';
+            card.style.opacity = '0';
+            card.style.maxHeight = '0';
+            card.style.overflow = 'hidden';
+            setTimeout(() => card.remove(), 350);
+            showToast('Moved to Activities only');
+        }
+    } catch (err) {
+        showToast('Failed', 'error');
+    }
+}
+</script>
 {% endblock %}

@@ -66,6 +66,7 @@ def _run_migrations(app):
         ('activity', 'book_ahead', 'BOOLEAN DEFAULT 0'),
         ('activity', 'book_ahead_note', 'TEXT'),
         ('activity', 'getting_there', 'TEXT'),
+        ('activity', 'is_confirmed', 'BOOLEAN DEFAULT 0'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -3000,13 +3001,14 @@ def create_app(run_data_migrations=True):
         session.pop('authenticated', None)
         return redirect(url_for('login'))
 
-    @app.before_request
-    def check_auth():
-        allowed_endpoints = ['login', 'static']
-        if request.endpoint and any(request.endpoint.startswith(a) for a in allowed_endpoints):
-            return
-        if not session.get('authenticated'):
-            return redirect(url_for('login'))
+    # Auth disabled — sharing with friends pre-trip. Re-enable before travel.
+    # @app.before_request
+    # def check_auth():
+    #     allowed_endpoints = ['login', 'static']
+    #     if request.endpoint and any(request.endpoint.startswith(a) for a in allowed_endpoints):
+    #         return
+    #     if not session.get('authenticated'):
+    #         return redirect(url_for('login'))
 
     # Ensure upload directories exist
     os.makedirs(os.path.join(app.config['UPLOAD_FOLDER'], 'originals'), exist_ok=True)

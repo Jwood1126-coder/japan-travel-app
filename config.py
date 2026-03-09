@@ -27,8 +27,9 @@ class Config:
             errors = []
             if cls.SECRET_KEY == 'dev-secret-change-me':
                 errors.append('SECRET_KEY is not set')
-            if cls.TRIP_PASSWORD == 'changeme':
-                errors.append('TRIP_PASSWORD is not set')
+            # TRIP_PASSWORD check disabled — auth turned off for sharing pre-trip
+            # if cls.TRIP_PASSWORD == 'changeme':
+            #     errors.append('TRIP_PASSWORD is not set')
             if errors:
                 for e in errors:
                     print(f'FATAL: {e} — refusing to start in production with insecure default.', file=sys.stderr)

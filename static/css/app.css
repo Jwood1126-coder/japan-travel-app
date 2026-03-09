@@ -3401,11 +3401,77 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     background: rgba(245, 158, 11, 0.06);
 }
 
+/* Day dividers within location groups */
+.act-day-divider {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 10px 1rem 4px;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    background: rgba(242, 181, 196, 0.06);
+}
+.act-day-divider:first-child { border-top: none; }
+.act-day-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--sakura-text);
+    white-space: nowrap;
+}
+.act-day-theme {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Confirmed activity styling */
+.act-browse-card.confirmed {
+    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, 0.04);
+}
+.confirmed-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.confirm-btn {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border: 1px solid #10b981;
+    border-radius: 12px;
+    background: none;
+    color: #10b981;
+    cursor: pointer;
+}
+.confirm-btn.active {
+    background: #d1fae5;
+    color: #065f46;
+    font-weight: 600;
+}
+[data-theme="dark"] .act-browse-card.confirmed {
+    background: rgba(16, 185, 129, 0.08);
+}
+[data-theme="dark"] .confirmed-badge {
+    background: #052e16;
+    color: #6ee7b7;
+}
+[data-theme="dark"] .confirm-btn { border-color: #34d399; color: #34d399; }
+[data-theme="dark"] .confirm-btn.active { background: #052e16; color: #6ee7b7; }
+
 /* Dark mode */
 [data-theme="dark"] .act-location-group { border-color: #333; }
 [data-theme="dark"] .act-location-title { background: #2a1a2a; }
 [data-theme="dark"] .act-browse-card { border-bottom-color: rgba(255,255,255,0.06); }
 [data-theme="dark"] .add-activity-form { background: #2d1f24; }
+[data-theme="dark"] .act-day-divider {
+    border-top-color: rgba(255,255,255,0.06);
+    background: rgba(242, 181, 196, 0.03);
+}
 
 /* ===== Book Ahead Badge ===== */
 .book-ahead-badge {
@@ -3532,6 +3598,17 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     flex-wrap: wrap;
     margin-top: 6px;
 }
+.unflag-bookahead-btn {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    background: none;
+    color: var(--pico-muted-color);
+    cursor: pointer;
+}
+.unflag-bookahead-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+[data-theme="dark"] .unflag-bookahead-btn { border-color: #555; }
 [data-theme="dark"] .book-ahead-card { border-color: #333; }
 [data-theme="dark"] .book-ahead-card.needs-action { border-left-color: #60a5fa; }
 [data-theme="dark"] .book-ahead-card.no-rush { border-left-color: #4ade80; }
@@ -3937,6 +4014,17 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     text-align: center;
     padding: 4px 0;
     opacity: 0.7;
+}
+
+/* Nav slot picker */
+.nav-slot-picker { position: fixed; inset: 0; z-index: 1100; }
+.nav-slot-active {
+    background: var(--sakura-light) !important;
+    font-weight: 600;
+    border-left: 3px solid var(--sakura);
+}
+[data-theme="dark"] .nav-slot-active {
+    background: rgba(242,181,196,0.15) !important;
 }
 
 /* ==================== */

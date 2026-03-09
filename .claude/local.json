@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Edit(*)",
+      "Write(*)"
+    ]
+  },
+  "model": "claude-opus-4-6"
+}

@@ -66,26 +66,30 @@ def activities_view():
     all_categories = set()
     for loc in locations:
         loc_days = [d for d in days if d.location_id == loc.id]
-        activities = []
+        # Group activities by day within this location
+        day_groups = []
+        substitutes = []
+        total_count = 0
         for d in loc_days:
+            day_activities = []
             for a in d.activities:
                 if not a.is_substitute and _is_browseable_activity(a):
-                    activities.append({'activity': a, 'day': d})
+                    day_activities.append({'activity': a, 'day': d})
                     if a.category:
                         all_categories.add(a.category)
-        # Also include substitutes grouped separately
-        substitutes = []
-        for d in loc_days:
-            for a in d.activities:
-                if a.is_substitute and _is_browseable_activity(a):
+                elif a.is_substitute and _is_browseable_activity(a):
                     substitutes.append({'activity': a, 'day': d})
                     if a.category:
                         all_categories.add(a.category)
-        if activities or substitutes:
+            if day_activities:
+                day_groups.append({'day': d, 'activities': day_activities})
+                total_count += len(day_activities)
+        if day_groups or substitutes:
             location_activities.append({
                 'location': loc,
-                'activities': activities,
+                'day_groups': day_groups,
                 'substitutes': substitutes,
+                'total_count': total_count,
             })
 
     # Sort categories in display order
@@ -147,11 +151,31 @@ def eliminate_activity(activity_id):
     return jsonify({'ok': True, 'is_eliminated': activity.is_eliminated})
 
 
+@activities_bp.route('/api/activities/<int:activity_id>/confirm', methods=['POST'])
+def confirm_activity(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    activity.is_confirmed = not activity.is_confirmed
+    # If confirming, also un-eliminate
+    if activity.is_confirmed and activity.is_eliminated:
+        activity.is_eliminated = False
+    db.session.commit()
+    return jsonify({'ok': True, 'is_confirmed': activity.is_confirmed})
+
+
 @activities_bp.route('/api/activities/<int:activity_id>/notes', methods=['PUT'])
 def update_activity_notes(activity_id):
     activity = Activity.query.get_or_404(activity_id)
     data = request.get_json()
     activity.notes = data.get('notes', '').strip() or None
+    db.session.commit()
+    return jsonify({'ok': True})
+
+
+@activities_bp.route('/api/activities/<int:activity_id>/unflag-bookahead', methods=['POST'])
+def unflag_bookahead(activity_id):
+    activity = Activity.query.get_or_404(activity_id)
+    activity.book_ahead = False
+    activity.book_ahead_note = None
     db.session.commit()
     return jsonify({'ok': True})
 

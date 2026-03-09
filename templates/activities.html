@@ -2,7 +2,7 @@
 {% block title %}Activities{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_lightbulb, icon_pin, icon_link, icon_translate, icon_delete, icon_pencil %}
+{% from "icons.html" import icon_lightbulb, icon_pin, icon_link, icon_translate, icon_delete, icon_pencil, icon_check %}
 <header>
     <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
         <h1 style="margin:0;">{{ icon_lightbulb(22) }} Activities</h1>
@@ -57,18 +57,25 @@
 </div>
 
 {% for group in location_activities %}
-<details class="act-location-group" open>
+<details class="act-location-group">
     <summary class="act-location-title">
         {{ group.location.name }}
-        <span class="act-location-count">{{ group.activities | length }}{% if group.substitutes %} + {{ group.substitutes | length }} alt{% endif %}</span>
+        <span class="act-location-count">{{ group.total_count }}{% if group.substitutes %} + {{ group.substitutes | length }} alt{% endif %}</span>
     </summary>
 
-    {% for item in group.activities %}
+    {% for dg in group.day_groups %}
+    <div class="act-day-divider">
+        <span class="act-day-label">Day {{ dg.day.day_number }} &mdash; {{ dg.day.date.strftime('%a, %b %d') }}</span>
+        <span class="act-day-theme">{{ dg.day.title }}</span>
+    </div>
+
+    {% for item in dg.activities %}
     {% set a = item.activity %}
     {% set d = item.day %}
-    <div class="act-browse-card {% if a.is_eliminated %}eliminated{% endif %}" data-activity-id="{{ a.id }}" data-category="{{ a.category or '' }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }} {{ a.category or '' }}">
+    <div class="act-browse-card {% if a.is_eliminated %}eliminated{% endif %} {% if a.is_confirmed %}confirmed{% endif %}" data-activity-id="{{ a.id }}" data-category="{{ a.category or '' }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }} {{ a.category or '' }}">
         <div class="act-browse-header">
             <span class="act-browse-title">{{ a.title }}</span>
+            {% if a.is_confirmed %}<span class="confirmed-badge">{{ icon_check(12) }} Confirmed</span>{% endif %}
             {% if a.category %}
             <span class="cat-badge cat-{{ a.category }}">{{ category_labels.get(a.category, a.category) }}</span>
             {% endif %}
@@ -78,8 +85,7 @@
             {% if a.is_eliminated %}<span class="ruled-out-badge">Ruled Out</span>{% endif %}
         </div>
         <div class="act-browse-meta">
-            Day {{ d.day_number }} &middot; {{ d.date.strftime('%b %d') }}
-            {% if a.time_slot %}&middot; {{ a.time_slot | title }}{% endif %}
+            {% if a.time_slot %}{{ a.time_slot | title }}{% endif %}
             {% if a.start_time %}&middot; {{ a.start_time }}{% endif %}
             {% if a.cost_note %}&middot; {{ a.cost_note }}{% endif %}
             {% if a.cost_per_person and not a.cost_note %}&middot; &yen;{{ a.cost_per_person | int }}/person{% endif %}
@@ -122,6 +128,9 @@
                 {{ icon_translate(14) }} EN
             </a>
             {% endif %}
+            <button class="confirm-btn {% if a.is_confirmed %}active{% endif %}" onclick="confirmActivity({{ a.id }})">
+                {% if a.is_confirmed %}{{ icon_check(12) }} Confirmed{% else %}Confirm{% endif %}
+            </button>
             <button class="eliminate-btn {% if a.is_eliminated %}active{% endif %}" onclick="eliminateActivity({{ a.id }})">
                 {% if a.is_eliminated %}&#x2713; Ruled Out{% else %}&#x2715; Rule Out{% endif %}
             </button>
@@ -132,6 +141,7 @@
         <textarea class="act-notes" placeholder="Notes..."
                   onchange="updateActNotes({{ a.id }}, this.value)">{{ a.notes or '' }}</textarea>
     </div>
+    {% endfor %}
     {% endfor %}
 
     {% if group.substitutes %}
@@ -173,6 +183,9 @@
                 <a href="{{ a.url }}" target="_blank" rel="noopener" class="doc-link">{{ icon_link(14) }} Details</a>
                 <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Translate">{{ icon_translate(14) }} EN</a>
                 {% endif %}
+                <button class="confirm-btn {% if a.is_confirmed %}active{% endif %}" onclick="confirmActivity({{ a.id }})">
+                    {% if a.is_confirmed %}Confirmed{% else %}Confirm{% endif %}
+                </button>
                 <button class="eliminate-btn {% if a.is_eliminated %}active{% endif %}" onclick="eliminateActivity({{ a.id }})">
                     {% if a.is_eliminated %}&#x2713; Ruled Out{% else %}&#x2715; Rule Out{% endif %}
                 </button>
@@ -292,6 +305,37 @@ async function eliminateActivity(id) {
                 if (badge) badge.remove();
             }
             showToast(data.is_eliminated ? 'Ruled out' : 'Restored');
+        }
+    } catch (err) {
+        showToast('Failed', 'error');
+    }
+}
+
+async function confirmActivity(id) {
+    try {
+        const resp = await fetch(`/api/activities/${id}/confirm`, { method: 'POST' });
+        const data = await resp.json();
+        if (data.ok) {
+            const card = document.querySelector(`[data-activity-id="${id}"]`);
+            const btn = card.querySelector('.confirm-btn');
+            const badge = card.querySelector('.confirmed-badge');
+            if (data.is_confirmed) {
+                card.classList.add('confirmed');
+                btn.classList.add('active');
+                btn.innerHTML = '&#x2713; Confirmed';
+                if (!badge) {
+                    const b = document.createElement('span');
+                    b.className = 'confirmed-badge';
+                    b.textContent = 'Confirmed';
+                    card.querySelector('.act-browse-header').insertBefore(b, card.querySelector('.act-browse-header').children[1]);
+                }
+            } else {
+                card.classList.remove('confirmed');
+                btn.classList.remove('active');
+                btn.innerHTML = 'Confirm';
+                if (badge) badge.remove();
+            }
+            showToast(data.is_confirmed ? 'Confirmed' : 'Unconfirmed');
         }
     } catch (err) {
         showToast('Failed', 'error');

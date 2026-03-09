@@ -27,9 +27,10 @@
             <span class="nav-icon" aria-hidden="true">{{ icon_home(22) }}</span>
             <span class="nav-label">Home</span>
         </a>
-        <a href="{{ url_for('accommodations.accommodations_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('accommodations') %}active{% endif %}" aria-label="Accommodations" {% if request.endpoint and request.endpoint.startswith('accommodations') %}aria-current="page"{% endif %}>
-            <span class="nav-icon" aria-hidden="true">{{ icon_hotel(22) }}</span>
-            <span class="nav-label">Stays</span>
+        {# Configurable nav slot — swappable via localStorage('navSlot') #}
+        <a id="navSlotLink" href="{{ url_for('accommodations.accommodations_view') }}" class="nav-item" aria-label="Quick access">
+            <span class="nav-icon" aria-hidden="true" id="navSlotIcon">{{ icon_hotel(22) }}</span>
+            <span class="nav-label" id="navSlotLabel">Stays</span>
         </a>
         <a href="{{ url_for('chat.chat_view') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('chat') %}active{% endif %}" aria-label="Chat" {% if request.endpoint and request.endpoint.startswith('chat') %}aria-current="page"{% endif %}>
             <span class="nav-icon" aria-hidden="true">{{ icon_chat(22) }}</span>
@@ -40,6 +41,17 @@
             <span class="nav-label">More</span>
         </a>
     </nav>
+
+    {# Hidden SVG icons for JS nav slot swapping #}
+    <div id="navSlotIcons" style="display:none;">
+        <span data-slot="stays">{{ icon_hotel(22) }}</span>
+        <span data-slot="activities">{{ icon_lightbulb(22) }}</span>
+        <span data-slot="checklists">{{ icon_check(22) }}</span>
+        <span data-slot="calendar"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+        <span data-slot="bookahead">{{ icon_ticket(22) }}</span>
+        <span data-slot="documents">{{ icon_clipboard(22) }}</span>
+        <span data-slot="reference">{{ icon_book(22) }}</span>
+    </div>
 
     <!-- More menu slide-up -->
     <div class="more-menu" id="moreMenu" role="dialog" aria-label="More options">
@@ -53,10 +65,12 @@
             <a href="{{ url_for('activities.activities_view') }}" class="more-link">{{ icon_lightbulb(18) }} Activities</a>
             <a href="{{ url_for('reference.reference_view') }}" class="more-link">{{ icon_book(18) }} Reference Guide</a>
             <a href="#" class="more-link" onclick="toggleTheme()">{{ icon_moon(18) }} Toggle Dark Mode</a>
+            <a href="#" class="more-link" onclick="showNavSlotPicker(event)">&#x2699;&#xFE0F; Customize Toolbar</a>
             <a href="{{ url_for('export.export_view') }}" class="more-link">&#x1f4c4; Export PDF</a>
             <a href="#" class="more-link" onclick="showBackupPanel(event)">&#x1f4be; Backup / Restore</a>
             <a href="#" class="more-link" onclick="hardRefresh()">&#x21bb; Refresh App</a>
-            <a href="{{ url_for('logout') }}" class="more-link">{{ icon_logout(18) }} Logout</a>
+            {# Auth disabled for sharing — uncomment when re-enabling login #}
+            {# <a href="{{ url_for('logout') }}" class="more-link">{{ icon_logout(18) }} Logout</a> #}
         </div>
     </div>
 
@@ -79,6 +93,24 @@
                 <p style="font-size:0.85rem; color:var(--pico-muted-color);">Loading server backups...</p>
             </div>
             <a href="#" class="more-link" onclick="closeBackupPanel()" style="text-align:center;">Close</a>
+        </div>
+    </div>
+
+    <!-- Nav slot picker -->
+    <div class="nav-slot-picker" id="navSlotPicker" style="display:none;">
+        <div class="more-menu-backdrop" onclick="closeNavSlotPicker()"></div>
+        <div class="more-menu-sheet" role="menu">
+            <div class="more-menu-handle"></div>
+            <h3 style="margin:0 0 12px; font-size:1.1rem;">Toolbar Quick Access</h3>
+            <p style="font-size:0.85rem; color:var(--pico-muted-color); margin:0 0 12px;">Choose what appears in the bottom toolbar.</p>
+            <a href="#" class="more-link nav-slot-option" data-slot="stays" onclick="setNavSlot('stays', event)">{{ icon_hotel(18) }} Stays</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="activities" onclick="setNavSlot('activities', event)">{{ icon_lightbulb(18) }} Activities</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="checklists" onclick="setNavSlot('checklists', event)">{{ icon_check(18) }} Checklists</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="calendar" onclick="setNavSlot('calendar', event)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Calendar</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="bookahead" onclick="setNavSlot('bookahead', event)">{{ icon_ticket(18) }} Book Ahead</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="documents" onclick="setNavSlot('documents', event)">{{ icon_clipboard(18) }} Documents</a>
+            <a href="#" class="more-link nav-slot-option" data-slot="reference" onclick="setNavSlot('reference', event)">{{ icon_book(18) }} Reference</a>
+            <a href="#" class="more-link" onclick="closeNavSlotPicker()" style="text-align:center; margin-top:8px;">Cancel</a>
         </div>
     </div>
 

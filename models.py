@@ -79,6 +79,7 @@ class Activity(db.Model):
     book_ahead = db.Column(db.Boolean, default=False)  # needs advance tickets/reservation
     book_ahead_note = db.Column(db.String(300))  # booking details: how far ahead, where to book
     getting_there = db.Column(db.String(500))  # transit tip: how to get here from previous activity
+    is_confirmed = db.Column(db.Boolean, default=False)  # user confirmed this activity is in the schedule
 
     def to_dict(self):
         return {
@@ -96,6 +97,7 @@ class Activity(db.Model):
             'notes': self.notes,
             'category': self.category,
             'why': self.why,
+            'is_confirmed': self.is_confirmed,
         }
 
 
