@@ -59,8 +59,17 @@ def _is_browseable_activity(activity):
 
 @activities_bp.route('/activities')
 def activities_view():
+    from models import Trip
+    from datetime import date as dt_date
     locations = Location.query.order_by(Location.sort_order).all()
     days = Day.query.order_by(Day.day_number).all()
+    trip = Trip.query.first()
+    today = dt_date.today()
+    current_day = None
+    trip_active = False
+    if trip and trip.start_date <= today <= trip.end_date:
+        trip_active = True
+        current_day = Day.query.filter(Day.date == today).first()
 
     location_activities = []
     all_categories = set()
@@ -99,7 +108,9 @@ def activities_view():
                            location_activities=location_activities,
                            all_days=days,
                            categories=sorted_categories,
-                           category_labels=CATEGORY_LABELS)
+                           category_labels=CATEGORY_LABELS,
+                           current_day=current_day,
+                           trip_active=trip_active)
 
 
 @activities_bp.route('/api/activities/add', methods=['POST'])

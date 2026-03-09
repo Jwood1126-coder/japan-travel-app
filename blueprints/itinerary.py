@@ -47,6 +47,12 @@ def _build_location_groups(days):
             else:
                 group['accom_pending_count'] = sum(
                     1 for o in opts if not o.is_eliminated)
+            # Use accommodation dates for display (more accurate than day grouping)
+            if accom_loc.check_in_date:
+                group['start_date'] = accom_loc.check_in_date
+            if accom_loc.check_out_date:
+                group['end_date'] = accom_loc.check_out_date
+                group['show_checkout'] = True
 
     # Build brief activity summaries per day
     for group in location_groups:
@@ -111,7 +117,7 @@ def _compute_next_up(today, trip):
         ChecklistItem.is_completed == False,
         ChecklistItem.sort_order < 9999,
         ChecklistItem.category.in_(['pre_departure_today', 'pre_departure_week',
-                                     'pre_departure_miles']),
+                                     'pre_departure_miles', 'pre_departure_month']),
     ).order_by(ChecklistItem.sort_order).first()
     if booking_item:
         return {

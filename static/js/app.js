@@ -18,7 +18,7 @@ function hardRefresh() {
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/static/sw.js?v=60')
+    navigator.serviceWorker.register('/static/sw.js?v=61')
         .then(reg => {
             console.log('SW registered, scope:', reg.scope);
             reg.addEventListener('updatefound', () => {
@@ -321,68 +321,6 @@ async function restoreServerBackup(name) {
         showToast('Restore failed', 'error');
     }
 }
-
-// Configurable nav slot
-const NAV_SLOT_CONFIG = {
-    stays:      { href: '/accommodations', label: 'Stays',      endpoints: ['accommodations'] },
-    activities: { href: '/activities',     label: 'Activities',  endpoints: ['activities'] },
-    checklists: { href: '/checklists',     label: 'Checklists',  endpoints: ['checklists'] },
-    calendar:   { href: '/calendar',       label: 'Calendar',    endpoints: ['calendar'] },
-    bookahead:  { href: '/book-ahead',     label: 'Book Ahead',  endpoints: ['bookahead'] },
-    documents:  { href: '/documents',      label: 'Docs',        endpoints: ['documents'] },
-    reference:  { href: '/reference',      label: 'Reference',   endpoints: ['reference'] },
-};
-
-function applyNavSlot() {
-    const slot = localStorage.getItem('navSlot') || 'stays';
-    const config = NAV_SLOT_CONFIG[slot];
-    if (!config) return;
-
-    const link = document.getElementById('navSlotLink');
-    const icon = document.getElementById('navSlotIcon');
-    const label = document.getElementById('navSlotLabel');
-    const iconsEl = document.getElementById('navSlotIcons');
-    if (!link || !icon || !label || !iconsEl) return;
-
-    link.href = config.href;
-    label.textContent = config.label;
-
-    const iconSrc = iconsEl.querySelector(`[data-slot="${slot}"]`);
-    if (iconSrc) icon.innerHTML = iconSrc.innerHTML;
-
-    // Set active state based on current page
-    const currentPath = window.location.pathname;
-    const isActive = config.endpoints.some(ep => currentPath.startsWith('/' + ep)) ||
-                     currentPath === config.href;
-    link.classList.toggle('active', isActive);
-}
-
-function showNavSlotPicker(e) {
-    if (e) e.preventDefault();
-    closeMore();
-    const picker = document.getElementById('navSlotPicker');
-    picker.style.display = '';
-    // Highlight current selection
-    const current = localStorage.getItem('navSlot') || 'stays';
-    picker.querySelectorAll('.nav-slot-option').forEach(opt => {
-        opt.classList.toggle('nav-slot-active', opt.dataset.slot === current);
-    });
-}
-
-function closeNavSlotPicker() {
-    document.getElementById('navSlotPicker').style.display = 'none';
-}
-
-function setNavSlot(slot, e) {
-    if (e) e.preventDefault();
-    localStorage.setItem('navSlot', slot);
-    applyNavSlot();
-    closeNavSlotPicker();
-    showToast(`Toolbar updated: ${NAV_SLOT_CONFIG[slot].label}`);
-}
-
-// Apply on load
-document.addEventListener('DOMContentLoaded', applyNavSlot);
 
 // Currency converter
 function toggleCurrencyConverter() {

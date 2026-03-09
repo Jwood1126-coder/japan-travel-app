@@ -2895,6 +2895,184 @@ def _migrate_update_itinerary_for_takanoyu(app):
     print("  Migration complete: itinerary updated for TAKANOYU.")
 
 
+def _migrate_audit_data_fixes(app):
+    """Fix data issues identified in frontend audit.
+    Covers: JR Pass pricing, Osaka dates, stale transit, reference corrections,
+    checklist cleanup, missing activities, and luggage forwarding.
+    Idempotent — each fix checks before applying."""
+    from models import (ChecklistItem, ChecklistOption, AccommodationLocation,
+                        AccommodationOption, TransportRoute, ReferenceContent,
+                        Activity, Day)
+
+    # Sentinel: skip if already applied (check for the luggage forwarding task we add)
+    if ChecklistItem.query.filter(ChecklistItem.title.ilike('%luggage forwarding%')).first():
+        return
+
+    print("Running migration: audit data fixes...")
+
+    # --- 1. JR Pass checklist options: ¥50,000 → ¥80,000 ---
+    jr_item = ChecklistItem.query.filter(ChecklistItem.title.ilike('%JR Pass%')).first()
+    if jr_item:
+        for opt in jr_item.options:
+            if opt.price_note and '50,000' in opt.price_note:
+                opt.price_note = opt.price_note.replace('50,000', '80,000')
+            elif opt.price_note and '55,000' in opt.price_note:
+                opt.price_note = opt.price_note.replace('55,000', '80,000')
+
+    # --- 2. Osaka accommodation: extend to 2 nights (checkout Apr 18) ---
+    osaka_loc = AccommodationLocation.query.filter_by(location_name='Osaka').first()
+    if osaka_loc and osaka_loc.num_nights == 1:
+        from datetime import date as dt_date
+        osaka_loc.num_nights = 2
+        osaka_loc.check_out_date = dt_date(2026, 4, 18)
+        osaka_loc.quick_notes = 'Two nights in Osaka. Namba/Dotonbori for street food and nightlife.'
+
+    # --- 3. Remove stale Hakone transit from Day 5 ---
+    day5 = Day.query.filter_by(day_number=5).first()
+    if day5:
+        stale_route = TransportRoute.query.filter_by(day_id=day5.id).filter(
+            TransportRoute.route_from.ilike('%Odawara%'),
+            TransportRoute.route_to.ilike('%Hakone%')
+        ).first()
+        if stale_route:
+            db.session.delete(stale_route)
+
+    # --- 4. Fix JR Pass reference content ---
+    jr_ref = ReferenceContent.query.filter_by(title='JR Pass Info').first()
+    if jr_ref and jr_ref.content:
+        jr_ref.content = jr_ref.content.replace(
+            'Activate: Day 5 (April 8)',
+            'Activate: Day 4 (April 8)')
+        jr_ref.content = jr_ref.content.replace(
+            'Expires: April 21 (covers everything through departure)',
+            'Expires: April 21 (activated April 8 — valid through departure April 18 with 3 days to spare)')
+
+    # --- 5. Remove Kanazawa hotel checklist item ---
+    kanazawa_hotel = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Kanazawa hotel%')).first()
+    if kanazawa_hotel:
+        # Delete its options first
+        for opt in kanazawa_hotel.options:
+            db.session.delete(opt)
+        db.session.delete(kanazawa_hotel)
+
+    # --- 6. Update Nohi Bus checklist: Takayama → Shirakawa-go (not Kanazawa) ---
+    nohi_item = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Nohi Bus%Kanazawa%')).first()
+    if nohi_item:
+        nohi_item.title = 'Reserve Nohi Bus (Takayama → Shirakawa-go)'
+        nohi_item.description = 'Highway bus from Takayama Bus Center to Shirakawa-go. ~50 min, reservations recommended.'
+
+    # --- 7. Add Hakone return transit to Day 4 ---
+    day4 = Day.query.filter_by(day_number=4).first()
+    if day4:
+        existing_return = Activity.query.filter_by(day_id=day4.id).filter(
+            Activity.title.ilike('%return%Tokyo%')).first()
+        if not existing_return:
+            # Find the max sort_order for afternoon activities on Day 4
+            max_sort = db.session.query(db.func.max(Activity.sort_order)).filter_by(
+                day_id=day4.id).scalar() or 0
+            return_transit = Activity(
+                day_id=day4.id,
+                title='Return to Tokyo from Hakone',
+                description=(
+                    'Hakone-Yumoto → Odawara (Hakone Tozan Railway, ~15 min) → '
+                    'Tokyo/Shinjuku (Shinkansen Kodama/Hikari ~35 min, JR Pass covered). '
+                    'Depart Hakone by ~5-6 PM to reach Shinjuku by ~7 PM.'
+                ),
+                time_slot='afternoon',
+                category='transit',
+                sort_order=max_sort + 1,
+                jr_pass_covered=True,
+            )
+            db.session.add(return_transit)
+
+        # Fix Dormy Inn reference in Day 4 evening activity
+        for act in Activity.query.filter_by(day_id=day4.id).all():
+            if 'Dormy Inn' in (act.description or '') or 'Dormy Inn' in (act.title or ''):
+                if 'ramen' in (act.title or '').lower():
+                    act.title = 'Last night in Shinjuku'
+                    act.description = (
+                        'Final evening in Tokyo before heading to the Alps tomorrow. '
+                        'Revisit Golden Gai, grab late-night ramen, or explore Kabukicho neon.'
+                    )
+
+    # --- 8. Mark booked-flight checklist items as completed ---
+    flight_items = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Book Delta%') |
+        ChecklistItem.title.ilike('%Book United%')
+    ).all()
+    for item in flight_items:
+        if not item.is_completed:
+            item.is_completed = True
+            item.status = 'completed'
+
+    # --- 9. Add luggage forwarding checklist item ---
+    luggage_item = ChecklistItem(
+        category='pre_departure_week',
+        title='Arrange luggage forwarding (takkyubin) — Tokyo → Kyoto',
+        description=(
+            'On Day 4 evening: ask hotel front desk to ship large bags to your Kyoto '
+            'accommodation via Yamato Transport (takkyubin). Cost: ~¥2,000-2,500/bag. '
+            'Arrives next day. Travel light through Takayama/Shirakawa-go with daypacks only. '
+            'Verify Kyoto accommodation accepts advance luggage delivery.'
+        ),
+        is_completed=False,
+        status='pending',
+        sort_order=50,
+    )
+    db.session.add(luggage_item)
+
+    # --- 10. Fix Osaka checklist item title (1 night → 2 nights) ---
+    osaka_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Osaka hotel%1 night%')).first()
+    if osaka_checklist:
+        osaka_checklist.title = 'Book Osaka hotel (2 nights, Apr 16-18)'
+
+    # --- 11. Mark Takayama ryokan checklist as completed if TAKANOYU is booked ---
+    takayama_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Takayama ryokan%')).first()
+    takanoyu = AccommodationOption.query.filter(
+        AccommodationOption.name.ilike('%TAKANOYU%'),
+        AccommodationOption.is_selected == True
+    ).first()
+    if takayama_checklist and takanoyu:
+        takayama_checklist.is_completed = True
+        takayama_checklist.status = 'completed'
+        takayama_checklist.title = 'Takayama: TAKANOYU booked (Apr 9-12)'
+
+    # --- 12. Mark Piece Hostel checklist if Kyoto accommodation is booked ---
+    kyoto_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Piece Hostel%')).first()
+    kyoto_booked = AccommodationOption.query.join(AccommodationLocation).filter(
+        AccommodationLocation.location_name.ilike('%Kyoto%'),
+        AccommodationOption.is_selected == True,
+        AccommodationOption.booking_status.in_(['booked', 'confirmed'])
+    ).first()
+    if kyoto_checklist and kyoto_booked:
+        kyoto_checklist.is_completed = True
+        kyoto_checklist.status = 'completed'
+        kyoto_checklist.title = f'Kyoto: {kyoto_booked.name} booked'
+
+    # --- 13. Fix Sotetsu Fresa selection if not already selected (local DB fix) ---
+    sotetsu = AccommodationOption.query.filter(
+        AccommodationOption.name.ilike('%Sotetsu Fresa%')).first()
+    if sotetsu and not sotetsu.is_selected:
+        sotetsu.is_selected = True
+        sotetsu.booking_status = 'booked'
+        sotetsu.confirmation_number = sotetsu.confirmation_number or '976558450'
+        # Mark Tokyo checklist item as completed
+        tokyo_checklist = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike('%Tokyo hotel%')).first()
+        if tokyo_checklist:
+            tokyo_checklist.is_completed = True
+            tokyo_checklist.status = 'completed'
+            tokyo_checklist.title = 'Tokyo: Sotetsu Fresa Inn booked (Apr 6-9)'
+
+    db.session.commit()
+    print("  Migration complete: audit data fixes applied.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -3058,6 +3236,7 @@ def create_app(run_data_migrations=True):
             _migrate_update_itinerary_for_sotetsu(app)
             _migrate_book_takanoyu(app)
             _migrate_update_itinerary_for_takanoyu(app)
+            _migrate_audit_data_fixes(app)
 
     return app
 

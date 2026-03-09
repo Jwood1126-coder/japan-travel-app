@@ -4296,6 +4296,160 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     border-bottom-color: #333;
 }
 
+/* ===== More menu divider ===== */
+.more-divider {
+    margin: 4px 16px;
+    border: 0;
+    border-top: 1px solid rgba(128,128,128,0.2);
+}
+.more-settings {
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* ===== Dashboard checkout hint ===== */
+.checkout-hint {
+    font-size: 0.7em;
+    opacity: 0.6;
+    font-weight: normal;
+}
+
+/* ===== Accommodations: show alternatives ===== */
+.show-alts-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+.show-alts-btn {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    border: 1px solid rgba(128,128,128,0.3);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--pico-color);
+    cursor: pointer;
+    min-height: 36px;
+}
+.show-alts-btn:hover {
+    background: rgba(128,128,128,0.1);
+}
+.show-alts-btn.ruled-out {
+    opacity: 0.6;
+}
+
+/* ===== Activities: view mode tabs ===== */
+.view-mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    background: rgba(128,128,128,0.1);
+    border-radius: 10px;
+    padding: 3px;
+}
+.view-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--pico-color);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    min-height: 40px;
+    transition: all 0.2s;
+}
+.view-tab.active {
+    background: var(--sakura);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(242,181,196,0.3);
+}
+[data-theme="dark"] .view-tab.active {
+    background: var(--sakura-dark, #c4899b);
+}
+
+/* ===== Touch target improvements ===== */
+.more-link {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+}
+.nav-item {
+    min-height: 48px;
+    padding: 6px 0;
+}
+.cat-chip {
+    min-height: 40px;
+    padding: 8px 14px;
+}
+.confirm-btn, .eliminate-btn, .act-delete-btn {
+    min-height: 40px;
+    padding: 8px 12px;
+}
+.select-btn {
+    min-height: 44px;
+}
+
+/* ===== Cyberpunk glow enhancements ===== */
+.loc-group-header {
+    position: relative;
+}
+.loc-group-name {
+    text-shadow: 0 0 10px rgba(242,181,196,0.3);
+}
+[data-theme="dark"] .loc-group-name {
+    text-shadow: 0 0 15px rgba(242,181,196,0.5), 0 0 30px rgba(242,181,196,0.2);
+}
+[data-theme="dark"] .next-up-card {
+    box-shadow: 0 0 15px rgba(242,181,196,0.15), 0 4px 12px rgba(0,0,0,0.3);
+}
+[data-theme="dark"] .next-up-card.urgency-high {
+    box-shadow: 0 0 20px rgba(255,107,107,0.2), 0 4px 12px rgba(0,0,0,0.3);
+}
+[data-theme="dark"] .booking-badge.confirmed,
+[data-theme="dark"] .booking-confirmed-banner {
+    box-shadow: 0 0 10px rgba(76,175,80,0.3);
+}
+[data-theme="dark"] .confirmed-badge {
+    text-shadow: 0 0 8px rgba(76,175,80,0.4);
+}
+
+/* Countdown glow pulse */
+.cd-val {
+    animation: glow-pulse 2s ease-in-out infinite alternate;
+}
+@keyframes glow-pulse {
+    from { text-shadow: 0 0 5px rgba(242,181,196,0.3); }
+    to   { text-shadow: 0 0 15px rgba(242,181,196,0.6), 0 0 30px rgba(242,181,196,0.2); }
+}
+[data-theme="dark"] .cd-val {
+    animation: glow-pulse-dark 2s ease-in-out infinite alternate;
+}
+@keyframes glow-pulse-dark {
+    from { text-shadow: 0 0 8px rgba(242,181,196,0.4); }
+    to   { text-shadow: 0 0 20px rgba(242,181,196,0.8), 0 0 40px rgba(242,181,196,0.3); }
+}
+
+/* Seconds label dimmer */
+.countdown-unit:last-child .cd-val {
+    opacity: 0.6;
+    font-size: 0.85em;
+}
+.countdown-unit:last-child .cd-label {
+    opacity: 0.5;
+}
+
+/* ===== 5-item bottom nav adjustment ===== */
+.bottom-nav {
+    justify-content: space-around;
+}
+.nav-label {
+    font-size: 0.65rem;
+}
+
 /* Utilities */
 @media (max-width: 480px) {
     .app-main {
