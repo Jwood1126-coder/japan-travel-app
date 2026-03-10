@@ -4,6 +4,23 @@
 
 A Flask + SQLite PWA for planning and managing a Japan trip. Deployed on Railway with auto-deploy from the `main` branch. Mobile-first, password-protected, with an AI chat agent built in.
 
+## Source of Truth for Bookings
+
+**`Documentation/flights/` contains the PDF booking confirmations. These are the AUTHORITATIVE source for all accommodation and flight data.** Never override booking details from PDFs with inferences, guesses, or "schedule audits."
+
+### Confirmed accommodation chain (ALL BOOKED):
+1. **Sotetsu Fresa Inn** — Tokyo, Apr 6–9 (3n) — Agoda #976558450
+2. **Traditional Room above Sento** — Takayama, Apr 9–12 (3n) — Airbnb #HMDDRX4NFX
+3. **Tsukiya-Mikazuki** — Kyoto, Apr 12–14 (2n) — Airbnb #HMXTP9H2Z9
+4. **Kyotofish Miyagawa** — Kyoto, Apr 14–16 (2n) — Airbnb (host Karen)
+5. **Hotel The Leben Osaka** — Osaka, Apr 16–18 (2n) — Agoda #976698966
+
+### NO KANAZAWA OVERNIGHT. Day 8 is transit only: Takayama → Shirakawa-go → Kanazawa → Kyoto.
+
+### Flights:
+- **Outbound**: DL5392 + DL275, Apr 5, CLE→DTW→HND. Confirmation HBPF75.
+- **Return**: UA876 + UA1470, Apr 18, HND→SFO→CLE. Confirmation I91ZHJ.
+
 ## Tech Stack
 
 - **Backend:** Flask 3.1, Flask-SQLAlchemy, Flask-SocketIO, Gunicorn + gevent

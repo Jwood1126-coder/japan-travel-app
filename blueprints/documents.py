@@ -41,6 +41,57 @@ def _get_saved_documents():
     return docs
 
 
+def _match_docs_to_bookings(docs, accommodations, flights):
+    """Match uploaded docs to bookings by confirmation number or name keywords."""
+    links = {}  # key: 'accom_{loc_id}' or 'flight_{flight_id}', value: list of doc filenames
+
+    for item in accommodations:
+        opt = item['selected']
+        loc = item['location']
+        key = f'accom_{loc.id}'
+        links[key] = []
+        for doc in docs:
+            fname_lower = doc['display_name'].lower()
+            # Match by confirmation number
+            if opt.confirmation_number and opt.confirmation_number.lower() in fname_lower:
+                links[key].append(doc)
+                continue
+            # Match by accommodation name keywords
+            name_words = opt.name.lower().split()
+            if any(w in fname_lower for w in name_words if len(w) > 3):
+                links[key].append(doc)
+                continue
+            # Match by location name (word boundary to avoid "kyoto" matching "kyotofish")
+            loc_lower = loc.location_name.lower().replace('stay 1', '').replace('stay 2', '').strip()
+            if loc_lower and re.search(r'\b' + re.escape(loc_lower) + r'\b', fname_lower):
+                links[key].append(doc)
+                continue
+            # Match by date range (e.g. "Apr 12 – 14" or "Apr_12_14")
+            if loc.check_in_date and loc.check_out_date:
+                ci = loc.check_in_date
+                co = loc.check_out_date
+                month = ci.strftime('%b').lower()  # "apr"
+                date_patterns = [
+                    f'{month}_{ci.day}_{co.day}',
+                    f'{month} {ci.day}',
+                ]
+                if any(p in fname_lower for p in date_patterns):
+                    links[key].append(doc)
+
+    for flight in flights:
+        key = f'flight_{flight.id}'
+        links[key] = []
+        for doc in docs:
+            fname_lower = doc['display_name'].lower()
+            if flight.confirmation_number and flight.confirmation_number.lower() in fname_lower:
+                links[key].append(doc)
+                continue
+            if flight.flight_number and flight.flight_number.lower() in fname_lower:
+                links[key].append(doc)
+
+    return links
+
+
 @documents_bp.route('/documents')
 def documents_view():
     flights = Flight.query.order_by(Flight.direction, Flight.leg_number).all()
@@ -74,12 +125,16 @@ def documents_view():
     # Uploaded documents (PDFs, images)
     saved_docs = _get_saved_documents()
 
+    # Link documents to accommodations and flights by matching keywords
+    doc_links = _match_docs_to_bookings(saved_docs, accommodations, flights)
+
     return render_template('documents.html',
                            flights=flights,
                            accommodations=accommodations,
                            transport=transport,
                            ticketed_activities=ticketed_activities,
-                           saved_docs=saved_docs)
+                           saved_docs=saved_docs,
+                           doc_links=doc_links)
 
 
 @documents_bp.route('/api/documents/flight/<int:flight_id>/confirmation',

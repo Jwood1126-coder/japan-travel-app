@@ -139,6 +139,7 @@ class AccommodationOption(db.Model):
     booking_image = db.Column(db.String(255))  # filename of booking screenshot/confirmation
     check_in_info = db.Column(db.String(200))   # e.g. "3:00 PM" or "after 3pm, front desk"
     check_out_info = db.Column(db.String(200))  # e.g. "11:00 AM"
+    phone = db.Column(db.String(50))
     user_notes = db.Column(db.Text)
 
     @property

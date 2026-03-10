@@ -106,6 +106,18 @@
                 <span>{{ flight.notes }}</span>
             </div>
             {% endif %}
+            {% set linked_flight_docs = doc_links.get('flight_' ~ flight.id, []) %}
+            {% if linked_flight_docs %}
+            <div class="doc-detail-row doc-attachments">
+                <span class="doc-detail-label">Documents</span>
+                <div class="doc-attachment-list">
+                    {% for doc in linked_flight_docs %}
+                    <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.display_name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
     </div>
     {% endfor %}
@@ -165,6 +177,24 @@
             <div class="doc-detail-row">
                 <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="doc-link">View booking</a>
                 <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
+            </div>
+            {% endif %}
+            {% set linked_docs = doc_links.get('accom_' ~ loc.id, []) %}
+            {% if linked_docs %}
+            <div class="doc-detail-row doc-attachments">
+                <span class="doc-detail-label">Documents</span>
+                <div class="doc-attachment-list">
+                    {% for doc in linked_docs %}
+                    <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.display_name }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if opt.notes %}
+            <div class="doc-detail-row">
+                <span class="doc-detail-label">Notes</span>
+                <span>{{ opt.notes }}</span>
             </div>
             {% endif %}
         </div>

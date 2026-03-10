@@ -67,6 +67,7 @@ def _run_migrations(app):
         ('activity', 'book_ahead_note', 'TEXT'),
         ('activity', 'getting_there', 'TEXT'),
         ('activity', 'is_confirmed', 'BOOLEAN DEFAULT 0'),
+        ('accommodation_option', 'phone', 'TEXT'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -4150,12 +4151,16 @@ def create_app(run_data_migrations=True):
     bundled_docs = os.path.join(os.path.dirname(__file__), 'Documentation', 'flights')
     if os.path.isdir(bundled_docs):
         import shutil
+        from werkzeug.utils import secure_filename as _sf
         existing = set(os.listdir(docs_dir))
         for fname in os.listdir(bundled_docs):
-            # Check if any file ending with this name already exists
-            if not any(f.endswith('__' + fname) or f == fname for f in existing):
+            safe = _sf(fname)
+            # Check both original name and secure_filename version
+            if not any(f.endswith('__' + fname) or f.endswith('__' + safe)
+                       or f == fname for f in existing):
                 src = os.path.join(bundled_docs, fname)
-                dst = os.path.join(docs_dir, fname)
+                unique = f"{__import__('uuid').uuid4().hex[:8]}__{safe}"
+                dst = os.path.join(docs_dir, unique)
                 shutil.copy2(src, dst)
 
     with app.app_context():
@@ -4221,6 +4226,11 @@ def create_app(run_data_migrations=True):
                 _migrate_schedule_consistency_v1(app)
             except Exception as e:
                 print(f"WARNING: schedule consistency migration failed: {e}")
+                db.session.rollback()
+            try:
+                _migrate_confirmed_bookings_v1(app)
+            except Exception as e:
+                print(f"WARNING: confirmed bookings migration failed: {e}")
                 db.session.rollback()
 
             # --- Post-migration validation (runs every boot) ---
@@ -4932,8 +4942,11 @@ def _validate_schedule(app):
     day_map = {d.day_number: d for d in days}
 
     # --- Check 1: Accommodation date chain gaps/overlaps ---
-    locs = AccommodationLocation.query.order_by(
+    # Skip locations where ALL options are eliminated (e.g. Kanazawa, merged Budget)
+    all_locs = AccommodationLocation.query.order_by(
         AccommodationLocation.check_in_date).all()
+    locs = [l for l in all_locs
+            if l.options and not all(o.is_eliminated for o in l.options)]
     for i in range(len(locs) - 1):
         curr = locs[i]
         nxt = locs[i + 1]
@@ -5009,6 +5022,513 @@ def _validate_schedule(app):
         print(f"{'='*60}\n")
     else:
         print("Schedule validation: all checks passed ✓")
+
+
+def _migrate_confirmed_bookings_v1(app):
+    """Authoritative migration based on confirmed PDF booking documents.
+    Source of truth: extracted data from uploaded booking confirmations.
+
+    Confirmed accommodation chain:
+    1. Sotetsu Fresa Inn Higashi-Shinjuku — Apr 6-9 (3n) — Agoda 976558450
+    2. Takayama — Apr 9-12 (3n) — NOT YET BOOKED
+    3. Tsukiya-Mikazuki (Airbnb machiya) — Apr 12-14 (2n) — HMXTP9H2Z9
+    4. Kyotofish Miyagawa Geisha Ochaya (Airbnb) — Apr 14-16 (2n) — confirmed
+    5. Hotel The Leben Osaka — Apr 16-18 (2n) — Agoda 976698966
+
+    NO KANAZAWA OVERNIGHT.
+    """
+    from models import (Trip, AccommodationLocation, AccommodationOption,
+                        Activity, Day, Location, db)
+    from datetime import date
+
+    with app.app_context():
+        trip = Trip.query.first()
+        if not trip:
+            return
+        sentinel = '__confirmed_bookings_v1'
+        if trip.notes and sentinel in trip.notes:
+            print("confirmed_bookings_v1: already applied, skipping")
+            return
+
+        print("Running migration: confirmed_bookings_v1 (from PDF booking data)...")
+
+        # ============================================================
+        # 1. TOKYO — Sotetsu Fresa Inn (LOC 1, OPT 11)
+        # ============================================================
+        tokyo_loc = AccommodationLocation.query.filter_by(location_name='Tokyo').first()
+        if tokyo_loc:
+            tokyo_loc.check_in_date = date(2026, 4, 6)
+            tokyo_loc.check_out_date = date(2026, 4, 9)
+            tokyo_loc.num_nights = 3
+
+            fresa = AccommodationOption.query.filter(
+                AccommodationOption.location_id == tokyo_loc.id,
+                AccommodationOption.name.like('%Sotetsu Fresa%')
+            ).first()
+            if fresa:
+                fresa.is_selected = True
+                fresa.booking_status = 'confirmed'
+                fresa.confirmation_number = '976558450'
+                fresa.address = '7-27-9 Shinjuku, Shinjuku-ku, Tokyo 160-0022'
+                fresa.check_in_info = 'after 3:00 PM'
+                fresa.check_out_info = 'before 11:00 AM'
+                fresa.phone = '+81-3-6892-2032'
+                fresa.property_type = 'Hotel'
+                # Deselect all other Tokyo options
+                for opt in tokyo_loc.options:
+                    if opt.id != fresa.id:
+                        opt.is_selected = False
+
+        # ============================================================
+        # 2. TAKAYAMA — NOT YET BOOKED (LOC 2 + LOC 3)
+        #    Ryokan: Apr 9-10 (1n), Budget: Apr 10-12 (2n) = 3n total
+        # ============================================================
+        tak_ryokan = AccommodationLocation.query.filter_by(
+            location_name='Takayama Ryokan').first()
+        if tak_ryokan:
+            tak_ryokan.check_in_date = date(2026, 4, 9)
+            tak_ryokan.check_out_date = date(2026, 4, 10)
+            tak_ryokan.num_nights = 1
+
+        tak_budget = AccommodationLocation.query.filter_by(
+            location_name='Takayama Budget').first()
+        if tak_budget:
+            tak_budget.check_in_date = date(2026, 4, 10)
+            tak_budget.check_out_date = date(2026, 4, 12)
+            tak_budget.num_nights = 2
+
+        # ============================================================
+        # 3. KANAZAWA — ELIMINATE (NO OVERNIGHT STAY)
+        # ============================================================
+        kanazawa_loc = AccommodationLocation.query.filter_by(
+            location_name='Kanazawa').first()
+        if kanazawa_loc:
+            for opt in kanazawa_loc.options:
+                opt.is_eliminated = True
+                opt.is_selected = False
+
+        # ============================================================
+        # 4. KYOTO — Split into two stays matching confirmed bookings
+        #    LOC 5 → Kyoto Stay 1 (Tsukiya-Mikazuki, Apr 12-14)
+        #    NEW LOC → Kyoto Stay 2 (Kyotofish, Apr 14-16)
+        # ============================================================
+        kyoto_loc = AccommodationLocation.query.filter(
+            AccommodationLocation.location_name.like('%Kyoto%'),
+            AccommodationLocation.location_name.notlike('%Stay 2%')
+        ).first()
+
+        if kyoto_loc:
+            kyoto_loc.location_name = 'Kyoto Stay 1'
+            kyoto_loc.check_in_date = date(2026, 4, 12)
+            kyoto_loc.check_out_date = date(2026, 4, 14)
+            kyoto_loc.num_nights = 2
+
+            # Deselect all existing options
+            for opt in kyoto_loc.options:
+                opt.is_selected = False
+
+            # Add Tsukiya-Mikazuki option
+            tsukiya = AccommodationOption.query.filter(
+                AccommodationOption.location_id == kyoto_loc.id,
+                AccommodationOption.name.like('%Tsukiya%')
+            ).first()
+            if not tsukiya:
+                tsukiya = AccommodationOption(
+                    location_id=kyoto_loc.id,
+                    name='Tsukiya-Mikazuki',
+                    rank=1,
+                    property_type='Machiya B&B',
+                    price_low=138, price_high=138,
+                    total_low=276, total_high=276,
+                )
+                db.session.add(tsukiya)
+                db.session.flush()
+
+            tsukiya.is_selected = True
+            tsukiya.is_eliminated = False
+            tsukiya.booking_status = 'confirmed'
+            tsukiya.confirmation_number = 'HMXTP9H2Z9'
+            tsukiya.address = '600-8302, Kyoto-fu, Shimogyo-ku, Kyoto-shi, 139 Ebisuchō'
+            tsukiya.check_in_info = 'after 4:00 PM'
+            tsukiya.check_out_info = 'by 11:00 AM'
+            tsukiya.phone = '+81-75-353-7920'
+
+        # Create Kyoto Stay 2 location
+        kyoto2 = AccommodationLocation.query.filter_by(
+            location_name='Kyoto Stay 2').first()
+        if not kyoto2:
+            kyoto2 = AccommodationLocation(
+                location_name='Kyoto Stay 2',
+                check_in_date=date(2026, 4, 14),
+                check_out_date=date(2026, 4, 16),
+                num_nights=2,
+                sort_order=6,
+            )
+            db.session.add(kyoto2)
+            db.session.flush()
+
+        # Add Kyotofish option
+        kyotofish = AccommodationOption.query.filter(
+            AccommodationOption.location_id == kyoto2.id,
+            AccommodationOption.name.like('%Kyotofish%')
+        ).first()
+        if not kyotofish:
+            kyotofish = AccommodationOption(
+                location_id=kyoto2.id,
+                name='Kyotofish Miyagawa Geisha Ochaya',
+                rank=1,
+                property_type='Airbnb Townhouse',
+            )
+            db.session.add(kyotofish)
+            db.session.flush()
+
+        kyotofish.is_selected = True
+        kyotofish.is_eliminated = False
+        kyotofish.booking_status = 'confirmed'
+        kyotofish.check_in_info = '4:00 PM'
+        kyotofish.check_out_info = '10:00 AM'
+        kyotofish.notes = 'Host: Karen. UPDATE GUEST COUNT TO 2 ADULTS (host flagged this).'
+
+        # ============================================================
+        # 5. OSAKA — Hotel The Leben (LOC 7)
+        # ============================================================
+        osaka_loc = AccommodationLocation.query.filter_by(
+            location_name='Osaka').first()
+        if osaka_loc:
+            osaka_loc.check_in_date = date(2026, 4, 16)
+            osaka_loc.check_out_date = date(2026, 4, 18)
+            osaka_loc.num_nights = 2
+
+            # Deselect all existing
+            for opt in osaka_loc.options:
+                opt.is_selected = False
+
+            leben = AccommodationOption.query.filter(
+                AccommodationOption.location_id == osaka_loc.id,
+                AccommodationOption.name.like('%Leben%')
+            ).first()
+            if not leben:
+                leben = AccommodationOption(
+                    location_id=osaka_loc.id,
+                    name='Hotel The Leben Osaka',
+                    rank=1,
+                    property_type='Hotel',
+                    price_low=230, price_high=230,
+                    total_low=460, total_high=460,
+                )
+                db.session.add(leben)
+                db.session.flush()
+
+            leben.is_selected = True
+            leben.is_eliminated = False
+            leben.booking_status = 'confirmed'
+            leben.confirmation_number = '976698966'
+            leben.address = '2-2-15 Minamisenba, Chuo-ku, Osaka 542-0081'
+            leben.check_in_info = 'after 3:00 PM'
+            leben.check_out_info = 'before 11:00 AM'
+            leben.notes = 'Free cancellation before Apr 7, non-refundable after. $459.42 total.'
+
+        # ============================================================
+        # 6. ACTIVITY FIXES
+        # ============================================================
+
+        # --- Day 2: Eliminate Dormy Inn amenities (user is at Sotetsu Fresa) ---
+        day2 = Day.query.filter_by(day_number=2).first()
+        if day2:
+            for title_frag in ['Rooftop onsen bath', 'Free late-night ramen']:
+                act = Activity.query.filter(
+                    Activity.day_id == day2.id,
+                    Activity.title.like(f'%{title_frag}%'),
+                    Activity.is_eliminated == False
+                ).first()
+                if act:
+                    act.is_eliminated = True
+                    print(f"  Eliminated Day 2: '{act.title}' (Dormy Inn amenity)")
+
+        # --- Day 7: Fix location from Kanazawa to Takayama ---
+        day7 = Day.query.filter_by(day_number=7).first()
+        takayama_loc = Location.query.filter_by(name='Takayama').first()
+        if day7 and takayama_loc:
+            if day7.location_id != takayama_loc.id:
+                day7.location_id = takayama_loc.id
+                print(f"  Fixed Day 7 location: Kanazawa → Takayama")
+
+        # --- Day 8: Transit day Takayama → Shirakawa-go → Kyoto ---
+        day8 = Day.query.filter_by(day_number=8).first()
+        if day8:
+            day8.title = 'TAKAYAMA → SHIRAKAWA-GO → KYOTO'
+            # Eliminate Kanazawa-specific activities
+            kanazawa_activities = [
+                'Check into Kaname Inn', 'Kenrokuen Garden',
+                'Castle Park', 'Higashi Chaya',
+                'Fresh seafood dinner at Omicho', 'Sai River',
+            ]
+            for frag in kanazawa_activities:
+                act = Activity.query.filter(
+                    Activity.day_id == day8.id,
+                    Activity.title.like(f'%{frag}%'),
+                    Activity.is_eliminated == False
+                ).first()
+                if act:
+                    act.is_eliminated = True
+                    print(f"  Eliminated Day 8: '{act.title}' (Kanazawa activity)")
+
+            # Fix bus route title
+            bus_to_kyoto = Activity.query.filter(
+                Activity.day_id == day8.id,
+                Activity.title.like('%Shirakawa-go%Kyoto%')
+            ).first()
+            if bus_to_kyoto:
+                bus_to_kyoto.title = 'Nohi Bus: Shirakawa-go → Kanazawa'
+                bus_to_kyoto.getting_there = 'Nohi Bus from Shirakawa-go to Kanazawa (~1h15m). Then Hokuriku Shinkansen/Thunderbird to Kyoto.'
+
+            # Add check-in to Tsukiya-Mikazuki on Day 8 evening
+            existing_checkin = Activity.query.filter(
+                Activity.day_id == day8.id,
+                Activity.title.like('%Tsukiya%')
+            ).first()
+            if not existing_checkin:
+                checkin_act = Activity(
+                    day_id=day8.id,
+                    title='Check into Tsukiya-Mikazuki (Kyoto machiya)',
+                    time_slot='evening',
+                    sort_order=900,
+                    getting_there='From Kyoto Station: Karasuma Line to Gojo Station (1 stop, 3 min). 5 min walk.',
+                    is_optional=False,
+                )
+                db.session.add(checkin_act)
+                print("  Added Day 8: Check into Tsukiya-Mikazuki")
+
+            # Add train from Kanazawa to Kyoto
+            existing_train = Activity.query.filter(
+                Activity.day_id == day8.id,
+                Activity.title.like('%Kanazawa%Kyoto%')
+            ).first()
+            if not existing_train:
+                # Check for Hokuriku shinkansen
+                existing_hoku = Activity.query.filter(
+                    Activity.day_id == day8.id,
+                    Activity.title.like('%Hokuriku%')
+                ).first()
+                if not existing_hoku:
+                    train_act = Activity(
+                        day_id=day8.id,
+                        title='Hokuriku Shinkansen + Thunderbird: Kanazawa → Kyoto',
+                        time_slot='afternoon',
+                        sort_order=800,
+                        jr_pass_covered=True,
+                        getting_there='Hokuriku Shinkansen Kanazawa → Tsuruga, then Thunderbird Express Tsuruga → Kyoto. ~2h15m total.',
+                    )
+                    db.session.add(train_act)
+                    print("  Added Day 8: Kanazawa → Kyoto train")
+
+        # --- Day 9: Eliminate Kanazawa activities, make it a Kyoto day ---
+        day9 = Day.query.filter_by(day_number=9).first()
+        if day9:
+            day9.title = 'KYOTO DAY 1 — Eastern Temples & Gion'
+            kanazawa_day9 = [
+                '21st Century Museum', 'D.T. Suzuki Museum',
+                'Nagamachi Samurai', 'Gold leaf ice cream',
+                'Last Omicho Market', 'Hokuriku Shinkansen',
+                'Thunderbird Express',
+            ]
+            for frag in kanazawa_day9:
+                act = Activity.query.filter(
+                    Activity.day_id == day9.id,
+                    Activity.title.like(f'%{frag}%'),
+                    Activity.is_eliminated == False
+                ).first()
+                if act:
+                    act.is_eliminated = True
+                    print(f"  Eliminated Day 9: '{act.title}' (Kanazawa activity)")
+
+            # Check-into Tsukiya should be Day 8, not Day 9 — move if on Day 9
+            tsukiya_checkin_d9 = Activity.query.filter(
+                Activity.day_id == day9.id,
+                Activity.title.like('%Tsukiya%')
+            ).first()
+            if tsukiya_checkin_d9:
+                tsukiya_checkin_d9.is_eliminated = True
+                print("  Eliminated Day 9: Tsukiya check-in (moved to Day 8)")
+
+            # Add Kyoto sightseeing activities for Day 9 if now mostly empty
+            active_d9 = Activity.query.filter_by(
+                day_id=day9.id, is_eliminated=False, is_substitute=False
+            ).count()
+            if active_d9 < 3:
+                kyoto_d9_activities = [
+                    ('Fushimi Inari Shrine — walk the thousand torii gates', 'morning', 100,
+                     'JR Nara Line from Kyoto Station to Inari Station (5 min). Shrine is right at the station exit.'),
+                    ('Kiyomizu-dera Temple', 'morning', 200,
+                     'Bus #207 from Gojo to Kiyomizu-michi (15 min) then 10 min uphill walk.'),
+                    ('Higashiyama historic walking streets', 'afternoon', 300,
+                     'Walk downhill from Kiyomizu-dera through Ninenzaka and Sannenzaka lanes.'),
+                    ('Gion district walk — spot geiko and maiko', 'afternoon', 400,
+                     'Walk north from Higashiyama through Yasaka Shrine to Gion (~15 min).'),
+                    ('Stroll along Kamo River', 'evening', 500,
+                     'Walk west from Gion to the river (5 min). Beautiful lit-up bridges at night.'),
+                    ('Pontocho Alley dinner', 'evening', 600,
+                     'Narrow alley parallel to Kamo River between Shijo and Sanjo bridges.'),
+                ]
+                for title, slot, order, gt in kyoto_d9_activities:
+                    exists = Activity.query.filter(
+                        Activity.day_id == day9.id,
+                        Activity.title.like(f'%{title[:20]}%')
+                    ).first()
+                    if not exists:
+                        db.session.add(Activity(
+                            day_id=day9.id, title=title, time_slot=slot,
+                            sort_order=order, getting_there=gt,
+                        ))
+                print("  Added Kyoto sightseeing activities to Day 9")
+
+        # --- Day 10: Fix Kiyomizu-dera (if also on Day 9 now, eliminate on Day 10) ---
+        day10 = Day.query.filter_by(day_number=10).first()
+        if day10:
+            kiyomizu_d10 = Activity.query.filter(
+                Activity.day_id == day10.id,
+                Activity.title.like('%Kiyomizu%'),
+                Activity.is_eliminated == False
+            ).first()
+            kiyomizu_d9 = Activity.query.filter(
+                Activity.day_id == (day9.id if day9 else -1),
+                Activity.title.like('%Kiyomizu%'),
+                Activity.is_eliminated == False
+            ).first()
+            if kiyomizu_d10 and kiyomizu_d9:
+                kiyomizu_d10.is_eliminated = True
+                print("  Eliminated Day 10 Kiyomizu-dera (now on Day 9)")
+
+        # --- Day 11: Hiroshima day trip from Kyoto (this is correct) ---
+        # Already has Hiroshima content — just verify title
+        day11 = Day.query.filter_by(day_number=11).first()
+        if day11:
+            day11.title = 'DAY TRIP — HIROSHIMA & MIYAJIMA ISLAND'
+
+        # --- Day 12: Eliminate duplicate Hiroshima, make it Kyoto→Osaka transit ---
+        day12 = Day.query.filter_by(day_number=12).first()
+        if day12:
+            # Check if Day 12 has Hiroshima activities — if Day 11 also does, eliminate Day 12's
+            day11_hiroshima = Activity.query.filter(
+                Activity.day_id == (day11.id if day11 else -1),
+                Activity.title.like('%Hiroshima%'),
+                Activity.is_eliminated == False
+            ).count()
+
+            if day11_hiroshima > 0:
+                # Day 11 already covers Hiroshima — eliminate Day 12 Hiroshima dupes
+                for act in Activity.query.filter(
+                    Activity.day_id == day12.id,
+                    Activity.is_eliminated == False
+                ).all():
+                    if any(kw in act.title for kw in [
+                        'Hiroshima', 'A-Bomb', 'okonomiyaki', 'Miyajima',
+                        'Itsukushima', 'JR train to', 'JR Ferry',
+                        'Shinkansen Kyoto', 'Shinkansen Hiroshima',
+                        'coin locker', 'Store luggage',
+                    ]):
+                        act.is_eliminated = True
+                        print(f"  Eliminated Day 12: '{act.title}' (Hiroshima dupe)")
+
+                day12.title = 'KYOTO → OSAKA'
+                # Change Day 12 location to Osaka
+                osaka_location = Location.query.filter_by(name='Osaka').first()
+                if osaka_location:
+                    day12.location_id = osaka_location.id
+
+                # Add Kyoto→Osaka transit activities
+                transit_acts = [
+                    ('Check out of Kyotofish Miyagawa Ochaya', 'morning', 100,
+                     'Checkout by 10:00 AM.'),
+                    ('Last Kyoto exploration & omiyage shopping', 'morning', 200,
+                     'Nishiki Market or Kyoto Station shopping area.'),
+                    ('JR Special Rapid: Kyoto → Osaka', 'afternoon', 300,
+                     'JR Special Rapid from Kyoto Station to Osaka Station (~30 min). JR Pass covered.'),
+                    ('Check into Hotel The Leben Osaka', 'afternoon', 400,
+                     'From Osaka Station: Midosuji Line to Shinsaibashi Station (3 stops). 5 min walk to hotel.'),
+                    ('Explore Shinsaibashi & Amerikamura', 'afternoon', 500,
+                     'Walk from hotel — Shinsaibashi shopping arcade is right outside.'),
+                    ('Dotonbori Night Walk', 'evening', 600,
+                     '~10 min walk south from Shinsaibashi to the canal.'),
+                ]
+                for title, slot, order, gt in transit_acts:
+                    exists = Activity.query.filter(
+                        Activity.day_id == day12.id,
+                        Activity.title.like(f'%{title[:20]}%')
+                    ).first()
+                    if not exists:
+                        db.session.add(Activity(
+                            day_id=day12.id, title=title, time_slot=slot,
+                            sort_order=order, getting_there=gt,
+                        ))
+                print("  Restructured Day 12 as Kyoto → Osaka transit day")
+
+        # --- Day 13: Now a FULL Osaka day (no morning transit needed) ---
+        day13 = Day.query.filter_by(day_number=13).first()
+        if day13:
+            day13.title = 'FULL DAY OSAKA — Street Food & Neon'
+            # Eliminate transit activities that are now on Day 12
+            for frag in ['Check out of Kyoto', 'JR Special Rapid to Osaka']:
+                act = Activity.query.filter(
+                    Activity.day_id == day13.id,
+                    Activity.title.like(f'%{frag}%'),
+                    Activity.is_eliminated == False
+                ).first()
+                if act:
+                    act.is_eliminated = True
+                    print(f"  Eliminated Day 13: '{act.title}' (now on Day 12)")
+
+            # "Check into Osaka hotel" should also be eliminated (now Day 12)
+            checkin_osaka = Activity.query.filter(
+                Activity.day_id == day13.id,
+                Activity.title.like('%Check into Osaka%'),
+                Activity.is_eliminated == False
+            ).first()
+            if checkin_osaka:
+                checkin_osaka.is_eliminated = True
+                print("  Eliminated Day 13: 'Check into Osaka hotel' (now on Day 12)")
+
+        # --- Day 14: Update departure activities ---
+        day14 = Day.query.filter_by(day_number=14).first()
+        if day14:
+            # Update checkout reference
+            checkout_act = Activity.query.filter(
+                Activity.day_id == day14.id,
+                Activity.title.like('%checkout%Hotel Leben%')
+            ).first()
+            if not checkout_act:
+                checkout_act = Activity.query.filter(
+                    Activity.day_id == day14.id,
+                    Activity.title.like('%Early checkout%')
+                ).first()
+            if checkout_act:
+                checkout_act.title = 'Check out of Hotel The Leben Osaka'
+                checkout_act.getting_there = 'Checkout before 11:00 AM. Flight UA876 departs HND 3:50 PM.'
+
+        # ============================================================
+        # 7. FLIGHT UPDATES — add confirmation details from PDFs
+        # ============================================================
+        from models import Flight
+        # Outbound: DL5392 + DL275
+        dl_flights = Flight.query.filter(Flight.direction == 'outbound').all()
+        for f in dl_flights:
+            if 'DL' in (f.flight_number or '') or 'Delta' in (f.airline or ''):
+                if not f.confirmation_number:
+                    f.confirmation_number = 'HBPF75'
+                f.booking_status = 'confirmed'
+
+        # Return: UA876 + UA1470
+        ua_flights = Flight.query.filter(Flight.direction == 'return').all()
+        for f in ua_flights:
+            if 'UA' in (f.flight_number or '') or 'United' in (f.airline or ''):
+                if not f.confirmation_number:
+                    f.confirmation_number = 'I91ZHJ'
+                f.booking_status = 'confirmed'
+
+        # Mark sentinel and commit
+        trip.notes = (trip.notes or '') + '\n' + sentinel
+        db.session.commit()
+        print("Migration complete: confirmed_bookings_v1 applied successfully.")
 
 
 if __name__ == '__main__':
