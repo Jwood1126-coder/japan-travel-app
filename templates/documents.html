@@ -11,15 +11,18 @@
 <!-- Uploaded Documents (PDFs, confirmations) -->
 <details class="doc-section" open>
     <summary class="doc-section-title">&#x1F4C4; Documents &amp; Confirmations</summary>
-    {% if saved_docs %}
+    {% if all_docs %}
     <div class="doc-file-list">
-        {% for doc in saved_docs %}
+        {% for doc in all_docs %}
         <div class="doc-file-row" data-filename="{{ doc.filename }}">
-            <span class="doc-file-icon">{% if doc.is_pdf %}&#x1F4D1;{% else %}&#x1F5BC;{% endif %}</span>
+            <span class="doc-file-icon">{% if doc.file_type == 'pdf' %}&#x1F4D1;{% else %}&#x1F5BC;{% endif %}</span>
             <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-               target="_blank" rel="noopener" class="doc-file-link">{{ doc.display_name }}</a>
+               target="_blank" rel="noopener" class="doc-file-link">{{ doc.original_name or doc.filename }}</a>
+            {% if doc.accommodations or doc.flights %}
+            <span class="doc-linked-badge" title="Linked to booking">&#x1F517;</span>
+            {% endif %}
             <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-               download="{{ doc.display_name }}" class="doc-download-btn" title="Download">&#x2B07;</a>
+               download="{{ doc.original_name or doc.filename }}" class="doc-download-btn" title="Download">&#x2B07;</a>
             <button class="doc-delete-btn" onclick="deleteDocument('{{ doc.filename }}')" title="Delete">&#x2715;</button>
         </div>
         {% endfor %}
@@ -47,10 +50,13 @@
     {% if group_flights %}
     <h3 class="flight-group-title">{{ group_label }}</h3>
     {% for flight in group_flights %}
-    <div class="flight-card-tripit" data-flight-id="{{ flight.id }}">
+    <div class="flight-card-tripit {% if flight.document_id %}doc-backed{% else %}doc-planned{% endif %}" data-flight-id="{{ flight.id }}">
         <div class="flight-card-header">
             <span class="flight-airline">{{ flight.airline }}</span>
             <span class="flight-number">{{ flight.flight_number }}</span>
+            {% if flight.document_id %}
+            <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
+            {% endif %}
             {% if flight.booking_status and flight.booking_status != 'not_booked' %}
             <span class="booking-badge {{ flight.booking_status }}">{{ flight.booking_status | replace('_', ' ') | title }}</span>
             {% endif %}
@@ -114,9 +120,14 @@
                 <div class="doc-attachment-list">
                     {% for doc in linked_flight_docs %}
                     <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.display_name }}</a>
+                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.original_name or doc.filename }}</a>
                     {% endfor %}
                 </div>
+            </div>
+            {% else %}
+            <div class="doc-detail-row doc-missing-hint">
+                <span class="doc-detail-label">Documents</span>
+                <span class="doc-needed">No document linked</span>
             </div>
             {% endif %}
         </div>
@@ -134,10 +145,13 @@
     {% for item in accommodations %}
     {% set loc = item.location %}
     {% set opt = item.selected %}
-    <div class="doc-card">
+    <div class="doc-card {% if opt.document_id %}doc-backed{% else %}doc-planned{% endif %}">
         <div class="doc-card-header">
             <strong>{{ opt.name }}</strong>
             {% if opt.property_type %}<span class="doc-card-type">{{ opt.property_type }}</span>{% endif %}
+            {% if opt.document_id %}
+            <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
+            {% endif %}
             <span class="booking-badge {{ opt.booking_status }}">{{ opt.booking_status | replace('_', ' ') | title }}</span>
         </div>
         <div class="doc-card-meta">
@@ -187,9 +201,14 @@
                 <div class="doc-attachment-list">
                     {% for doc in linked_docs %}
                     <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.display_name }}</a>
+                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.original_name or doc.filename }}</a>
                     {% endfor %}
                 </div>
+            </div>
+            {% else %}
+            <div class="doc-detail-row doc-missing-hint">
+                <span class="doc-detail-label">Documents</span>
+                <span class="doc-needed">No document linked</span>
             </div>
             {% endif %}
             {% if opt.notes %}
@@ -209,7 +228,7 @@
 <details class="doc-section">
     <summary class="doc-section-title">{{ icon_train(18) }} Transport Routes</summary>
     {% for route in transport %}
-    <div class="doc-card transport-card">
+    <div class="doc-card transport-card doc-planned">
         <div class="transport-route">
             <span class="transport-from">{{ route.route_from }}</span>
             <span class="transport-arrow">&rarr;</span>
@@ -222,6 +241,7 @@
             {{ route.train_name or route.transport_type | title }}
             {% if route.duration %}&middot; {{ route.duration }}{% endif %}
             {% if route.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}
+            <span class="planned-badge">Planned</span>
         </div>
     </div>
     {% endfor %}
@@ -235,10 +255,11 @@
     {% for item in ticketed_activities %}
     {% set a = item.activity %}
     {% set d = item.day %}
-    <div class="doc-card">
+    <div class="doc-card doc-planned">
         <div class="doc-card-header">
             <strong>{{ a.title }}</strong>
             {% if a.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}
+            <span class="planned-badge">Planned</span>
         </div>
         <div class="doc-card-meta">
             Day {{ d.day_number }} &middot; {{ d.date.strftime('%b %d') }} &middot; {{ item.location.name }}
@@ -273,7 +294,7 @@
 </details>
 {% endif %}
 
-{% if not flights and not accommodations and not transport and not ticketed_activities and not saved_docs %}
+{% if not flights and not accommodations and not transport and not ticketed_activities and not all_docs %}
 <p class="empty-state">No travel documents yet. Upload your booking confirmations to get started.</p>
 {% endif %}
 {% endblock %}

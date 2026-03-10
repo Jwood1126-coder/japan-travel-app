@@ -5,7 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Blueprint, render_template, jsonify, request, current_app
 from models import db, AccommodationLocation, AccommodationOption, ChecklistItem
-from guardrails import validate_booking_status, validate_non_negative
+from guardrails import validate_booking_status, validate_non_negative, validate_document_status
 
 accommodations_bp = Blueprint('accommodations', __name__)
 
@@ -295,6 +295,8 @@ def update_status(option_id):
     if new_status is not None:
         try:
             new_status = validate_booking_status(new_status)
+            validate_document_status(new_status, option.document_id,
+                                     f"accommodation '{option.name}'")
         except ValueError as e:
             return jsonify({'ok': False, 'error': str(e)}), 400
         option.booking_status = new_status

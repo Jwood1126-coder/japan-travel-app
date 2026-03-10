@@ -1,6 +1,6 @@
-"""Schema migrations — adds missing columns to existing tables.
+"""Schema migrations — adds missing columns/tables to the database.
 
-Idempotent and safe to run on every boot. Uses raw SQLite ALTER TABLE
+Idempotent and safe to run on every boot. Uses raw SQLite DDL
 so it works even if models have changed.
 """
 
@@ -9,12 +9,29 @@ import sqlite3
 
 
 def run_schema_migrations(app):
-    """Add new columns to existing tables if they don't exist."""
+    """Add new columns/tables if they don't exist."""
     db_path = app.config['SQLALCHEMY_DATABASE_URI'].replace('sqlite:///', '')
     if not os.path.exists(db_path):
         return
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
+
+    # --- Create Document table (Phase 6: document-first architecture) ---
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS document (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            original_name TEXT,
+            file_type TEXT,
+            file_size INTEGER,
+            doc_type TEXT NOT NULL,
+            extracted_data TEXT,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            notes TEXT
+        )
+    """)
+
+    # --- Column additions (idempotent via try/except) ---
     migrations = [
         ('activity', 'address', 'TEXT'),
         ('accommodation_option', 'address', 'TEXT'),
@@ -44,6 +61,9 @@ def run_schema_migrations(app):
         ('activity', 'getting_there', 'TEXT'),
         ('activity', 'is_confirmed', 'BOOLEAN DEFAULT 0'),
         ('accommodation_option', 'phone', 'TEXT'),
+        # Phase 6: document-first FK columns
+        ('accommodation_option', 'document_id', 'INTEGER REFERENCES document(id)'),
+        ('flight', 'document_id', 'INTEGER REFERENCES document(id)'),
     ]
     for table, column, col_type in migrations:
         try:

@@ -141,6 +141,7 @@ class AccommodationOption(db.Model):
     check_out_info = db.Column(db.String(200))  # e.g. "11:00 AM"
     phone = db.Column(db.String(50))
     user_notes = db.Column(db.Text)
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)
 
     @property
     def price_tier(self):
@@ -152,6 +153,10 @@ class AccommodationOption(db.Model):
             return '$$'
         else:
             return '$$$'
+
+    @property
+    def is_document_backed(self):
+        return self.document_id is not None
 
     def to_dict(self):
         return {
@@ -174,6 +179,8 @@ class AccommodationOption(db.Model):
             'check_in_info': self.check_in_info,
             'check_out_info': self.check_out_info,
             'user_notes': self.user_notes,
+            'document_id': self.document_id,
+            'is_document_backed': self.is_document_backed,
         }
 
 
@@ -196,6 +203,7 @@ class Flight(db.Model):
     notes = db.Column(db.Text)
     booking_status = db.Column(db.String(50), default='not_booked')
     confirmation_number = db.Column(db.String(100))
+    document_id = db.Column(db.Integer, db.ForeignKey('document.id'), nullable=True)
 
 
 class TransportRoute(db.Model):
@@ -284,6 +292,34 @@ class ChecklistOption(db.Model):
             'is_selected': self.is_selected,
             'user_notes': self.user_notes,
         }
+
+
+class Document(db.Model):
+    """An uploaded file that proves a booking or reservation.
+    This is the root of the trust chain — documents are the source of truth."""
+    id = db.Column(db.Integer, primary_key=True)
+
+    # File storage
+    filename = db.Column(db.String(255), nullable=False)       # Stored filename (uuid__original)
+    original_name = db.Column(db.String(255))                   # User's original filename
+    file_type = db.Column(db.String(10))                        # pdf, png, jpg
+    file_size = db.Column(db.Integer)                           # Bytes
+
+    # Classification
+    doc_type = db.Column(db.String(30), nullable=False)
+    # Values: accommodation_booking, flight_receipt, transport_ticket,
+    #         activity_ticket, insurance, passport, visa, other
+
+    # Extracted data (parsed from the document)
+    extracted_data = db.Column(db.Text)                         # JSON blob of parsed fields
+
+    # Metadata
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notes = db.Column(db.Text)
+
+    # Relationships
+    accommodations = db.relationship('AccommodationOption', backref='document')
+    flights = db.relationship('Flight', backref='document')
 
 
 class Photo(db.Model):

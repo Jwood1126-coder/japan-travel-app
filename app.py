@@ -183,6 +183,19 @@ def create_app(run_data_migrations=True):
                 print(f"ERROR: schedule validation failed: {e}")
                 traceback.print_exc()
 
+            # Phase 6: seed Document records for files on disk & auto-link
+            try:
+                from blueprints.documents import seed_document_records, auto_link_documents
+                seeded = seed_document_records()
+                if seeded:
+                    print(f"  Documents: created {seeded} record(s) for files on disk")
+                linked = auto_link_documents()
+                if linked:
+                    print(f"  Documents: auto-linked {linked} document(s) to bookings")
+            except Exception as e:
+                print(f"ERROR: document seeding failed: {e}")
+                traceback.print_exc()
+
     return app
 
 

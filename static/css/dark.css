@@ -472,3 +472,10 @@
 [data-theme="dark"] .confirmed-fill {
     box-shadow: 0 0 6px rgba(242,181,196,0.3);
 }
+
+/* Document-first: dark mode for planned/confirmed distinction */
+[data-theme="dark"] .doc-backed { border-left-color: #22c55e; }
+[data-theme="dark"] .doc-planned { border-left-color: #ca8a04; }
+[data-theme="dark"] .planned-badge { background: #422006; color: #fbbf24; }
+[data-theme="dark"] .doc-needed { color: #fbbf24; }
+[data-theme="dark"] .doc-missing-hint .doc-detail-label { color: #fbbf24; }

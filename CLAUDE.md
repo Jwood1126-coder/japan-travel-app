@@ -33,7 +33,8 @@ A Flask + SQLite PWA for planning and managing a Japan trip. Deployed on Railway
 
 ```
 app.py                  # App factory, auth routes, template filters (~190 lines)
-models.py               # 13 SQLAlchemy models
+models.py               # 15 SQLAlchemy models (includes Document model)
+guardrails.py           # Runtime validation: booking status, document-first rule, date overlaps
 config.py               # Flask config, env vars, production validation
 wsgi.py                 # Gunicorn entry point (imports create_app)
 start.py                # Railway bootstrap: dir setup, DB backup, seed, launch gunicorn
@@ -51,7 +52,7 @@ blueprints/
   checklists.py         # Checklist view + toggle/add/update/delete APIs
   activities.py         # Activity list + toggle/update/add/delete APIs
   uploads.py            # Photo upload with EXIF extraction + thumbnail generation
-  documents.py          # PDF upload + list view + document-to-booking linking
+  documents.py          # Document-first: upload, link/unlink, auto-match, seed on boot
   calendar.py           # Month calendar view
   backup.py             # DB backup/restore via API
   export.py             # PDF export
@@ -103,9 +104,10 @@ When adding styles:
 
 The live production DB was mutated by 39 migration functions that originally lived in `app.py`. These have been **archived** to `migrations/archive/` (frozen, never imported). On every boot, `create_app()` runs:
 
-1. **`migrations/schema.py`** — Adds missing columns via ALTER TABLE (idempotent)
+1. **`migrations/schema.py`** — Adds missing columns/tables via ALTER TABLE + CREATE TABLE (idempotent)
 2. **`migrations/legacy.py`** — Verifies all 39 legacy migrations were applied (sentinel checks, does NOT re-run them)
-3. **`migrations/validate.py`** — Schedule validation: accommodation date gaps, overpacked days, departure conflicts
+3. **`migrations/validate.py`** — Schedule validation: date gaps, overpacked days, departure conflicts, document integrity
+4. **Document seeding** — `seed_document_records()` syncs files on disk → DB, `auto_link_documents()` matches to bookings
 
 **Rules for data changes:**
 - The migration system is **closed** — no new migration functions should be added
@@ -118,6 +120,67 @@ The live production DB was mutated by 39 migration functions that originally liv
 - Also add the column to the model in `models.py`
 - The ALTER TABLE is wrapped in try/except so it's safe to re-run
 
+## Document-First Architecture
+
+### The Iron Rule
+**If there is no uploaded document (PDF, email screenshot, booking confirmation) linked to a booking, it CANNOT have status `confirmed` in the database.**
+
+This is enforced at three levels:
+1. **API layer** — `guardrails.validate_document_status()` rejects confirmed without `document_id`
+2. **AI chat** — `executor.py` calls `validate_document_status()` before setting booking_status
+3. **Boot-time** — `migrations/validate.py` Check 6 warns about confirmed items missing documents
+
+### Status Transitions
+```
+not_booked → researching → booked → confirmed → completed
+                                ↑                    ↓
+                                └── cancelled ←──────┘
+```
+- `not_booked → booked`: Set dates and details, no document needed
+- `booked → confirmed`: **REQUIRES document_id** — the API rejects without it
+- `confirmed → cancelled`: Can happen anytime, preserves the record
+- Deleting/unlinking a document auto-downgrades `confirmed → booked`
+- NEVER skip states (e.g., `not_booked → confirmed` without a document)
+
+### Document Model
+- `Document` records in the DB represent uploaded files (PDFs, images)
+- `AccommodationOption.document_id` and `Flight.document_id` link bookings to their proof
+- On boot, `seed_document_records()` syncs files on disk → DB records
+- On boot, `auto_link_documents()` matches unlinked documents to bookings by confirmation number, name keywords, and date patterns
+
+### Planned vs Confirmed Visual Language
+- **Confirmed** (doc-backed): solid green left border, 📄 icon, document link shown
+- **Planned** (no document): dashed yellow left border, "Planned" badge, "No document linked" hint
+- NEVER render planned items with the same styling as confirmed items
+
+### Accommodation Chain
+The confirmed accommodation chain defines the trip structure:
+1. Sotetsu Fresa Inn → Tokyo, Apr 6–9
+2. TAKANOYU → Takayama, Apr 9–12
+3. Tsukiya-Mikazuki → Kyoto, Apr 12–14
+4. Kyotofish Miyagawa → Kyoto, Apr 14–16
+5. Hotel The Leben Osaka → Osaka, Apr 16–18
+
+Days get their city from the accommodation covering that date. Transport routes connect consecutive stays.
+
+## Guardrails & Validation
+
+### Runtime Enforcement (`guardrails.py`)
+- `validate_booking_status()` — rejects invalid status strings
+- `validate_document_status()` — enforces the iron rule (confirmed requires document)
+- `validate_time_slot()` — rejects invalid time slots
+- `validate_non_negative()` — rejects negative prices/costs
+- `check_accom_date_overlap()` — detects overlapping accommodation dates
+
+### Boot-time Validation (`migrations/validate.py`)
+Runs on every boot, prints warnings (does not block startup):
+1. Accommodation date chain gaps/overlaps
+2. Accommodation num_nights consistency
+3. Departure day activity conflicts
+4. Overpacked days (>10 activities)
+5. Multiple selected options per location
+6. Document integrity (confirmed without document, conf# without document)
+
 ## Key Architecture Patterns
 
 ### Authentication
@@ -127,7 +190,7 @@ The live production DB was mutated by 39 migration functions that originally liv
 - `@app.before_request` redirects unauthenticated users to `/login` (currently disabled for pre-trip sharing)
 
 ### Real-time Updates
-- Flask-SocketIO emits events (`accommodation_updated`, `activity_updated`)
+- Flask-SocketIO emits events (`accommodation_updated`, `activity_updated`, `document_updated`)
 - Client-side Socket.IO listeners refresh UI without page reload
 - Gevent worker model supports WebSocket connections
 
@@ -138,6 +201,7 @@ The live production DB was mutated by 39 migration functions that originally liv
 - SSE streaming for incremental response display (`routes.py`)
 - Dynamic context includes full trip state: all accommodations, activities, flights, transport (`context.py`)
 - Server-side web search tool (Anthropic-managed)
+- **Document enforcement**: chat tools validate document status before setting booking_status to confirmed
 
 ### Template Filters (defined in create_app)
 - `maps_link(address)` — Google Maps search URL
@@ -148,7 +212,8 @@ The live production DB was mutated by 39 migration functions that originally liv
 - Each city has an `AccommodationLocation` with multiple `AccommodationOption` records
 - `is_selected=True` marks the chosen hotel (only one per location)
 - `is_eliminated=True` removes from consideration without deleting
-- `booking_status`: not_booked / booked / confirmed
+- `booking_status`: not_booked / researching / booked / confirmed / cancelled
+- `document_id`: FK to Document — required for `confirmed` status
 - `price_tier` property: `$` (<$60/night), `$$` ($60-120), `$$$` (>$120)
 - Foreign key is `location_id` (NOT `accommodation_location_id`), `rank` is NOT NULL
 
@@ -185,7 +250,7 @@ The live production DB was mutated by 39 migration functions that originally liv
 
 - **Platform:** Railway (auto-deploy from GitHub `main` branch)
 - **Entry:** `Procfile` → `start.py` → Gunicorn with gevent workers
-- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → schema migrations → legacy verification → schedule validation → app serves
+- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → schema migrations → legacy verification → schedule validation → document seeding/auto-linking → app serves
 - **Environment variables:** `SECRET_KEY`, `TRIP_PASSWORD`, `ANTHROPIC_API_KEY`, `RAILWAY_VOLUME_MOUNT_PATH`
 - Production refuses to start if `SECRET_KEY` or `TRIP_PASSWORD` are default values
 
@@ -202,6 +267,55 @@ When making ANY change to the trip data (activities, accommodations, transport, 
 - **Days vs. nights:** A stay from Apr 6 check-in to Apr 9 check-out is 3 nights (not 4). Nights = checkout date minus check-in date. This is a common source of errors.
 - **Transition days:** Checkout from one city and check-in to the next often happen on the same date (e.g., Apr 9 = Tokyo checkout + Takayama check-in). The calendar view merges these overlap dates.
 
+## Behavioral Rules for AI Agents
+
+### 1. Documents Are the Source of Truth
+- If there is no uploaded document confirming a booking, it CANNOT be `confirmed`
+- The accommodation chain defines the trip structure — days get their city from accommodations
+- NEVER create a confirmed accommodation or flight without a `document_id`
+- NEVER override PDF booking data with inferences, guesses, or "schedule audits"
+
+### 2. No More Migration Functions
+- The migration pattern from v1 is closed — do not create migration functions
+- Data changes happen through: UI actions, API endpoints, or AI chat tools
+- Schema changes (new columns/tables) go in `migrations/schema.py` as idempotent DDL
+- For one-time data fixes, write a script in `scripts/`, run it, verify, delete it
+- NEVER add data manipulation code that runs on every boot
+
+### 3. Always Check DB State Before Writing
+- Before creating a record, query whether it already exists
+- Before updating a record, verify the current state matches your assumptions
+- NEVER blindly set fields — read first, then decide what to change
+- Use `guardrails.py` validation functions to check constraints before committing
+
+### 4. Status Transitions Are Enforced
+- `booked → confirmed`: REQUIRES `document_id` — the API rejects without it
+- Deleting/unlinking a document auto-downgrades `confirmed → booked`
+- NEVER skip states (e.g., `not_booked → confirmed` without a document)
+- All status changes must go through `validate_booking_status()` and `validate_document_status()`
+
+### 5. Cross-Cutting Changes Must Cascade
+When an accommodation is confirmed/modified/cancelled:
+- Update the checklist item for that city
+- Verify transport routes still connect correctly
+- Verify day assignments still match the date range
+
+When a document is deleted/unlinked:
+- All linked bookings downgrade from `confirmed` to `booked`
+- Boot-time validation will flag any remaining inconsistencies
+
+### 6. Error Handling
+- NEVER wrap database operations in bare `try/except` that swallows errors
+- Validate inputs BEFORE attempting the operation (use `guardrails.py`)
+- If something unexpected happens, return an error to the user — don't silently continue
+
+### 7. Testing After Changes
+- After any data model change: verify dashboard, calendar, day view, accommodations, documents, checklists
+- After any CSS change: verify every page in both light and dark mode on mobile (375px)
+- After any chat tool change: send a message that triggers the tool, check the DB result
+- Before deploying: run `python -c "from app import create_app; create_app()"` and check for warnings
+- Bump the service worker cache version in `static/sw.js`
+
 ## Things to Be Careful About
 
 - **No test suite exists.** Changes should be verified manually or by running the app locally.
@@ -209,6 +323,7 @@ When making ANY change to the trip data (activities, accommodations, transport, 
 - **Never force-push or reset main** — Railway auto-deploys from it.
 - **Never replace the production DB** with a fresh import — it contains live booking data, chat history, photos, and completed activities.
 - **Service worker cache** must be bumped on every CSS/HTML/JS change (`static/sw.js`).
+- **Document-first rule is enforced** — attempting to set `confirmed` without a `document_id` will be rejected at the API, chat, and UI levels.
 
 ## Running Locally
 

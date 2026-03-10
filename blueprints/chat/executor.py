@@ -3,7 +3,8 @@
 from datetime import datetime
 from models import (db, ChecklistItem, Day, Activity, AccommodationOption,
                     AccommodationLocation, Flight, BudgetItem)
-from guardrails import validate_time_slot, validate_booking_status, validate_non_negative
+from guardrails import (validate_time_slot, validate_booking_status,
+                        validate_non_negative, validate_document_status)
 
 
 def execute_tool(tool_name, tool_input):
@@ -18,7 +19,10 @@ def execute_tool(tool_name, tool_input):
                 return {"success": False, "error": f"Flight {flight_num} not found in itinerary"}
             if tool_input.get('booking_status'):
                 try:
-                    flight.booking_status = validate_booking_status(tool_input['booking_status'])
+                    new_status = validate_booking_status(tool_input['booking_status'])
+                    validate_document_status(new_status, flight.document_id,
+                                             f'flight {flight.flight_number}')
+                    flight.booking_status = new_status
                 except ValueError as e:
                     return {"success": False, "error": str(e)}
             if tool_input.get('confirmation_number'):
@@ -41,7 +45,10 @@ def execute_tool(tool_name, tool_input):
                 return {"success": False, "error": f"Accommodation '{name}' not found"}
             if tool_input.get('booking_status'):
                 try:
-                    tool_input['booking_status'] = validate_booking_status(tool_input['booking_status'])
+                    new_status = validate_booking_status(tool_input['booking_status'])
+                    validate_document_status(new_status, option.document_id,
+                                             f"accommodation '{option.name}'")
+                    tool_input['booking_status'] = new_status
                 except ValueError as e:
                     return {"success": False, "error": str(e)}
             for field in ['booking_status', 'confirmation_number', 'address', 'user_notes',

@@ -3,10 +3,15 @@
 These validate inputs at API boundaries before they reach the database.
 Boot-time validation lives in migrations/validate.py (advisory warnings).
 These guardrails are enforcement — they reject bad data with errors.
+
+Document-first iron rule: status 'confirmed' requires a linked Document.
 """
 
 VALID_TIME_SLOTS = {'morning', 'afternoon', 'evening', 'night'}
 VALID_BOOKING_STATUSES = {'not_booked', 'booked', 'confirmed', 'researching', 'cancelled'}
+
+# Statuses that require a document_id to be set
+DOCUMENT_REQUIRED_STATUSES = {'confirmed'}
 
 
 def validate_time_slot(time_slot):
@@ -40,6 +45,26 @@ def validate_non_negative(value, field_name):
     if v < 0:
         raise ValueError(f"'{field_name}' cannot be negative (got {v})")
     return v
+
+
+def validate_document_status(new_status, document_id, entity_name='item'):
+    """Enforce the iron rule: 'confirmed' requires a linked document.
+
+    Args:
+        new_status: The proposed new booking_status
+        document_id: The current or proposed document_id
+        entity_name: Human-readable name for error messages
+
+    Raises ValueError if attempting to confirm without a document.
+    """
+    if not new_status:
+        return
+    s = new_status.strip().lower()
+    if s in DOCUMENT_REQUIRED_STATUSES and not document_id:
+        raise ValueError(
+            f"Cannot set {entity_name} to '{s}' without a linked document. "
+            f"Upload the booking confirmation PDF first, then confirm."
+        )
 
 
 def check_accom_date_overlap(location, exclude_location_id=None):

@@ -80,6 +80,21 @@ def validate_schedule(app):
             warnings.append(
                 f"MULTI-SELECT: {loc.location_name} has {selected_count} selected options (should be 0 or 1)")
 
+    # --- Check 6: Document integrity (confirmed without document) ---
+    for loc in all_locs:
+        for opt in loc.options:
+            if opt.booking_status == 'confirmed' and not opt.document_id:
+                warnings.append(
+                    f"DOC INTEGRITY: '{opt.name}' is confirmed but has no linked document")
+            if opt.confirmation_number and not opt.document_id and opt.is_selected:
+                warnings.append(
+                    f"DOC SUSPICIOUS: '{opt.name}' has conf# {opt.confirmation_number} but no document linked")
+
+    for f in flights:
+        if f.booking_status == 'confirmed' and not f.document_id:
+            warnings.append(
+                f"DOC INTEGRITY: Flight {f.flight_number} is confirmed but has no linked document")
+
     if warnings:
         print(f"\n{'='*60}")
         print(f"SCHEDULE VALIDATION: {len(warnings)} warning(s)")
