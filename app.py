@@ -4232,6 +4232,11 @@ def create_app(run_data_migrations=True):
             except Exception as e:
                 print(f"WARNING: confirmed bookings migration failed: {e}")
                 db.session.rollback()
+            try:
+                _migrate_fix_takanoyu_v1(app)
+            except Exception as e:
+                print(f"WARNING: fix_takanoyu migration failed: {e}")
+                db.session.rollback()
 
             # --- Post-migration validation (runs every boot) ---
             try:
@@ -5529,6 +5534,73 @@ def _migrate_confirmed_bookings_v1(app):
         trip.notes = (trip.notes or '') + '\n' + sentinel
         db.session.commit()
         print("Migration complete: confirmed_bookings_v1 applied successfully.")
+
+
+def _migrate_fix_takanoyu_v1(app):
+    """Fix TAKANOYU as the correct selected Takayama accommodation.
+
+    The confirmed_bookings_v1 migration created a duplicate 'Traditional Room
+    above Sento' option at the same address as TAKANOYU. They are the same
+    property. TAKANOYU was booked first and is the user-recognized name.
+
+    Also removes the erroneous 'Book Kanazawa' checklist item.
+    """
+    from models import (Trip, AccommodationOption, ChecklistItem, db)
+
+    with app.app_context():
+        trip = Trip.query.first()
+        if not trip:
+            return
+        sentinel = '__fix_takanoyu_v1'
+        if trip.notes and sentinel in trip.notes:
+            print("fix_takanoyu_v1: already applied, skipping")
+            return
+
+        print("Running migration: fix_takanoyu_v1...")
+
+        # --- 1. Find both options (same property at souyuji-machi 107) ---
+        takanoyu = AccommodationOption.query.filter(
+            AccommodationOption.name.ilike('%TAKANOYU%')).first()
+        sento_dup = AccommodationOption.query.filter(
+            AccommodationOption.name.ilike('%Traditional Room above Sento%')).first()
+
+        if takanoyu and sento_dup:
+            # Copy PDF-verified data from duplicate into TAKANOYU
+            takanoyu.confirmation_number = sento_dup.confirmation_number or takanoyu.confirmation_number
+            takanoyu.booking_status = 'confirmed'
+            takanoyu.is_selected = True
+            takanoyu.is_eliminated = False
+            takanoyu.address = sento_dup.address or takanoyu.address
+            takanoyu.phone = sento_dup.phone or takanoyu.phone
+            takanoyu.check_in_info = sento_dup.check_in_info or takanoyu.check_in_info
+            takanoyu.check_out_info = sento_dup.check_out_info or takanoyu.check_out_info
+            if sento_dup.user_notes:
+                takanoyu.user_notes = sento_dup.user_notes
+
+            # Eliminate the duplicate
+            sento_dup.is_selected = False
+            sento_dup.is_eliminated = True
+            print("  TAKANOYU: selected + confirmed (merged PDF data from duplicate)")
+            print("  Traditional Room above Sento: eliminated (duplicate)")
+        elif takanoyu:
+            # Just fix TAKANOYU directly
+            takanoyu.booking_status = 'confirmed'
+            takanoyu.is_selected = True
+            takanoyu.is_eliminated = False
+            takanoyu.confirmation_number = takanoyu.confirmation_number or 'HMDDRX4NFX'
+            print("  TAKANOYU: selected + confirmed")
+
+        # --- 2. Remove 'Book Kanazawa' checklist item ---
+        kanazawa_book = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike('%Book Kanazawa%')).first()
+        if kanazawa_book:
+            db.session.delete(kanazawa_book)
+            print(f"  Deleted checklist: '{kanazawa_book.title}'")
+
+        # Mark sentinel and commit
+        trip.notes = (trip.notes or '') + '\n' + sentinel
+        db.session.commit()
+        print("Migration complete: fix_takanoyu_v1 applied.")
 
 
 if __name__ == '__main__':

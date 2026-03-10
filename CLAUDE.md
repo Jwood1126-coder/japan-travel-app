@@ -10,7 +10,7 @@ A Flask + SQLite PWA for planning and managing a Japan trip. Deployed on Railway
 
 ### Confirmed accommodation chain (ALL BOOKED):
 1. **Sotetsu Fresa Inn** — Tokyo, Apr 6–9 (3n) — Agoda #976558450
-2. **Traditional Room above Sento** — Takayama, Apr 9–12 (3n) — Airbnb #HMDDRX4NFX
+2. **TAKANOYU** — Takayama, Apr 9–12 (3n) — Airbnb #HMDDRX4NFX (host Hiroto)
 3. **Tsukiya-Mikazuki** — Kyoto, Apr 12–14 (2n) — Airbnb #HMXTP9H2Z9
 4. **Kyotofish Miyagawa** — Kyoto, Apr 14–16 (2n) — Airbnb (host Karen)
 5. **Hotel The Leben Osaka** — Osaka, Apr 16–18 (2n) — Agoda #976698966
