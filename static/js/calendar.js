@@ -148,11 +148,12 @@
         D.accomSpans.forEach(function(span) {
             var cinDay = parseInt(span.check_in.split('-')[2]);
             var coutDay = parseInt(span.check_out.split('-')[2]);
-            var nights = coutDay - cinDay;
-            if (nights <= 0) return;
+            // Span includes both check-in and check-out days (you're at the hotel both days)
+            var numCells = coutDay - cinDay + 1;
+            if (numCells <= 0) return;
 
             var startIdx = (cinDay - 1) + startDow;
-            var remaining = nights;
+            var remaining = numCells;
             var curIdx = startIdx;
             var isFirst = true;
 
