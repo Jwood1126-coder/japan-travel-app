@@ -44,6 +44,10 @@
         for (var i = 0; i < btns.length; i++) {
             btns[i].classList.toggle('active', btns[i].dataset.view === view);
         }
+        // Build accom bars when month view first becomes visible
+        if (view === 'month' && !monthBarsBuilt) {
+            requestAnimationFrame(buildAccomBars);
+        }
         // Scroll to today in list view
         if (view === 'list') {
             var el = document.getElementById('calToday');
@@ -57,11 +61,16 @@
     });
 
     // --- MONTH VIEW ---
+    var monthGrid = null;
+    var monthOverlay = null;
+    var monthStartDow = 3; // April 2026 starts on Wednesday
+    var monthBarsBuilt = false;
+
     function buildMonthGrid() {
-        var grid = document.querySelector('.cal-month-grid');
-        // April 2026 starts on Wednesday (day 3, 0=Sun)
-        // We already have 7 header cells
-        var startDow = 3; // Wednesday
+        monthGrid = document.querySelector('.cal-month-grid');
+        monthOverlay = document.getElementById('calAccomOverlay');
+        var grid = monthGrid;
+        var startDow = monthStartDow;
 
         // Build a lookup: day-of-month → trip day data
         var dayMap = {};
@@ -117,19 +126,24 @@
             }
         }
 
-        // Build accommodation span bars
-        buildAccomBars(grid, startDow);
-
-        // Build legend
+        // Build legend immediately
         buildAccomLegend();
     }
 
-    function buildAccomBars(grid, startDow) {
-        // Create an overlay container for accommodation bars
-        var overlay = document.createElement('div');
-        overlay.className = 'cal-accom-overlay';
-        grid.style.position = 'relative';
-        grid.appendChild(overlay);
+    function buildAccomBars() {
+        if (monthBarsBuilt || !monthGrid || !monthOverlay) return;
+
+        var grid = monthGrid;
+        var overlay = monthOverlay;
+        var startDow = monthStartDow;
+        var dayCells = grid.querySelectorAll('.cal-grid-cell');
+        var wrapperRect = grid.parentElement.getBoundingClientRect();
+        var gridRect = grid.getBoundingClientRect();
+
+        // If grid isn't visible yet (display:none), bail and retry later
+        if (gridRect.width === 0) return;
+
+        overlay.innerHTML = '';
 
         D.accomSpans.forEach(function(span) {
             var cinDay = parseInt(span.check_in.split('-')[2]);
@@ -137,27 +151,43 @@
             var nights = coutDay - cinDay;
             if (nights <= 0) return;
 
-            // Calculate grid positions (0-indexed from Apr 1)
-            var startIdx = (cinDay - 1) + startDow; // grid cell index
-            var startRow = Math.floor(startIdx / 7);
-            var startCol = startIdx % 7;
-
-            // The bar might wrap across rows
+            var startIdx = (cinDay - 1) + startDow;
             var remaining = nights;
-            var currentCol = startCol;
-            var currentRow = startRow;
+            var curIdx = startIdx;
+            var isFirst = true;
 
             while (remaining > 0) {
-                var colsInThisRow = Math.min(remaining, 7 - currentCol);
+                var curCol = curIdx % 7;
+                var colsInThisRow = Math.min(remaining, 7 - curCol);
+                var endIdx = curIdx + colsInThisRow - 1;
+
+                var firstCell = dayCells[curIdx];
+                var lastCell = dayCells[endIdx];
+                if (!firstCell || !lastCell) {
+                    remaining -= colsInThisRow;
+                    curIdx += colsInThisRow;
+                    isFirst = false;
+                    continue;
+                }
+
+                var firstRect = firstCell.getBoundingClientRect();
+                var lastRect = lastCell.getBoundingClientRect();
+
                 var bar = document.createElement('div');
                 bar.className = 'cal-accom-bar';
+
+                var left = firstRect.left - wrapperRect.left;
+                var width = (lastRect.left + lastRect.width) - firstRect.left;
+                var top = (firstRect.top + firstRect.height) - wrapperRect.top - 14;
+
                 bar.style.cssText =
-                    'grid-column: ' + (currentCol + 1) + ' / span ' + colsInThisRow + ';' +
-                    'grid-row: ' + (currentRow + 2) + ';' + // +2 for header row + 1-indexed
-                    'background: ' + span.color_bg + ';' +
-                    'box-shadow: 0 0 8px ' + span.color_glow + ';';
-                // Only show name on first segment
-                if (currentCol === startCol && currentRow === startRow) {
+                    'left:' + left + 'px;' +
+                    'width:' + width + 'px;' +
+                    'top:' + top + 'px;' +
+                    'background:' + span.color_bg + ';' +
+                    'box-shadow:0 0 8px ' + span.color_glow + ';';
+
+                if (isFirst) {
                     bar.textContent = span.name;
                     bar.title = span.name + ' (' + span.num_nights + 'n)';
                 }
@@ -166,13 +196,15 @@
                     e.stopPropagation();
                     window.location.href = '/accommodations#loc-' + this.dataset.locId;
                 });
-                grid.appendChild(bar);
+                overlay.appendChild(bar);
 
                 remaining -= colsInThisRow;
-                currentCol = 0;
-                currentRow++;
+                curIdx += colsInThisRow;
+                isFirst = false;
             }
         });
+
+        monthBarsBuilt = true;
     }
 
     function buildAccomLegend() {
@@ -235,10 +267,17 @@
             var flightsHtml = '';
             if (wd.flights && wd.flights.length) {
                 wd.flights.forEach(function(f) {
-                    flightsHtml += '<div class="cw-chip flight">' +
-                        '&#9992; ' + f.flight_number + ' ' + f.route_from + '→' + f.route_to +
-                        (f.depart_time ? ' <span class="cw-chip-time">' + f.depart_time + '</span>' : '') +
-                        '</div>';
+                    if (f.is_arrival) {
+                        flightsHtml += '<div class="cw-chip flight arrival">' +
+                            '&#9992; ' + f.flight_number + ' Arriving ' + f.route_to +
+                            (f.arrive_time ? ' <span class="cw-chip-time">~' + f.arrive_time + '</span>' : '') +
+                            '</div>';
+                    } else {
+                        flightsHtml += '<div class="cw-chip flight">' +
+                            '&#9992; ' + f.flight_number + ' ' + f.route_from + '&rarr;' + f.route_to +
+                            (f.depart_time ? ' <span class="cw-chip-time">' + f.depart_time + '</span>' : '') +
+                            '</div>';
+                    }
                 });
             }
 
@@ -343,11 +382,19 @@
         // Flights
         if (wd.flights && wd.flights.length) {
             wd.flights.forEach(function(f) {
-                html += '<div class="cdv-flight">' +
-                    '&#9992; <strong>' + f.flight_number + '</strong> ' +
-                    f.route_from + ' → ' + f.route_to +
-                    (f.depart_time ? ' at ' + f.depart_time : '') +
-                    '</div>';
+                if (f.is_arrival) {
+                    html += '<div class="cdv-flight arrival">' +
+                        '&#9992; <strong>' + f.flight_number + '</strong> Arriving ' +
+                        f.route_to +
+                        (f.arrive_time ? ' ~' + f.arrive_time : '') +
+                        '</div>';
+                } else {
+                    html += '<div class="cdv-flight">' +
+                        '&#9992; <strong>' + f.flight_number + '</strong> ' +
+                        f.route_from + ' &rarr; ' + f.route_to +
+                        (f.depart_time ? ' at ' + f.depart_time : '') +
+                        '</div>';
+                }
             });
         }
 
@@ -426,5 +473,10 @@
     buildWeekView(D.todayDayNum && D.todayDayNum > 7 ? 2 : 1);
     buildDayView(currentDayNum);
     switchView(currentView);
+
+    // If month is visible on load, build bars after layout settles
+    if (currentView === 'month') {
+        requestAnimationFrame(buildAccomBars);
+    }
 
 })();

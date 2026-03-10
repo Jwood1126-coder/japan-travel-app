@@ -3727,6 +3727,303 @@ def _migrate_restore_hakone_route(app):
     print("  Migration complete: Odawara → Hakone route restored on Day 4.")
 
 
+def _migrate_calendar_warnings_and_data_v2(app):
+    """Comprehensive migration: Day 14 timeline, time warnings, data fixes,
+    transport routes, transit time estimates, checklist options."""
+    from models import (Activity, Day, Trip, TransportRoute, ChecklistItem,
+                        ChecklistOption)
+
+    trip = Trip.query.first()
+    if trip and trip.notes and '__cal_warnings_v2' in (trip.notes or ''):
+        return
+
+    changed = False
+    print("Running migration: calendar warnings and data fixes v2...")
+
+    # ---- HELPER ----
+    def find_activity(title_pattern, day_number=None):
+        q = Activity.query.filter(Activity.title.ilike(title_pattern))
+        if day_number:
+            day = Day.query.filter_by(day_number=day_number).first()
+            if day:
+                q = q.filter_by(day_id=day.id)
+        return q.first()
+
+    def find_day(day_number):
+        return Day.query.filter_by(day_number=day_number).first()
+
+    # ================================================================
+    # 1. DAY 14 — Departure timeline warning
+    # ================================================================
+    day14 = find_day(14)
+    if day14:
+        timeline_text = (
+            "\u26a0\ufe0f TIGHT DEPARTURE TIMELINE — Leave hotel by 8:00 AM\n"
+            "8:00 AM  Leave Hotel The Leben (early checkout)\n"
+            "8:30 AM  Subway to Shin-Osaka Station (~20 min)\n"
+            "9:00 AM  Board Shinkansen Hikari to Shinagawa (~2h 30min)\n"
+            "11:30 AM Arrive Shinagawa\n"
+            "11:45 AM Keikyu Line to Haneda Airport (~15 min)\n"
+            "12:00 PM Arrive Haneda Terminal 3 (International)\n"
+            "12:00-1:30 PM  Last shopping, tax-free, check-in\n"
+            "1:50 PM  Check-in cutoff (2 hours before departure)\n"
+            "3:50 PM  UA876 departs HND \u2192 SFO"
+        )
+        if not day14.notes or 'TIGHT DEPARTURE' not in day14.notes:
+            day14.notes = timeline_text
+            changed = True
+
+        # Update "Early checkout" activity start_time
+        checkout_act = find_activity('%early checkout%', 14)
+        if checkout_act and not checkout_act.start_time:
+            checkout_act.start_time = '8:00 AM'
+            changed = True
+
+    # ================================================================
+    # 2. TIME-SENSITIVE WARNINGS on specific activities
+    # ================================================================
+
+    # Day 2 — Suica pickup backup
+    suica = find_activity('%Welcome Suica%')
+    if suica:
+        note = "JR Travel Service Center at Haneda closes ~6:30 PM. If you arrive after it closes, get Suica from any station vending machine instead (available 24/7, look for machines with English option)."
+        if not suica.notes or 'closes' not in suica.notes:
+            suica.notes = note
+            changed = True
+
+    # Day 3 — Sumo stable call reminder (call on Day 2 evening)
+    sumo = find_activity('%Sumo%Morning Practice%')
+    if sumo:
+        note = "Call the stable 4-8 PM the day before (Apr 6) to confirm practice. You may arrive at the hotel around 7-8 PM \u2014 call immediately if you make it in time. If you miss the window, just show up at 6:45 AM on Apr 7 without confirmation."
+        if not sumo.book_ahead_note or 'Call the stable' not in sumo.book_ahead_note:
+            sumo.book_ahead_note = note
+            changed = True
+
+    # Day 4 — Hakone onsen last train warning
+    onsen = find_activity('%Tenzan%')
+    if onsen:
+        note = "\u26a0\ufe0f LAST TRAIN: Onsen closes 10 PM but last Hakone Tozan train to Odawara departs ~9:30 PM. Leave the onsen by 8:30 PM to safely catch the return train to Tokyo."
+        if not onsen.notes or 'LAST TRAIN' not in (onsen.notes or ''):
+            onsen.notes = note
+            changed = True
+
+    # Day 8 — Shirakawa-go last bus
+    day8 = find_day(8)
+    if day8:
+        bus_warning = "\u26a0\ufe0f LAST BUS: The last Nohi Bus from Shirakawa-go to Kanazawa departs ~3:00-4:00 PM. Plan to catch a bus by 2:30 PM. If you miss it, there is no train alternative from Shirakawa-go."
+        if not day8.notes or 'LAST BUS' not in (day8.notes or ''):
+            day8.notes = ((day8.notes or '') + '\n' + bus_warning).strip()
+            changed = True
+
+    # Day 11 — Miyajima return deadline
+    torii = find_activity('%Itsukushima Torii%')
+    if not torii:
+        torii = find_activity('%Itsukushima Shrine%')
+    if torii:
+        note = "\u26a0\ufe0f RETURN DEADLINE: Leave Miyajima island by 5:30 PM to safely return to Kyoto. Ferry (10 min) + JR train to Hiroshima (25 min) + Shinkansen to Kyoto (1h 45min) = arrive Kyoto ~8:00 PM. Last Shinkansen Hiroshima\u2192Kyoto departs ~9:30 PM."
+        if not torii.notes or 'RETURN DEADLINE' not in (torii.notes or ''):
+            torii.notes = note
+            changed = True
+
+    # Day 2 — Hotel late arrival notice
+    checkin = find_activity('%Check into Sotetsu Fresa%')
+    if checkin:
+        note = "Booking says 'if arriving after 9pm, contact hotel directly.' You should arrive ~7-8 PM, but flight delays could push this close. Consider messaging hotel via Agoda before departure to confirm late check-in is okay. Hotel phone: +81-3-6892-2032."
+        if not checkin.notes or 'arriving after 9pm' not in (checkin.notes or ''):
+            checkin.notes = note
+            changed = True
+
+    # ================================================================
+    # 3. DATA FIX: Piece Hostel Sanjo → Tsukiya-Mikazuki
+    # ================================================================
+    piece = find_activity('%Piece Hostel Sanjo%')
+    if piece:
+        piece.title = "Check into Tsukiya-Mikazuki (Kyoto machiya B&B)"
+        piece.getting_there = "From Kyoto Station: Karasuma Line to Gojo Station (1 stop, 3 min). 5 min walk to the machiya. Address: 139 Ebisucho, Shimogyo-ku. Host phone: +81 75-353-7920."
+        changed = True
+
+    # ================================================================
+    # 4. TRANSPORT ROUTES — Fix Day 8 chain and add missing segments
+    # ================================================================
+
+    # 4a. Day 8 — Break into 3 legs
+    if day8:
+        # Check if we already have the broken-down routes
+        existing_shirakawa = TransportRoute.query.filter(
+            TransportRoute.route_from.ilike('%Takayama%Bus%'),
+            TransportRoute.day_id == day8.id
+        ).first()
+        if not existing_shirakawa:
+            # Delete or rename the old combined route
+            old_route = TransportRoute.query.filter(
+                TransportRoute.route_from.ilike('%Takayama%'),
+                TransportRoute.day_id == day8.id
+            ).first()
+            if old_route:
+                db.session.delete(old_route)
+
+            db.session.add(TransportRoute(
+                route_from='Takayama Bus Center',
+                route_to='Shirakawa-go',
+                transport_type='Nohi Bus',
+                duration='~50 min',
+                jr_pass_covered=False,
+                cost_if_not_covered='~\u00a52,800/person (reserve in advance)',
+                notes='Depart Takayama Bus Center (next to JR Takayama Station). Drops off at Shirakawa-go Bus Terminal.',
+                day_id=day8.id,
+                sort_order=1,
+            ))
+            db.session.add(TransportRoute(
+                route_from='Shirakawa-go',
+                route_to='Kanazawa Station',
+                transport_type='Nohi Bus / Hokutetsu Bus',
+                duration='~1h 15min',
+                jr_pass_covered=False,
+                cost_if_not_covered='~\u00a52,800/person (reserve in advance)',
+                notes='Departs from same Shirakawa-go Bus Terminal. Reserve ahead \u2014 buses sell out. Last bus typically ~3-4 PM.',
+                day_id=day8.id,
+                sort_order=2,
+            ))
+            db.session.add(TransportRoute(
+                route_from='Kanazawa Station',
+                route_to='Kyoto Station',
+                transport_type='JR Thunderbird Limited Express',
+                train_name='Thunderbird',
+                duration='~2h 15min',
+                jr_pass_covered=True,
+                cost_if_not_covered='~\u00a57,000 (covered by JR Pass)',
+                notes='Direct limited express to Kyoto. JR Pass covered. Runs roughly every 30-60 min.',
+                day_id=day8.id,
+                sort_order=3,
+            ))
+            changed = True
+
+    # 4b. Day 2 — Haneda → Shinjuku route
+    day2 = find_day(2)
+    if day2:
+        existing_haneda = TransportRoute.query.filter(
+            TransportRoute.route_from.ilike('%Haneda%'),
+            TransportRoute.day_id == day2.id
+        ).first()
+        if not existing_haneda:
+            db.session.add(TransportRoute(
+                route_from='Haneda Airport',
+                route_to='Higashi-Shinjuku',
+                transport_type='Keikyu Line + subway OR Limousine Bus',
+                duration='~60-90 min',
+                jr_pass_covered=False,
+                cost_if_not_covered='\u00a5600-1,300 depending on method',
+                notes='JR Pass not yet activated. Options: Keikyu Line to Shinagawa + subway (~\u00a5800, 75 min) or Airport Limousine Bus direct to Shinjuku (~\u00a51,300, 60-85 min).',
+                day_id=day2.id,
+                sort_order=1,
+            ))
+            changed = True
+
+    # 4c. Day 4 — Update existing Hakone route with better details
+    hakone_route = TransportRoute.query.filter(
+        TransportRoute.route_from.ilike('%Odawara%'),
+        TransportRoute.route_to.ilike('%Hakone%')
+    ).first()
+    if hakone_route:
+        if not hakone_route.duration:
+            hakone_route.duration = '~15 min to Hakone-Yumoto, then ~40 min to Gora'
+            changed = True
+        if not hakone_route.cost_if_not_covered or hakone_route.cost_if_not_covered == 'Hakone Free Pass':
+            hakone_route.cost_if_not_covered = 'Covered by Hakone Free Pass'
+            hakone_route.route_to = 'Hakone (Loop Start: Hakone-Yumoto)'
+            changed = True
+
+    # ================================================================
+    # 5. TRANSIT TIME ESTIMATES — Update getting_there with times
+    # ================================================================
+    transit_updates = [
+        ('%Ueno Zoo%', None, '~20 min from Shinjuku'),
+        ('%A PIT Autobacs%', None, '~40 min from Shinjuku via Rinkai Line'),
+        ('%UpGarage%', None, '~50 min from Shinjuku via Odakyu Line to Machida Station, 5 min walk'),
+        ('%Honda Welcome Plaza%', None, '~10 min from Shinjuku via Oedo Line'),
+        ('%Route 246%Supercar%', None, '~10 min from Shinjuku'),
+        ('%Roppongi Hills%', None, '~15 min from Shinjuku via Oedo Line'),
+        ('%UDX%Akihabara%', None, '~20 min from Shinjuku via JR Chuo Line'),
+        ('%Daikoku PA%', None, 'Tour is 4.5 hours. Pickup at 6:30 PM, return ~11 PM'),
+        ('%Switchback Train%', 4, '~40 min Hakone-Yumoto to Gora'),
+        ('%Cable Car%', 4, '~10 min Gora to Owakudani'),
+        ('%Ropeway%', 4, '~25 min Owakudani to Togendai'),
+        ('%Pirate Ship%', 4, '~30 min cruise across Lake Ashi'),
+        ('%Open-Air Museum%', 4, '~5 min walk from Chokoku-no-Mori Station (between Hakone-Yumoto and Gora)'),
+        ('%ake brewery%tasting%', None, 'Walk between them, ~2-5 min apart'),
+        ('%Hida beef sushi%', None, '~5 min walk within old town'),
+        ('%Kamo River%stroll%', None, '~2 min walk to the riverbank'),
+        ('%Nishiki Market%', None, '~20 min train to central Kyoto'),
+        ('%Dotonbori%Night%', None, '~10 min from Shinsaibashi area'),
+        ('%Takoyaki crawl%', None, 'Walk between them, all within ~200m / 2 min'),
+        ('%Hozenji Yokocho%', None, '~2 min walk from Dotonbori canal'),
+        ('%Nara day trip%', None, 'JR Yamatoji Rapid to JR Nara Station (45-50 min). Deer park is 5 min walk from station east exit.'),
+        ('%Amerikamura%', None, '~15 min from Nara Line. 5 min walk west from Shinsaibashi Station.'),
+        ('%Shinsaibashi arcade%', None, '~2 min walk east from Amerikamura'),
+    ]
+
+    for pattern, day_num, time_info in transit_updates:
+        act = find_activity(pattern, day_num)
+        if act:
+            current = act.getting_there or ''
+            if time_info not in current:
+                if current:
+                    act.getting_there = current.rstrip('.') + '. ' + time_info
+                else:
+                    act.getting_there = time_info
+                changed = True
+
+    # ================================================================
+    # 6. CHECKLIST FIXES
+    # ================================================================
+
+    # 6a. Delta outbound — add option and set to decision type
+    delta_item = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Delta%outbound%')
+    ).first()
+    if not delta_item:
+        delta_item = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike('%Book Delta%CLE%')
+        ).first()
+    if delta_item:
+        if delta_item.item_type == 'task':
+            delta_item.item_type = 'decision'
+            delta_item.status = 'completed'
+            changed = True
+        # Add option if none
+        if not delta_item.options:
+            db.session.add(ChecklistOption(
+                checklist_item_id=delta_item.id,
+                name='Delta Endeavor Air DL5392 + DL275',
+                price_note='Cash booking',
+                description='CLE 10:30 AM \u2192 DTW 11:26 AM (DL5392), DTW 2:05 PM \u2192 HND 4:15 PM+1 (DL275). Confirmation: HBPF75',
+                is_selected=True,
+                sort_order=0,
+            ))
+            changed = True
+
+    # 6b. Hakone Free Pass, Shirakawa-go, Suica — set to decision type if task
+    for pattern in ['%Hakone Free Pass%', '%Shirakawa%bus%', '%Welcome Suica%',
+                    '%Suica%IC%card%']:
+        item = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike(pattern)
+        ).first()
+        if item and item.item_type == 'task' and item.options:
+            item.item_type = 'decision'
+            changed = True
+
+    # ================================================================
+    # COMMIT & SENTINEL
+    # ================================================================
+    if trip:
+        trip.notes = ((trip.notes or '') + '\n__cal_warnings_v2').strip()
+    db.session.commit()
+    if changed:
+        print("  Migration complete: calendar warnings and data fixes v2 applied.")
+    else:
+        print("  Migration complete: calendar warnings v2 — already up to date.")
+
+
 def create_app(run_data_migrations=True):
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -3904,6 +4201,11 @@ def create_app(run_data_migrations=True):
                 _migrate_restore_hakone_route(app)
             except Exception as e:
                 print(f"WARNING: hakone route migration failed: {e}")
+                db.session.rollback()
+            try:
+                _migrate_calendar_warnings_and_data_v2(app)
+            except Exception as e:
+                print(f"WARNING: calendar warnings v2 migration failed: {e}")
                 db.session.rollback()
 
     return app

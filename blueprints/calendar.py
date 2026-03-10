@@ -29,13 +29,15 @@ TYPE_ICONS = {
 def _get_type_icon(title):
     """Determine day type icon from title keywords."""
     t = (title or '').lower()
-    if 'travel' in t or 'departure' in t or 'arrive' in t:
+    if 'travel' in t or 'departure' in t or 'arrive' in t or '\u2192' in t or '->' in t:
         return 'travel'
     elif 'buffer' in t or 'flex' in t:
         return 'rest'
     elif 'day trip' in t or 'hiroshima' in t:
         return 'daytrip'
-    elif 'hakone' in t or 'alps' in t or 'shirakawa' in t:
+    elif 'hakone' in t or 'shirakawa' in t:
+        return 'nature'
+    elif 'alps' in t and 'takayama' not in t:
         return 'nature'
     elif 'temple' in t or 'gion' in t or 'arashiyama' in t:
         return 'temple'
@@ -208,11 +210,15 @@ def calendar_view():
 
         day_flights_list = []
         for f in flights_by_date.get(day.date, []):
+            is_arrival = (f.arrive_date and f.arrive_date == day.date
+                          and f.depart_date != day.date)
             day_flights_list.append({
                 'flight_number': f.flight_number,
                 'route_from': f.route_from,
                 'route_to': f.route_to,
                 'depart_time': f.depart_time,
+                'arrive_time': f.arrive_time,
+                'is_arrival': is_arrival,
             })
 
         accom = accom_by_date.get(day.date)

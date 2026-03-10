@@ -1599,8 +1599,15 @@ body {
 }
 
 .checklist-item.completed .check-text {
-    text-decoration: line-through;
     color: var(--completed-text);
+    opacity: 0.6;
+}
+.checklist-item.completed .check-label::after {
+    content: '\2713';
+    color: var(--jr-green, #16a34a);
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin-left: auto;
 }
 
 .check-label {
@@ -4544,6 +4551,9 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     color: var(--sakura-text);
 }
 
+.cal-month-wrapper {
+    position: relative;
+}
 .cal-month-grid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
@@ -4551,7 +4561,6 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     background: var(--pico-muted-border-color);
     border-radius: 10px;
     overflow: hidden;
-    position: relative;
 }
 
 .cal-grid-head {
@@ -4567,7 +4576,7 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
 
 .cal-grid-cell {
     background: var(--pico-background-color);
-    padding: 4px 3px 22px;
+    padding: 4px 2px 18px;
     min-height: 52px;
     display: flex;
     flex-direction: column;
@@ -4632,23 +4641,32 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
     color: var(--accent);
 }
 
-/* Accommodation span bars in month grid */
+/* Accommodation bar overlay — sits on top of month grid */
+.cal-accom-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 5;
+}
 .cal-accom-bar {
+    position: absolute;
+    height: 14px;
     border-radius: 3px;
     color: #fff;
     font-size: 0.52rem;
     font-weight: 600;
-    padding: 1px 4px;
+    padding: 0 4px;
+    line-height: 14px;
     cursor: pointer;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    align-self: end;
-    margin-top: auto;
-    z-index: 5;
     opacity: 0.85;
     transition: opacity 0.15s;
-    /* Positioned via grid-column/grid-row in JS */
+    pointer-events: auto;
 }
 .cal-accom-bar:hover {
     opacity: 1;
@@ -4680,6 +4698,44 @@ h1 svg, h2 svg, h3 svg { vertical-align: -3px; margin-right: 4px; }
 .cal-legend-nights {
     color: var(--pico-muted-color);
     font-weight: 400;
+}
+
+/* Month grid — mobile compact (375px screens) */
+@media (max-width: 480px) {
+    .cal-month-grid {
+        gap: 0.5px;
+    }
+    .cal-grid-cell {
+        padding: 3px 1px 16px;
+        min-height: 44px;
+    }
+    .mg-date {
+        font-size: 0.72rem;
+    }
+    .mg-trip-num {
+        display: none;
+    }
+    .mg-icon {
+        font-size: 0.6rem;
+    }
+    .mg-count {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        font-size: 0.48rem;
+        padding: 0 2px;
+        border-radius: 4px;
+    }
+    .cal-grid-head {
+        font-size: 0.55rem;
+        padding: 4px 0;
+    }
+    .cal-accom-bar {
+        height: 12px;
+        font-size: 0.45rem;
+        line-height: 12px;
+        padding: 0 2px;
+    }
 }
 
 /* ============================= */
