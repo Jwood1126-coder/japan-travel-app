@@ -3229,7 +3229,7 @@ def _migrate_transport_checklist_and_data_fixes(app):
     # --- PHASE 2.1: Fix JR Pass station purchase price ---
     opt6 = ChecklistOption.query.filter(
         ChecklistOption.name.ilike('%Buy at JR Station%')).first()
-    if opt6 and '80,000' in (opt6.price_note or ''):
+    if opt6 and '88,000' not in (opt6.price_note or ''):
         opt6.price_note = "~¥88,000/pp (station markup)"
 
     # --- PHASE 2.2: Fix Piece Hostel stale checklist ---
@@ -3313,6 +3313,186 @@ def _migrate_remove_kanazawa_hotel(app):
     db.session.delete(kanazawa_hotel)
     db.session.commit()
     print("  Migration complete: Kanazawa hotel item removed.")
+
+
+def _migrate_production_data_reapply(app):
+    """Re-apply audit fixes that were skipped on production.
+    The original _migrate_audit_data_fixes used a sentinel (luggage forwarding
+    checklist item) that already existed on production, causing the entire
+    migration to be skipped. This migration applies each fix individually
+    with its own idempotency check.
+    Sentinel: checks for a marker note on the Trip record."""
+    from models import (ChecklistItem, ChecklistOption, AccommodationLocation,
+                        AccommodationOption, TransportRoute, ReferenceContent,
+                        Activity, Day, Trip, Flight)
+    from datetime import date as dt_date
+
+    # Sentinel: use a unique marker to avoid re-running
+    trip = Trip.query.first()
+    if trip and trip.notes and '__prod_reapply_v1' in trip.notes:
+        return
+
+    print("Running migration: production data re-apply...")
+    changed = False
+
+    # --- 1. JR Pass checklist options: fix ALL pricing ---
+    jr_item = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%JR Pass%')).first()
+    if jr_item:
+        for opt in ChecklistOption.query.filter_by(
+                checklist_item_id=jr_item.id).all():
+            pn = opt.price_note or ''
+            if '50,000' in pn:
+                opt.price_note = pn.replace('50,000', '80,000')
+                changed = True
+            elif '55,000' in pn:
+                opt.price_note = '~¥88,000/pp (station markup)'
+                changed = True
+
+    # --- 2. Osaka accommodation: extend to 2 nights ---
+    osaka_loc = AccommodationLocation.query.filter(
+        AccommodationLocation.location_name.ilike('%Osaka%')).first()
+    if osaka_loc:
+        if osaka_loc.num_nights == 1:
+            osaka_loc.num_nights = 2
+            osaka_loc.check_out_date = dt_date(2026, 4, 18)
+            changed = True
+        if osaka_loc.quick_notes and 'wild night' in osaka_loc.quick_notes.lower():
+            osaka_loc.quick_notes = ('Two nights in Osaka. Namba/Dotonbori '
+                                     'for street food and nightlife.')
+            changed = True
+
+    # --- 3. Remove stale Hakone transit from Day 5 ---
+    day5 = Day.query.filter_by(day_number=5).first()
+    if day5:
+        stale_route = TransportRoute.query.filter_by(day_id=day5.id).filter(
+            TransportRoute.route_from.ilike('%Odawara%'),
+            TransportRoute.route_to.ilike('%Hakone%')
+        ).first()
+        if stale_route:
+            db.session.delete(stale_route)
+            changed = True
+
+    # --- 4. Fix JR Pass reference content (Day 5 → Day 4, expiry wording) ---
+    jr_ref = ReferenceContent.query.filter(
+        ReferenceContent.title.ilike('%JR Pass%')).first()
+    if jr_ref and jr_ref.content:
+        if 'Day 5 (April 8)' in jr_ref.content:
+            jr_ref.content = jr_ref.content.replace(
+                'Day 5 (April 8)', 'Day 4 (April 8)')
+            changed = True
+        if 'Day 5 (Apr 8)' in jr_ref.content:
+            jr_ref.content = jr_ref.content.replace(
+                'Day 5 (Apr 8)', 'Day 4 (Apr 8)')
+            changed = True
+        if 'covers everything through departure' in jr_ref.content:
+            jr_ref.content = jr_ref.content.replace(
+                'Expires: April 21 (covers everything through departure)',
+                'Expires: April 21 (activated April 8 — valid through '
+                'departure April 18 with 3 days to spare)')
+            changed = True
+
+    # --- 5. Fix Osaka checklist title (1 night → 2 nights) ---
+    osaka_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Osaka hotel%1 night%')).first()
+    if osaka_checklist:
+        osaka_checklist.title = 'Book Osaka hotel (2 nights, Apr 16-18)'
+        changed = True
+
+    # --- 6. Create Delta outbound checklist if missing ---
+    delta_item = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Delta%outbound%')).first()
+    if not delta_item:
+        delta_item = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike('%Delta%CLE%')).first()
+    if not delta_item:
+        db.session.add(ChecklistItem(
+            title='Book Delta outbound CLE -> DTW -> HND',
+            category='pre_departure_today',
+            item_type='task',
+            status='completed',
+            is_completed=True,
+            sort_order=1,
+        ))
+        changed = True
+
+    # --- 7. Mark booked-flight checklist items as completed ---
+    for pattern in ['%Book Delta%', '%Book United%']:
+        items = ChecklistItem.query.filter(
+            ChecklistItem.title.ilike(pattern)).all()
+        for item in items:
+            if not item.is_completed:
+                item.is_completed = True
+                item.status = 'completed'
+                changed = True
+
+    # --- 8. Update Nohi Bus title if still references Kanazawa ---
+    nohi_item = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Nohi Bus%Kanazawa%')).first()
+    if nohi_item:
+        nohi_item.title = 'Reserve Nohi Bus (Takayama → Shirakawa-go)'
+        changed = True
+
+    # --- 9. Mark Piece Hostel / Kyoto checklist if Kyoto is booked ---
+    kyoto_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Piece Hostel%')).first()
+    if kyoto_checklist:
+        kyoto_booked = AccommodationOption.query.join(
+            AccommodationLocation
+        ).filter(
+            AccommodationLocation.location_name.ilike('%Kyoto%'),
+            AccommodationOption.is_selected == True,
+            AccommodationOption.booking_status.in_(['booked', 'confirmed'])
+        ).first()
+        if kyoto_booked:
+            kyoto_checklist.is_completed = True
+            kyoto_checklist.status = 'completed'
+            kyoto_checklist.title = f'Kyoto: {kyoto_booked.name} booked'
+            changed = True
+
+    # --- 10. Mark Takayama ryokan checklist if TAKANOYU is booked ---
+    tak_checklist = ChecklistItem.query.filter(
+        ChecklistItem.title.ilike('%Takayama ryokan%')).first()
+    if tak_checklist and not tak_checklist.is_completed:
+        takanoyu = AccommodationOption.query.filter(
+            AccommodationOption.name.ilike('%TAKANOYU%'),
+            AccommodationOption.is_selected == True
+        ).first()
+        if takanoyu:
+            tak_checklist.is_completed = True
+            tak_checklist.status = 'completed'
+            tak_checklist.title = 'Takayama: TAKANOYU booked (Apr 9-12)'
+            changed = True
+
+    # --- 11. Fix luggage forwarding reference (Day 5 → Day 4) ---
+    ref_luggage = ReferenceContent.query.filter(
+        ReferenceContent.title.ilike('%Luggage%')).first()
+    if ref_luggage and 'Day 5' in (ref_luggage.content or ''):
+        ref_luggage.content = ref_luggage.content.replace(
+            'Use on Day 5: send bags from Tokyo to Kyoto, travel light through Alps.',
+            'Use on Day 4 evening or Day 5 morning: ask Sotetsu Fresa Inn front desk '
+            'to ship bags to your Kyoto accommodation via takkyubin. Bags arrive next '
+            'day. Travel light through the Alps.')
+        changed = True
+
+    # --- 12. Fix transport route: Odawara→Hakone on wrong day ---
+    # Some DBs may have the route on Day 5 (id varies) instead of Day 4
+    day4 = Day.query.filter_by(day_number=4).first()
+    if day4 and day5:
+        misplaced = TransportRoute.query.filter_by(day_id=day5.id).filter(
+            TransportRoute.route_from.ilike('%Odawara%')).first()
+        if misplaced:
+            misplaced.day_id = day4.id
+            changed = True
+
+    # Write sentinel marker
+    if trip:
+        trip.notes = ((trip.notes or '') + '\n__prod_reapply_v1').strip()
+    db.session.commit()
+    if changed:
+        print("  Migration complete: production data re-apply applied fixes.")
+    else:
+        print("  Migration complete: production data already up to date.")
 
 
 def create_app(run_data_migrations=True):
@@ -3482,6 +3662,7 @@ def create_app(run_data_migrations=True):
             _migrate_hiroshima_time_warning(app)
             _migrate_transport_checklist_and_data_fixes(app)
             _migrate_remove_kanazawa_hotel(app)
+            _migrate_production_data_reapply(app)
 
     return app
 
