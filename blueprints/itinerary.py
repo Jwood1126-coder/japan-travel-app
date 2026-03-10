@@ -35,23 +35,30 @@ def _build_location_groups(days):
         options_by_loc.setdefault(opt.location_id, []).append(opt)
 
     for group in location_groups:
-        accom_loc = next(
-            (a for a in all_accom if group['location'] in a.location_name),
-            None)
-        if accom_loc:
-            opts = options_by_loc.get(accom_loc.id, [])
-            selected = next((o for o in opts if o.is_selected), None)
+        # Find ALL matching accommodation locations (e.g. Takayama has Ryokan + Budget)
+        matching_accoms = [a for a in all_accom
+                          if group['location'] in a.location_name]
+        if matching_accoms:
+            # Aggregate options across all matching locations
+            all_opts = []
+            for accom_loc in matching_accoms:
+                all_opts.extend(options_by_loc.get(accom_loc.id, []))
+            selected = next((o for o in all_opts if o.is_selected), None)
             if selected:
                 group['accom_name'] = selected.name
                 group['accom_status'] = selected.booking_status
             else:
                 group['accom_pending_count'] = sum(
-                    1 for o in opts if not o.is_eliminated)
-            # Use accommodation dates for display (more accurate than day grouping)
-            if accom_loc.check_in_date:
-                group['start_date'] = accom_loc.check_in_date
-            if accom_loc.check_out_date:
-                group['end_date'] = accom_loc.check_out_date
+                    1 for o in all_opts if not o.is_eliminated)
+            # Use earliest check-in and latest check-out across all locations
+            check_ins = [a.check_in_date for a in matching_accoms
+                         if a.check_in_date]
+            check_outs = [a.check_out_date for a in matching_accoms
+                          if a.check_out_date]
+            if check_ins:
+                group['start_date'] = min(check_ins)
+            if check_outs:
+                group['end_date'] = max(check_outs)
                 group['show_checkout'] = True
 
     # Build brief activity summaries + day type icons per day
