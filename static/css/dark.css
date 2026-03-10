@@ -1,0 +1,474 @@
+[data-theme="dark"] {
+    --sakura-light: #2d1f24;
+    --sakura-text: #FFB7C5;
+    --sakura-dark: #FF8FA3;
+    --completed-bg: #1a2e1a;
+    --completed-text: #6b7280;
+    --accent: #F472A8;
+    --glass-bg: rgba(30, 30, 30, 0.72);
+}
+
+[data-theme="dark"] .bottom-nav { background: rgba(30,30,30,0.95); border-top-color: #333; }
+
+[data-theme="dark"] .more-menu-sheet { background: #1e1e1e; }
+
+[data-theme="dark"] .more-menu-handle { background: #555; }
+
+[data-theme="dark"] .day-overview-card,
+[data-theme="dark"] .flight-card-tripit,
+[data-theme="dark"] .activity-card,
+[data-theme="dark"] .option-card,
+[data-theme="dark"] .ref-section,
+[data-theme="dark"] .entry-card { border-color: #333; }
+
+[data-theme="dark"] .day-overview-card:hover { background: var(--sakura-light); }
+
+[data-theme="dark"] .day-overview-card.today { border-color: var(--accent); }
+
+[data-theme="dark"] .progress-bar { background: #333; }
+
+[data-theme="dark"] .activity-user-note { background: #3d3520; color: #fef3c7; }
+
+[data-theme="dark"] .cost-badge { background: #2d2d2d; color: #9ca3af; }
+
+[data-theme="dark"] .booking-badge.booked,
+[data-theme="dark"] .booking-badge.confirmed { background: #064e3b; color: #6ee7b7; }
+
+[data-theme="dark"] .booking-badge.pending { background: #78350f; color: #fcd34d; }
+
+[data-theme="dark"] .transport-card { background: linear-gradient(135deg, var(--sakura-light), transparent); border-color: #4a2030; }
+
+[data-theme="dark"] .buffer-badge { background: #78350f; color: #fcd34d; }
+
+[data-theme="dark"] .badge.breakfast { background: #78350f; color: #fcd34d; }
+
+[data-theme="dark"] .badge.onsen { background: #1e3a5f; color: #93c5fd; }
+
+[data-theme="dark"] .budget-calc { background: var(--sakura-light); }
+
+[data-theme="dark"] .chat-bubble.assistant { background: #2d2d2d; }
+
+[data-theme="dark"] .chat-input-bar { background: #1e1e1e; border-top-color: #333; }
+
+[data-theme="dark"] .prompt-btn { background: var(--sakura-light); border-color: #4a2030; }
+
+[data-theme="dark"] .fab { box-shadow: 0 4px 12px rgba(255,107,157,0.3); }
+
+[data-theme="dark"] .substitutes-section { border-color: #444; }
+
+[data-theme="dark"] .slot-heading { border-bottom-color: #4a2030; }
+
+[data-theme="dark"] .activity-start-time { background: #3d1f2d; }
+
+[data-theme="dark"] .book-link.alt { background: #555; }
+
+[data-theme="dark"] .select-btn { border-color: var(--accent); color: var(--accent); }
+
+[data-theme="dark"] .login-error { color: #fc8181; }
+
+[data-theme="dark"] .stat-card { background: var(--sakura-light); }
+
+/* Dark mode for itinerary summary */
+
+[data-theme="dark"] .loc-group { border-color: #333; }
+
+[data-theme="dark"] .loc-group-header { background: #2a1a2a; }
+
+[data-theme="dark"] .loc-group-vibe { background: #2a1a2a; }
+
+[data-theme="dark"] .itin-day-row { border-color: #333; }
+
+[data-theme="dark"] .itin-day-row:hover { background: #2a1a2a; }
+
+[data-theme="dark"] .loc-group-accom { border-color: #333; background: rgba(255,255,255,0.03); }
+
+[data-theme="dark"] .itin-progress-bar { background: #333; }
+
+[data-theme="dark"] .buffer-badge-sm { background: #3d3520; color: #fef3c7; }
+
+[data-theme="dark"] .double-book-warning {
+    background: #451a03;
+    color: #fbbf24;
+    border-left-color: #f59e0b;
+}
+
+[data-theme="dark"] .booking-confirmed-banner {
+    background: #052e16;
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .booking-alert-note {
+    background: #451a03;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .location-tab.booked {
+    background: #052e16;
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .neighborhood-tag {
+    background: #0c2d48;
+    color: #7dd3fc;
+}
+
+[data-theme="dark"] .booking-image-preview img { border-color: #4a2030; }
+
+[data-theme="dark"] .upload-label { border-color: #4a2030; }
+
+[data-theme="dark"] .subgroup-count {
+    background: rgba(255,255,255,0.1);
+}
+
+[data-theme="dark"] .thinking-indicator { background: #2d2d2d; }
+
+/* Dark mode - new components */
+
+[data-theme="dark"] .attach-btn { background: var(--sakura-light); }
+
+[data-theme="dark"] .image-preview { background: #1e1e1e; }
+
+[data-theme="dark"] .image-preview img { border-color: #4a2030; }
+
+[data-theme="dark"] .accommodation-day-card { background: linear-gradient(135deg, var(--sakura-light), transparent); border-color: #4a2030; }
+
+[data-theme="dark"] .accommodation-day-card.pending-choice { background: linear-gradient(135deg, #3d3520, transparent); border-color: #f59e0b; }
+
+[data-theme="dark"] .accom-pending-option { background: rgba(255,255,255,0.05); }
+
+[data-theme="dark"] .checklist-mode-tabs { border-color: #4a2030; }
+
+[data-theme="dark"] .mode-tab { color: var(--sakura-text); }
+
+[data-theme="dark"] .mode-tab.active { background: var(--accent); color: #fff; }
+
+[data-theme="dark"] .upcoming-event-card { border-color: #333; }
+
+[data-theme="dark"] .upcoming-date-heading { border-bottom-color: #333; }
+
+[data-theme="dark"] .event-status-badge.confirmed { background: #064e3b; color: #6ee7b7; }
+
+[data-theme="dark"] .event-status-badge.booked { background: #1e3a5f; color: #93c5fd; }
+
+[data-theme="dark"] .event-status-badge.not_booked { background: #78350f; color: #fcd34d; }
+
+[data-theme="dark"] .event-status-badge.upcoming { background: #2d2d2d; color: #9ca3af; }
+
+[data-theme="dark"] .event-status-badge.info { background: #312e81; color: #a5b4fc; }
+
+[data-theme="dark"] .maps-link { color: var(--accent); }
+
+[data-theme="dark"] .minor-activities summary { color: #9ca3af; }
+
+/* Dark mode - decision checklist */
+
+[data-theme="dark"] .decision-status-badge.pending { background: #2d2d2d; color: #9ca3af; }
+
+[data-theme="dark"] .decision-status-badge.researching { background: #1e3a5f; color: #93c5fd; }
+
+[data-theme="dark"] .decision-status-badge.decided,
+[data-theme="dark"] .decision-status-badge.booked { background: #064e3b; color: #6ee7b7; }
+
+[data-theme="dark"] .cl-option-card { border-color: #333; }
+
+[data-theme="dark"] .cl-option-card.selected { border-color: var(--accent); background: rgba(233, 30, 122, 0.08); }
+
+[data-theme="dark"] .cl-option-body { border-top-color: #333; }
+
+[data-theme="dark"] .eliminate-btn.active { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+
+[data-theme="dark"] .add-option-btn { border-color: #444; color: #666; }
+
+[data-theme="dark"] .add-item-section-btn { border-color: #444; color: #666; }
+
+[data-theme="dark"] .add-item-form { border-color: #4a2030; }
+
+[data-theme="dark"] .add-option-form { border-color: #4a2030; }
+
+[data-theme="dark"] .booking-badge.not-booked { background: #78350f; color: #fcd34d; }
+
+[data-theme="dark"] .delete-item-btn:hover { color: #f87171; }
+
+[data-theme="dark"] .option-notes { background: #1e1e1e; border-color: #333; color: #ccc; }
+
+[data-theme="dark"] .status-select-sm { background: #1e1e1e; border-color: #333; color: #ccc; }
+
+[data-theme="dark"] .ptr {
+    background: var(--sakura-light);
+}
+
+/* --- Dark mode: new components --- */
+
+[data-theme="dark"] .next-up-card {
+    background: linear-gradient(135deg, rgba(255,183,197,0.08), transparent);
+    border-color: #4a2030;
+}
+
+[data-theme="dark"] .next-up-card.urgency-high { border-color: var(--accent); }
+
+[data-theme="dark"] .next-up-subtitle { color: #9ca3af; }
+
+[data-theme="dark"] .next-up-tip { background: rgba(255,183,197,0.1); }
+
+[data-theme="dark"] .itin-day-row.today { background: rgba(255,183,197,0.08); }
+
+[data-theme="dark"] .quick-link-card { background: #2a1a2a; border-color: #4a2030; color: var(--sakura-text); }
+
+/* Dark mode */
+
+[data-theme="dark"] .doc-section { border-color: #333; }
+
+[data-theme="dark"] .doc-section-title { background: #2a1a2a; }
+
+[data-theme="dark"] .doc-card { border-bottom-color: rgba(255,255,255,0.06); }
+
+[data-theme="dark"] .confirmation-input { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+
+[data-theme="dark"] .status-select { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+
+[data-theme="dark"] .checkin-checkout-row input { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+
+[data-theme="dark"] .doc-file-row { border-bottom-color: rgba(255,255,255,0.06); }
+
+[data-theme="dark"] .doc-upload-area { border-top-color: rgba(255,255,255,0.06); }
+
+[data-theme="dark"] .doc-delete-btn:hover { background: #450a0a; color: #fca5a5; }
+
+[data-theme="dark"] .price-edit-row input { background: #1e1e1e; border-color: #4a2030; color: #fff; }
+
+[data-theme="dark"] .option-detail-actions { border-color: #333; }
+
+[data-theme="dark"] .eliminate-btn { background: #2a2a2a; border-color: #555; color: #ccc; }
+
+[data-theme="dark"] .eliminate-btn.active { background: #3a1a1a; border-color: #844; color: #e88; }
+
+[data-theme="dark"] .delete-option-btn { background: #2a1515; border-color: #844; color: #e88; }
+
+[data-theme="dark"] .cat-temple { background: #451a03; color: #fbbf24; }
+
+[data-theme="dark"] .cat-food { background: #500724; color: #f9a8d4; }
+
+[data-theme="dark"] .cat-nightlife { background: #2e1065; color: #c4b5fd; }
+
+[data-theme="dark"] .cat-shopping { background: #1e3a5f; color: #93c5fd; }
+
+[data-theme="dark"] .cat-nature { background: #064e3b; color: #6ee7b7; }
+
+[data-theme="dark"] .cat-culture { background: #1e1b4b; color: #a5b4fc; }
+
+[data-theme="dark"] .act-why-card {
+    background: #2d2305;
+    border-left-color: #d97706;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .activity-why-tip {
+    background: #2d2305;
+    border-left-color: #d97706;
+    color: #fcd34d;
+}
+
+[data-theme="dark"] .sub-for-badge {
+    background: #451a03;
+    color: #fbbf24;
+}
+
+[data-theme="dark"] .act-browse-card.substitute {
+    background: rgba(245, 158, 11, 0.06);
+}
+
+[data-theme="dark"] .act-browse-card.confirmed {
+    background: rgba(16, 185, 129, 0.08);
+}
+
+[data-theme="dark"] .confirmed-badge {
+    background: #052e16;
+    color: #6ee7b7;
+}
+
+[data-theme="dark"] .confirm-btn { border-color: #34d399; color: #34d399; }
+
+[data-theme="dark"] .confirm-btn.active { background: #052e16; color: #6ee7b7; }
+
+/* Dark mode */
+
+[data-theme="dark"] .act-location-group { border-color: #333; }
+
+[data-theme="dark"] .act-location-title { background: #2a1a2a; }
+
+[data-theme="dark"] .act-browse-card { border-bottom-color: rgba(255,255,255,0.06); }
+
+[data-theme="dark"] .add-activity-form { background: #2d1f24; }
+
+[data-theme="dark"] .act-day-divider {
+    border-top-color: rgba(255,255,255,0.06);
+    background: rgba(242, 181, 196, 0.03);
+}
+
+[data-theme="dark"] .book-ahead-badge {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .act-transit-tip,
+[data-theme="dark"] .activity-transit-tip {
+    background: #0c1929;
+    border-left-color: #60a5fa;
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .act-book-tip,
+[data-theme="dark"] .activity-book-tip {
+    background: #052e16;
+    border-left-color: #4ade80;
+    color: #86efac;
+}
+
+[data-theme="dark"] .unflag-bookahead-btn { border-color: #555; }
+
+[data-theme="dark"] .book-ahead-card { border-color: #333; }
+
+[data-theme="dark"] .book-ahead-card.needs-action { border-left-color: #60a5fa; }
+
+[data-theme="dark"] .book-ahead-card.no-rush { border-left-color: #4ade80; }
+
+[data-theme="dark"] .book-ahead-note {
+    background: #052e16;
+    border-left-color: #4ade80;
+    color: #86efac;
+}
+
+[data-theme="dark"] .book-ahead-transit {
+    background: #0c1929;
+    border-left-color: #60a5fa;
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .book-ahead-location {
+    color: var(--sakura-text);
+    border-bottom-color: var(--sakura-dark);
+}
+
+/* Dark mode adjustments */
+
+[data-theme="dark"] .petal { background: var(--sakura-dark); }
+
+[data-theme="dark"] .wave-divider { color: #4a2030; }
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #4a2030; }
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover { background: var(--sakura-dark); }
+
+[data-theme="dark"] .next-up-card:hover { box-shadow: 0 4px 20px rgba(212, 39, 106, 0.15); }
+
+[data-theme="dark"] .quick-link-card:hover { box-shadow: 0 2px 12px rgba(212, 39, 106, 0.2); }
+
+[data-theme="dark"] .swipe-content { background: var(--pico-background-color, #1e1e1e); }
+
+[data-theme="dark"] .nav-slot-active {
+    background: rgba(242,181,196,0.15) !important;
+}
+
+[data-theme="dark"] .cal-chip.flight {
+    background: #1e3a5f;
+    color: #93c5fd;
+}
+
+[data-theme="dark"] .cal-chip.transport {
+    background: #0c4a6e;
+    color: #7dd3fc;
+}
+
+[data-theme="dark"] .cal-accom {
+    background: #2d1f24;
+}
+
+[data-theme="dark"] .cal-accom.booked {
+    background: #052e16;
+    color: #6ee7b7;
+}
+
+/* Dark mode overrides */
+
+[data-theme="dark"] .cal-location-divider {
+    background: var(--pico-background-color);
+    color: var(--sakura);
+}
+
+[data-theme="dark"] .cal-datenum {
+    color: var(--sakura);
+}
+
+[data-theme="dark"] .cal-day-card:hover {
+    background: #2d1f24;
+}
+
+[data-theme="dark"] .cal-day-card {
+    border-bottom-color: #333;
+}
+
+[data-theme="dark"] .view-tab.active {
+    background: var(--sakura-dark, #c4899b);
+}
+
+[data-theme="dark"] .loc-group-name {
+    text-shadow: 0 0 15px rgba(242,181,196,0.5), 0 0 30px rgba(242,181,196,0.2);
+}
+
+[data-theme="dark"] .next-up-card {
+    box-shadow: 0 0 15px rgba(242,181,196,0.15), 0 4px 12px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .next-up-card.urgency-high {
+    box-shadow: 0 0 20px rgba(255,107,107,0.2), 0 4px 12px rgba(0,0,0,0.3);
+}
+
+[data-theme="dark"] .booking-badge.confirmed,
+[data-theme="dark"] .booking-confirmed-banner {
+    box-shadow: 0 0 10px rgba(76,175,80,0.3);
+}
+
+[data-theme="dark"] .confirmed-badge {
+    text-shadow: 0 0 8px rgba(76,175,80,0.4);
+}
+
+[data-theme="dark"] .cd-val {
+    animation: glow-pulse-dark 2s ease-in-out infinite alternate;
+}
+
+[data-theme="dark"] .cal-today {
+    background: rgba(242,181,196,0.08);
+    box-shadow: 0 0 12px rgba(242,181,196,0.1);
+}
+
+[data-theme="dark"] .cal-view-btn.active {
+    box-shadow: 0 2px 12px rgba(244,114,168,0.3);
+}
+
+[data-theme="dark"] .cal-grid-cell.today {
+    background: rgba(244,114,168,0.15);
+}
+
+[data-theme="dark"] .mg-count {
+    background: rgba(244,114,168,0.15);
+    color: var(--accent);
+}
+
+[data-theme="dark"] .cal-week-tab.active {
+    background: rgba(244,114,168,0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+[data-theme="dark"] .cal-week-day.today {
+    box-shadow: 0 0 16px rgba(244,114,168,0.2);
+}
+
+[data-theme="dark"] .co-done {
+    color: #81C784;
+    text-shadow: 0 0 8px rgba(76,175,80,0.4);
+}
+
+[data-theme="dark"] .confirmed-fill {
+    box-shadow: 0 0 6px rgba(242,181,196,0.3);
+}

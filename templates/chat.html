@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Chat with Claude{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css') }}">{% endblock %}
 
 {% block content %}
 <script>document.body.classList.add('chat-page');</script>

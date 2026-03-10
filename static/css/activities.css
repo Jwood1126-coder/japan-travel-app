@@ -1,0 +1,160 @@
+/* --- Activities Browse Page --- */
+
+.act-location-group {
+    margin-bottom: 1rem;
+    border: 1px solid var(--sakura);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+/* Category filter chips */
+
+.category-chips {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 0 0 0.75rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+/* Category badges */
+
+.cat-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+/* Substitute/alternative badge */
+
+.sub-for-badge {
+    font-size: 0.7rem;
+    padding: 1px 8px;
+    border-radius: 8px;
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 500;
+}
+
+/* Alternatives section in activities page */
+
+.act-alternatives-section {
+    margin: 4px 0 0;
+    border-top: 1px dashed var(--pico-muted-border-color);
+}
+
+/* ===== Book Ahead Badge ===== */
+
+.book-ahead-badge {
+    font-size: 0.65rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    background: #dbeafe;
+    color: #1e40af;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ===== Book Ahead Page ===== */
+
+.book-ahead-intro {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    margin: -8px 0 12px;
+}
+
+.book-ahead-location {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 20px 0 8px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid var(--sakura);
+    color: var(--sakura-text);
+}
+
+.book-ahead-card {
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    border-radius: var(--radius);
+    border: 1px solid var(--pico-muted-border-color);
+    background: var(--pico-card-background-color, #fff);
+}
+
+.book-ahead-card.needs-action {
+    border-left: 4px solid #3b82f6;
+}
+
+.book-ahead-card.no-rush {
+    border-left: 4px solid #22c55e;
+}
+
+.book-ahead-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.book-ahead-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.book-ahead-meta {
+    font-size: 0.78rem;
+    color: var(--pico-muted-color);
+    margin: 2px 0 6px;
+}
+
+.book-ahead-note {
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    margin: 6px 0;
+    background: #f0fdf4;
+    border-left: 3px solid #22c55e;
+    color: #166534;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+
+.book-ahead-transit {
+    font-size: 0.82rem;
+    padding: 6px 8px;
+    margin: 6px 0;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    color: #1e40af;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+
+.book-ahead-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+}
+
+/* ===== Accommodations: show alternatives ===== */
+
+.show-alts-row {
+    display: flex;
+    gap: 8px;
+    padding: 8px 0;
+    flex-wrap: wrap;
+}
+
+/* ===== Activities: view mode tabs ===== */
+
+.view-mode-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    background: rgba(128,128,128,0.1);
+    border-radius: 10px;
+    padding: 3px;
+}

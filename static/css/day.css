@@ -1,0 +1,506 @@
+/* Day View */
+
+.day-header {
+    text-align: center;
+    margin-bottom: 1rem;
+}
+
+.day-nav-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.day-nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 1.3rem;
+    color: var(--accent);
+    background: var(--sakura-light);
+}
+
+.day-nav-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.day-header-center h1 {
+    margin-bottom: 0;
+}
+
+.day-title {
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+}
+
+/* Time Slot Sections */
+
+.time-slot-section {
+    margin-bottom: 1.5rem;
+}
+
+.slot-heading {
+    font-size: 0.95rem;
+    color: var(--sakura-text);
+    border-bottom: 2px solid var(--sakura);
+    padding-bottom: 4px;
+    margin-bottom: 0.75rem;
+}
+
+/* Activity Cards */
+
+.activity-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    transition: all 0.2s;
+}
+
+.activity-card.completed {
+    background: var(--completed-bg);
+    opacity: 0.7;
+}
+
+.activity-card.completed .activity-title {
+    text-decoration: line-through;
+    color: var(--completed-text);
+}
+
+.activity-card.substitute {
+    border-style: dashed;
+    opacity: 0.8;
+}
+
+.activity-main {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.activity-check input[type="checkbox"] {
+    min-width: 20px;
+    min-height: 20px;
+    margin-top: 2px;
+    accent-color: var(--jr-green);
+}
+
+.activity-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.activity-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.activity-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.jr-badge {
+    display: inline-block;
+    background: var(--jr-green);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.optional-badge {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    font-style: italic;
+}
+
+.time-badge {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    background: var(--sakura-light);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.activity-cost {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    margin-top: 2px;
+}
+
+.activity-details {
+    margin-top: 4px;
+    font-size: 0.85rem;
+}
+
+.activity-details summary {
+    cursor: pointer;
+    color: var(--accent);
+    font-size: 0.8rem;
+}
+
+.activity-details p {
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.activity-user-note {
+    margin-top: 4px;
+    padding: 4px 8px;
+    background: #fef9c3;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.note-btn {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--pico-muted-color);
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.sub-for {
+    font-size: 0.75rem;
+    color: var(--pico-muted-color);
+    display: block;
+}
+
+/* Substitutes */
+
+.substitutes-section {
+    margin: 1rem 0;
+    padding: 0.75rem;
+    border: 1px dashed var(--pico-muted-border-color);
+    border-radius: 10px;
+}
+
+.substitute-heading {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--pico-muted-color);
+}
+
+/* Day Notes */
+
+.day-notes-section {
+    margin-top: 1.5rem;
+}
+
+.day-notes-input {
+    width: 100%;
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Floating Action Button */
+
+.fab {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(233, 30, 122, 0.4);
+    z-index: 100;
+}
+
+/* Flights */
+
+.flight-card {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--pico-muted-border-color);
+}
+
+.flight-route {
+    font-size: 1.1rem;
+}
+
+/* TripIt-Style Flight Cards */
+
+.flight-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--pico-muted-color);
+    margin: 1rem 0 0.5rem;
+}
+
+.flight-card-tripit {
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border-radius: 12px;
+    border: 1px solid var(--pico-muted-border-color);
+}
+
+.flight-card-tripit.compact { padding: 0.75rem; }
+
+.flight-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0.75rem;
+}
+
+.flight-airline { font-weight: 600; font-size: 0.9rem; }
+
+.flight-number { font-size: 0.8rem; color: var(--pico-muted-color); }
+
+.flight-route-visual {
+    display: flex;
+    align-items: center;
+}
+
+.flight-endpoint { text-align: center; min-width: 60px; }
+
+.flight-time { font-size: 1.3rem; font-weight: 700; line-height: 1.2; }
+
+.compact .flight-time { font-size: 1.1rem; }
+
+.flight-airport { font-size: 0.9rem; font-weight: 600; color: var(--pico-muted-color); }
+
+.flight-date-sm { font-size: 0.7rem; color: var(--pico-muted-color); }
+
+.flight-connector { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 0 8px; }
+
+.flight-line {
+    width: 100%;
+    height: 2px;
+    background: var(--sakura);
+    position: relative;
+}
+
+.flight-line::before, .flight-line::after {
+    content: '';
+    position: absolute;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sakura-dark);
+}
+
+.flight-line::before { left: 0; }
+
+.flight-line::after { right: 0; }
+
+.flight-duration-label { font-size: 0.75rem; color: var(--pico-muted-color); margin-top: 4px; }
+
+.flight-card-footer {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+    font-size: 0.85rem;
+}
+
+/* Transport Route Cards */
+
+.transport-banner { margin-bottom: 1.5rem; }
+
+.transport-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--sakura-light), transparent);
+    border: 1px solid var(--sakura);
+}
+
+.transport-details { flex: 1; min-width: 0; }
+
+.transport-route-text { font-weight: 600; font-size: 0.9rem; }
+
+/* Activity Start Times & Cost Badges */
+
+.activity-start-time {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--sakura-light);
+    padding: 1px 8px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.cost-badge {
+    font-size: 0.7rem;
+    color: var(--pico-muted-color);
+    background: #f3f4f6;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+/* Location Details in Day Header */
+
+.location-vibe {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    font-style: italic;
+    margin-top: 4px;
+}
+
+.book-link {
+    padding: 6px 14px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.book-link.alt {
+    background: var(--pico-muted-color);
+}
+
+/* Minor/Compact Activities */
+
+.activity-card.compact {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.activity-card.compact .activity-title { font-size: 0.9rem; }
+
+.slot-heading svg,
+.guide-link svg,
+.activity-url-link svg,
+.maps-link svg,
+.task-link-icon svg { vertical-align: -3px; margin-right: 3px; }
+
+.note-btn svg { display: block; }
+
+/* Transport cards */
+
+.transport-card { padding: 0.5rem 1rem; }
+
+.transport-route {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.transport-arrow { color: var(--pico-muted-color); }
+
+.transport-details {
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    margin-top: 0.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.transport-details svg { vertical-align: -2px; }
+
+/* Why/reasoning tip in day view */
+
+.activity-why-tip {
+    display: flex;
+    gap: 4px;
+    align-items: flex-start;
+    padding: 6px 8px;
+    margin-top: 4px;
+    background: #fffbeb;
+    border-left: 2px solid #f59e0b;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    color: #92400e;
+}
+
+/* Confirmed activity styling */
+
+.act-browse-card.confirmed {
+    border-left: 3px solid #10b981;
+    background: rgba(16, 185, 129, 0.04);
+}
+
+/* ===== Transit & Booking Tips (Activities + Day view) ===== */
+
+.act-transit-tip, .activity-transit-tip {
+    font-size: 0.78rem;
+    padding: 4px 8px;
+    margin: 4px 0;
+    background: #eff6ff;
+    border-left: 3px solid #3b82f6;
+    color: #1e40af;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.4;
+}
+
+.book-link {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 16px;
+}
+
+/* Activity card touch targets */
+
+.act-browse-card {
+    padding: 0.85rem;
+}
+
+/* Time slot swim lanes */
+
+.cw-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+/* Day view content */
+
+.cdv-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+/* Day view timeline */
+
+.cdv-timeline {
+    margin-top: 10px;
+}

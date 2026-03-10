@@ -1,0 +1,295 @@
+/* Accommodation status in location group */
+
+.loc-group-accom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-top: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    font-size: 0.8rem;
+    background: rgba(0,0,0,0.02);
+}
+
+/* Accommodations */
+
+.location-tabs {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 8px;
+    margin-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.accom-section {
+    margin-bottom: 2rem;
+    scroll-margin-top: 1rem;
+}
+
+.option-card {
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.option-card.selected {
+    border-color: var(--accent);
+    background: var(--sakura-light);
+}
+
+.option-card.status-booked {
+    border-color: var(--jr-green);
+    border-width: 2px;
+}
+
+.maps-navigate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #4285f4;
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 4px;
+}
+
+.maps-navigate-btn:hover {
+    background: #3367d6;
+    color: #fff;
+}
+
+.select-btn {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.select-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.option-actions .select-btn { flex: 1; width: auto; }
+
+/* Editable address field */
+
+.editable-address {
+    margin-top: 6px;
+}
+
+.editable-address .field-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.editable-address input {
+    flex: 1;
+    font-size: 0.85rem;
+    padding: 8px 10px;
+    min-height: 40px;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: 8px;
+    background: transparent;
+    color: inherit;
+}
+
+/* Booking image attachment */
+
+.booking-image-section {
+    margin-top: 8px;
+}
+
+.booking-image-preview {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 6px;
+}
+
+.booking-image-preview img {
+    max-width: 100%;
+    max-height: 200px;
+    border-radius: 10px;
+    border: 2px solid var(--sakura);
+    cursor: pointer;
+    object-fit: contain;
+}
+
+.booking-image-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.booking-image-upload {
+    display: block;
+    cursor: pointer;
+}
+
+.booking-image-upload input[type="file"] {
+    display: none;
+}
+
+/* Budget */
+
+.budget-calc {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: var(--sakura-light);
+    border-radius: 12px;
+}
+
+/* Accommodation Day Cards */
+
+.accommodation-day-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--sakura);
+    background: linear-gradient(135deg, var(--sakura-light), transparent);
+}
+
+/* Pending accommodation choice cards */
+
+.accommodation-day-card.pending-choice {
+    border-left: 4px solid #f59e0b;
+    background: linear-gradient(135deg, #fffbeb, transparent);
+}
+
+/* Google Maps Links */
+
+.maps-link {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-decoration: none;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.cl-option-card.eliminated {
+    opacity: 0.45;
+}
+
+.cl-option-card.eliminated .cl-option-name {
+    text-decoration: line-through;
+}
+
+.select-btn-sm {
+    padding: 4px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.select-btn-sm.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+/* Accommodation empty state (no options) */
+
+.accom-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.5rem 0;
+}
+
+.navigate-link svg { vertical-align: -2px; margin-right: 2px; }
+
+/* Eliminated / ruled-out state */
+
+.option-card.eliminated .option-header {
+    opacity: 0.45;
+}
+
+.option-card.eliminated .option-name {
+    text-decoration: line-through;
+}
+
+.option-card.eliminated .option-price {
+    text-decoration: line-through;
+}
+
+/* Detail action buttons (rule out + delete) */
+
+.option-detail-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+}
+
+.act-browse-card.eliminated {
+    opacity: 0.5;
+}
+
+.select-btn {
+    min-height: 48px;
+    font-size: 0.95rem;
+}
+
+.navigate-link {
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.show-alts-btn {
+    font-size: 0.8rem;
+    padding: 6px 14px;
+    border: 1px solid rgba(128,128,128,0.3);
+    border-radius: 20px;
+    background: transparent;
+    color: var(--pico-color);
+    cursor: pointer;
+    min-height: 36px;
+}
+
+.show-alts-btn:hover {
+    background: rgba(128,128,128,0.1);
+}
+
+.show-alts-btn.ruled-out {
+    opacity: 0.6;
+}
+
+.select-btn {
+    min-height: 44px;
+}

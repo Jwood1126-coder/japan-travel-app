@@ -1,0 +1,225 @@
+/* Backup panel reuses more-menu styling */
+
+.backup-panel {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 2001;
+}
+
+/* Chat — full-viewport flex layout, no pixel guessing */
+
+body.chat-page {
+    padding-bottom: 0 !important;
+    overflow: hidden;
+    height: 100vh;
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+
+body.chat-page .app-main {
+    flex: 1;
+    min-height: 0;
+    padding: 0;
+    margin: 0;
+    max-width: 100%;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* On chat page, take nav out of fixed positioning and into the flex flow
+   so it sits at its natural height — no guessing required */
+
+body.chat-page .bottom-nav {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.chat-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.chat-header h1 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    padding-bottom: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
+}
+
+.chat-welcome {
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.prompt-btn {
+    padding: 10px 16px;
+    border-radius: 20px;
+    border: 1px solid var(--sakura);
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    text-align: left;
+}
+
+.chat-bubble {
+    max-width: 85%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+    flex-shrink: 0;
+}
+
+.chat-bubble.user {
+    align-self: flex-end;
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+}
+
+.chat-bubble.assistant {
+    align-self: flex-start;
+    background: var(--pico-muted-border-color, #e2e8f0);
+    border-bottom-left-radius: 4px;
+}
+
+.chat-input-bar {
+    display: flex;
+    gap: 8px;
+    padding: 8px 1rem;
+    border-top: 1px solid var(--pico-muted-border-color);
+    background: var(--glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.chat-input-bar textarea {
+    flex: 1;
+    margin-bottom: 0;
+    resize: none;
+    overflow-y: auto;
+    max-height: 120px;
+    min-height: 44px;
+    line-height: 1.4;
+    padding: 10px 14px;
+    border-radius: 22px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 1px solid var(--pico-muted-border-color);
+}
+
+.chat-input-bar button {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+/* Chat Image Upload */
+
+.attach-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    padding: 0;
+    background: var(--sakura-light);
+    color: var(--sakura-text);
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.chat-image {
+    max-width: 200px;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.chat-welcome-sub {
+    font-size: 0.85rem;
+    color: var(--pico-muted-color);
+    margin-top: 4px;
+}
+
+/* Chat header & model selector */
+
+.chat-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.model-selector {
+    display: flex;
+    gap: 4px;
+}
+
+/* Thinking indicator */
+
+.thinking-indicator {
+    align-self: flex-start;
+    padding: 14px 20px;
+    border-radius: 16px;
+    background: var(--pico-muted-border-color, #e2e8f0);
+    border-bottom-left-radius: 4px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+}
+
+.thinking-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--pico-muted-color, #718096);
+    animation: thinkPulse 1.4s ease-in-out infinite;
+}
+
+.thinking-dot:nth-child(2) { animation-delay: 0.2s; }
+
+.thinking-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Prompt buttons */
+
+.prompt-btn {
+    min-height: 48px;
+    padding: 12px 18px;
+}

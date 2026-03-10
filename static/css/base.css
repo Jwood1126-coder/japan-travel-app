@@ -1,0 +1,47 @@
+/* Japan Travel Assistant - Cherry Blossom Theme */
+
+/* Screen-reader only utility */
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+:root {
+    --sakura: #F2B5C4;
+    --sakura-dark: #E8899E;
+    --sakura-light: #FFF5F7;
+    --sakura-text: #7A2048;
+    --accent: #D4276A;
+    --jr-green: #3cb371;
+    --completed-bg: #f0fdf4;
+    --completed-text: #6b7280;
+    --glass-bg: rgba(255, 245, 247, 0.72);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --radius: 14px;
+}
+
+/* Global */
+
+body {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Firefox */
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sakura) transparent;
+}

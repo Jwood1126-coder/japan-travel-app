@@ -1,7 +1,18 @@
 // Service Worker for offline support
-const CACHE_NAME = 'japan-trip-v78';
+const CACHE_NAME = 'japan-trip-v79';
 const STATIC_ASSETS = [
-    '/static/css/app.css',
+    '/static/css/base.css',
+    '/static/css/layout.css',
+    '/static/css/components.css',
+    '/static/css/dark.css',
+    '/static/css/dashboard.css',
+    '/static/css/day.css',
+    '/static/css/calendar.css',
+    '/static/css/accommodations.css',
+    '/static/css/checklists.css',
+    '/static/css/activities.css',
+    '/static/css/chat.css',
+    '/static/css/documents.css',
     '/static/js/app.js',
     '/static/js/itinerary.js',
     '/static/js/checklists.js',

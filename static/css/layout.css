@@ -1,0 +1,189 @@
+.app-main {
+    padding: 1rem;
+    max-width: 600px;
+}
+
+/* Login Page */
+
+.login-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding-bottom: 0;
+}
+
+.login-card {
+    text-align: center;
+    max-width: 320px;
+    width: 100%;
+}
+
+.login-title {
+    font-size: 2rem;
+    margin-bottom: 0;
+}
+
+.login-subtitle {
+    color: var(--sakura-dark);
+    margin-bottom: 0.5rem;
+}
+
+.login-emoji {
+    font-size: 3rem;
+    margin: 1rem 0;
+}
+
+.login-error {
+    color: #e53e3e;
+    font-size: 0.9rem;
+}
+
+/* Bottom Navigation */
+
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    background: var(--pico-background-color, #fff);
+    border-top: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    padding: 6px 0;
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+    z-index: 1000;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 0;  /* no rounded corners — extend to screen edges */
+}
+
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+    color: var(--pico-muted-color, #718096);
+    font-size: 0.7rem;
+    padding: 4px 12px;
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+}
+
+.nav-item.active {
+    color: var(--accent);
+}
+
+.nav-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.nav-label {
+    margin-top: 2px;
+}
+
+/* More Menu */
+
+.more-menu {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+}
+
+.more-menu.open {
+    display: block;
+}
+
+.more-menu-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+}
+
+.more-menu-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--pico-background-color, #fff);
+    border-radius: 16px 16px 0 0;
+    padding: 8px 1rem 2rem;
+    transform: translateY(0);
+}
+
+.more-menu-handle {
+    width: 40px;
+    height: 4px;
+    background: #ccc;
+    border-radius: 2px;
+    margin: 0 auto 1rem;
+}
+
+.more-link {
+    display: block;
+    padding: 14px 8px;
+    text-decoration: none;
+    color: var(--pico-color);
+    font-size: 1.05rem;
+    border-bottom: 1px solid var(--pico-muted-border-color, #eee);
+}
+
+/* SVG icon alignment */
+
+.nav-icon svg { display: block; margin: 0 auto; }
+
+.more-link svg { vertical-align: -4px; margin-right: 8px; }
+
+/* Glass effect for more menu */
+
+.more-menu-sheet {
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+/* More menu links */
+
+.more-link {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== More menu divider ===== */
+
+.more-divider {
+    margin: 4px 16px;
+    border: 0;
+    border-top: 1px solid rgba(128,128,128,0.2);
+}
+
+/* ===== Touch target improvements ===== */
+
+.more-link {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.nav-item {
+    min-height: 48px;
+    padding: 6px 0;
+}
+
+.nav-label {
+    font-size: 0.65rem;
+}
+
+/* Utilities */
+
+@media (max-width: 480px) {
+    .app-main {
+        padding: 0.75rem;
+    }
+}

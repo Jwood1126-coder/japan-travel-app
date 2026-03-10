@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Checklists{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/checklists.css') }}">{% endblock %}
 
 {% from "icons.html" import icon_check, icon_link, icon_delete, icon_chevron, icon_pin, icon, icon_translate %}
 

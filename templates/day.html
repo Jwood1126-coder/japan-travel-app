@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Day {{ day.day_number }} - {{ day.title }}{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/day.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 
 {% block content %}
 {% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes, icon_translate, icon_lightbulb %}
