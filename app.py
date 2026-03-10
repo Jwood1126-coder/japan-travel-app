@@ -4197,52 +4197,30 @@ def create_app(run_data_migrations=True):
             _migrate_transport_checklist_and_data_fixes(app)
             _migrate_remove_kanazawa_hotel(app)
             _migrate_production_data_reapply(app)
-            try:
-                _migrate_add_transit_directions(app)
-            except Exception as e:
-                print(f"WARNING: transit directions migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_restore_hakone_route(app)
-            except Exception as e:
-                print(f"WARNING: hakone route migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_calendar_warnings_and_data_v2(app)
-            except Exception as e:
-                print(f"WARNING: calendar warnings v2 migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_transport_hardening_v1(app)
-            except Exception as e:
-                print(f"WARNING: transport hardening v1 migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_sync_accom_checklist_v1(app)
-            except Exception as e:
-                print(f"WARNING: sync accom checklist migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_schedule_consistency_v1(app)
-            except Exception as e:
-                print(f"WARNING: schedule consistency migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_confirmed_bookings_v1(app)
-            except Exception as e:
-                print(f"WARNING: confirmed bookings migration failed: {e}")
-                db.session.rollback()
-            try:
-                _migrate_fix_takanoyu_v1(app)
-            except Exception as e:
-                print(f"WARNING: fix_takanoyu migration failed: {e}")
-                db.session.rollback()
+            import traceback as _tb
+            for _mig_fn, _mig_label in [
+                (_migrate_add_transit_directions, 'transit directions'),
+                (_migrate_restore_hakone_route, 'hakone route'),
+                (_migrate_calendar_warnings_and_data_v2, 'calendar warnings v2'),
+                (_migrate_transport_hardening_v1, 'transport hardening v1'),
+                (_migrate_sync_accom_checklist_v1, 'sync accom checklist'),
+                (_migrate_schedule_consistency_v1, 'schedule consistency'),
+                (_migrate_confirmed_bookings_v1, 'confirmed bookings'),
+                (_migrate_fix_takanoyu_v1, 'fix takanoyu'),
+            ]:
+                try:
+                    _mig_fn(app)
+                except Exception as e:
+                    print(f"ERROR: {_mig_label} migration failed: {e}")
+                    _tb.print_exc()
+                    db.session.rollback()
 
             # --- Post-migration validation (runs every boot) ---
             try:
                 _validate_schedule(app)
             except Exception as e:
-                print(f"WARNING: schedule validation failed: {e}")
+                print(f"ERROR: schedule validation failed: {e}")
+                _tb.print_exc()
 
     return app
 
