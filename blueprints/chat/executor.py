@@ -3,6 +3,7 @@
 from datetime import datetime
 from models import (db, ChecklistItem, Day, Activity, AccommodationOption,
                     AccommodationLocation, Flight, BudgetItem)
+from guardrails import validate_time_slot, validate_booking_status, validate_non_negative
 
 
 def execute_tool(tool_name, tool_input):
@@ -16,7 +17,10 @@ def execute_tool(tool_name, tool_input):
             if not flight:
                 return {"success": False, "error": f"Flight {flight_num} not found in itinerary"}
             if tool_input.get('booking_status'):
-                flight.booking_status = tool_input['booking_status']
+                try:
+                    flight.booking_status = validate_booking_status(tool_input['booking_status'])
+                except ValueError as e:
+                    return {"success": False, "error": str(e)}
             if tool_input.get('confirmation_number'):
                 flight.confirmation_number = tool_input['confirmation_number']
             if tool_input.get('depart_time'):
@@ -35,15 +39,26 @@ def execute_tool(tool_name, tool_input):
             ).first()
             if not option:
                 return {"success": False, "error": f"Accommodation '{name}' not found"}
+            if tool_input.get('booking_status'):
+                try:
+                    tool_input['booking_status'] = validate_booking_status(tool_input['booking_status'])
+                except ValueError as e:
+                    return {"success": False, "error": str(e)}
             for field in ['booking_status', 'confirmation_number', 'address', 'user_notes',
                           'check_in_info', 'check_out_info']:
                 if tool_input.get(field):
                     setattr(option, field, tool_input[field])
             # Handle price updates
             if tool_input.get('price_low') is not None:
-                option.price_low = tool_input['price_low']
+                try:
+                    option.price_low = validate_non_negative(tool_input['price_low'], 'price_low')
+                except ValueError as e:
+                    return {"success": False, "error": str(e)}
             if tool_input.get('price_high') is not None:
-                option.price_high = tool_input['price_high']
+                try:
+                    option.price_high = validate_non_negative(tool_input['price_high'], 'price_high')
+                except ValueError as e:
+                    return {"success": False, "error": str(e)}
             # Recalculate totals if prices changed
             if option.price_low and option.location_id:
                 loc = AccommodationLocation.query.get(option.location_id)
@@ -122,6 +137,9 @@ def execute_tool(tool_name, tool_input):
             ).first()
             if not option:
                 return {"success": False, "error": f"Accommodation '{name}' not found"}
+            if eliminate and option.booking_status in ('booked', 'confirmed'):
+                return {"success": False, "error": f"Cannot eliminate '{option.name}' — it is {option.booking_status}. "
+                        f"Change booking status first."}
             option.is_eliminated = eliminate
             if eliminate and option.is_selected:
                 option.is_selected = False
@@ -134,15 +152,21 @@ def execute_tool(tool_name, tool_input):
             day = Day.query.filter_by(day_number=tool_input['day_number']).first()
             if not day:
                 return {"success": False, "error": f"Day {tool_input['day_number']} not found"}
+            # Validate inputs
+            try:
+                validated_ts = validate_time_slot(tool_input.get('time_slot'))
+                validated_cost = validate_non_negative(tool_input.get('cost_per_person'), 'cost_per_person')
+            except ValueError as e:
+                return {"success": False, "error": str(e)}
 
             if tool_input.get('create_new', False):
                 max_order = max([a.sort_order for a in day.activities] or [0])
                 activity = Activity(
                     day_id=day.id,
                     title=tool_input['title'],
-                    time_slot=tool_input.get('time_slot'),
+                    time_slot=validated_ts,
                     start_time=tool_input.get('start_time'),
-                    cost_per_person=tool_input.get('cost_per_person'),
+                    cost_per_person=validated_cost,
                     cost_note=tool_input.get('cost_note'),
                     address=tool_input.get('address'),
                     description=tool_input.get('description'),
@@ -161,8 +185,13 @@ def execute_tool(tool_name, tool_input):
                 ).first()
                 if not activity:
                     return {"success": False, "error": f"Activity '{tool_input['title']}' not found on Day {day.day_number}"}
-                for field in ['address', 'notes', 'start_time', 'cost_per_person',
-                              'cost_note', 'description', 'url', 'time_slot', 'is_optional']:
+                # Apply validated values for time_slot and cost
+                if validated_ts is not None:
+                    activity.time_slot = validated_ts
+                if validated_cost is not None:
+                    activity.cost_per_person = validated_cost
+                for field in ['address', 'notes', 'start_time',
+                              'cost_note', 'description', 'url', 'is_optional']:
                     if tool_input.get(field) is not None:
                         setattr(activity, field, tool_input[field])
                 db.session.commit()

@@ -5,6 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Blueprint, render_template, jsonify, request, current_app
 from models import db, AccommodationLocation, AccommodationOption, ChecklistItem
+from guardrails import validate_booking_status, validate_non_negative
 
 accommodations_bp = Blueprint('accommodations', __name__)
 
@@ -50,6 +51,10 @@ def select_option(option_id):
                           methods=['POST'])
 def eliminate_option(option_id):
     option = AccommodationOption.query.get_or_404(option_id)
+    # Prevent eliminating a booked/confirmed accommodation
+    if not option.is_eliminated and option.booking_status in ('booked', 'confirmed'):
+        return jsonify({'ok': False, 'error': f"Cannot eliminate — {option.name} is {option.booking_status}. "
+                        f"Change booking status first."}), 400
     option.is_eliminated = not option.is_eliminated
     db.session.commit()
 
@@ -281,9 +286,6 @@ def fetch_url_info():
         })
 
 
-VALID_BOOKING_STATUSES = {'not_booked', 'researching', 'booked', 'confirmed', 'cancelled'}
-
-
 @accommodations_bp.route('/api/accommodations/<int:option_id>/status',
                           methods=['PUT'])
 def update_status(option_id):
@@ -291,8 +293,10 @@ def update_status(option_id):
     data = request.get_json()
     new_status = data.get('booking_status')
     if new_status is not None:
-        if new_status not in VALID_BOOKING_STATUSES:
-            return jsonify({'ok': False, 'error': f'Invalid status: {new_status}'}), 400
+        try:
+            new_status = validate_booking_status(new_status)
+        except ValueError as e:
+            return jsonify({'ok': False, 'error': str(e)}), 400
         option.booking_status = new_status
     option.confirmation_number = data.get('confirmation_number',
                                           option.confirmation_number)
@@ -308,9 +312,15 @@ def update_status(option_id):
     if 'check_out_info' in data:
         option.check_out_info = data['check_out_info'] or None
     if 'price_low' in data:
-        option.price_low = float(data['price_low']) if data['price_low'] else None
+        try:
+            option.price_low = validate_non_negative(data['price_low'], 'price_low')
+        except ValueError as e:
+            return jsonify({'ok': False, 'error': str(e)}), 400
     if 'price_high' in data:
-        option.price_high = float(data['price_high']) if data['price_high'] else None
+        try:
+            option.price_high = validate_non_negative(data['price_high'], 'price_high')
+        except ValueError as e:
+            return jsonify({'ok': False, 'error': str(e)}), 400
     # Recalculate totals when price changes
     if ('price_low' in data or 'price_high' in data) and option.location_id:
         loc = AccommodationLocation.query.get(option.location_id)

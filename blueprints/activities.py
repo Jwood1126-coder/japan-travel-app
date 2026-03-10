@@ -1,6 +1,7 @@
 import re
 from flask import Blueprint, render_template, request, jsonify
 from models import db, Location, Day, Activity
+from guardrails import validate_time_slot, validate_non_negative
 
 activities_bp = Blueprint('activities', __name__)
 
@@ -121,6 +122,12 @@ def add_activity():
     if not day_id or not title:
         return jsonify({'ok': False, 'error': 'Day and title are required'}), 400
 
+    try:
+        time_slot = validate_time_slot(data.get('time_slot'))
+        cost = validate_non_negative(data.get('cost_per_person'), 'cost_per_person')
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+
     day = Day.query.get_or_404(int(day_id))
     max_order = max([a.sort_order for a in day.activities] or [0])
 
@@ -128,8 +135,9 @@ def add_activity():
         day_id=day.id,
         title=title,
         description=(data.get('description') or '').strip() or None,
-        time_slot=data.get('time_slot') or None,
+        time_slot=time_slot,
         start_time=(data.get('start_time') or '').strip() or None,
+        cost_per_person=cost,
         cost_note=(data.get('cost_note') or '').strip() or None,
         address=(data.get('address') or '').strip() or None,
         url=(data.get('url') or '').strip() or None,
