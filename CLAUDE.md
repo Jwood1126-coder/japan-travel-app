@@ -32,34 +32,60 @@ A Flask + SQLite PWA for planning and managing a Japan trip. Deployed on Railway
 ## Project Structure
 
 ```
-app.py                  # App factory + 26 idempotent startup migrations (3,065 lines)
-models.py               # 13 SQLAlchemy models (327 lines)
+app.py                  # App factory, auth routes, template filters (~190 lines)
+models.py               # 13 SQLAlchemy models
 config.py               # Flask config, env vars, production validation
 wsgi.py                 # Gunicorn entry point (imports create_app)
 start.py                # Railway bootstrap: dir setup, DB backup, seed, launch gunicorn
 import_markdown.py      # Seed script: builds fresh DB from source_data/ markdown files
 
+migrations/
+  schema.py             # Schema migrations: ALTER TABLE column additions (idempotent)
+  legacy.py             # Verifies all legacy migrations were applied (sentinel checks)
+  validate.py           # Boot-time schedule validation (date gaps, overpacked days, etc.)
+  archive/              # Frozen reference of all 39 original migration functions (NEVER imported)
+
 blueprints/
   itinerary.py          # Dashboard (index) + day view routes
   accommodations.py     # Hotel picker CRUD + reorder + batch operations
   checklists.py         # Checklist view + toggle/add/update/delete APIs
-  chat.py               # AI chat: system prompt, tool defs, SSE streaming, image upload
   activities.py         # Activity list + toggle/update/add/delete APIs
   uploads.py            # Photo upload with EXIF extraction + thumbnail generation
-  documents.py          # PDF upload + list view
+  documents.py          # PDF upload + list view + document-to-booking linking
   calendar.py           # Month calendar view
   backup.py             # DB backup/restore via API
   export.py             # PDF export
   bookahead.py          # Ticketed activities page
   reference.py          # Travel reference content page
+  chat/                 # AI chat package
+    __init__.py          # Exports chat_bp
+    prompt.py            # SYSTEM_PROMPT constant (~140 lines)
+    tools.py             # TOOLS + SERVER_TOOLS definitions (16 tools)
+    executor.py          # execute_tool() — all tool handlers (~300 lines)
+    context.py           # build_context() — dynamic trip state for AI
+    routes.py            # Flask routes: chat view, send message (SSE), history
 
 templates/              # Jinja2 templates (base.html is the layout)
-static/css/app.css      # All styles (4,200+ lines), includes dark mode
+static/css/             # 12 organized CSS files (see CSS Architecture below)
 static/js/              # Per-page JS files (vanilla, no framework)
-static/sw.js            # Service worker
+static/sw.js            # Service worker (bump cache version on every deploy)
 source_data/            # Original markdown plans (seed data for import_markdown.py)
-docs/PROJECT_NOTES.md   # Historical project notes (partially outdated)
+Documentation/flights/  # PDF booking confirmations (authoritative source)
 ```
+
+## CSS Architecture
+
+CSS is split into 12 files loaded via `{% block page_css %}` in templates:
+
+- **Always loaded** (in base.html): `base.css` → `layout.css` → `components.css` → `dark.css`
+- **Per-page**: `dashboard.css`, `day.css`, `calendar.css`, `accommodations.css`, `checklists.css`, `activities.css`, `chat.css`, `documents.css`
+- **dark.css** loads last for specificity (all `[data-theme="dark"]` selectors)
+- **`static/css/app.css`** is the old monolith (5,267 lines) — kept as reference, NOT loaded by any template
+
+When adding styles:
+- Add to the appropriate per-page CSS file, or `components.css` for shared styles
+- Dark mode overrides go in `dark.css`
+- Bump the service worker cache version after any CSS change
 
 ## How the Database Works
 
@@ -75,22 +101,20 @@ docs/PROJECT_NOTES.md   # Historical project notes (partially outdated)
 
 ### The Migration System
 
-**This is critical to understand.** The live production DB has been mutated by 26 startup migration functions in `app.py`. These run on every app boot inside `create_app()`:
+The live production DB was mutated by 39 migration functions that originally lived in `app.py`. These have been **archived** to `migrations/archive/` (frozen, never imported). On every boot, `create_app()` runs:
 
-1. Each migration function is **idempotent** — it checks if already applied and skips if so
-2. They are **order-dependent** — do not reorder them
-3. They contain **hardcoded data** (activity titles, dates, URLs, coordinates, booking details)
-4. The `source_data/` markdown files are the *original* seed, but the live DB has drifted far from them via these migrations
+1. **`migrations/schema.py`** — Adds missing columns via ALTER TABLE (idempotent)
+2. **`migrations/legacy.py`** — Verifies all 39 legacy migrations were applied (sentinel checks, does NOT re-run them)
+3. **`migrations/validate.py`** — Schedule validation: accommodation date gaps, overpacked days, departure conflicts
 
-**Rules for migrations:**
-- New data changes go in a NEW function at the end of the migration list in `create_app()`
-- Always add an idempotency guard at the top (check if already applied, return early if so)
-- Never modify or reorder existing migration functions
-- Never replace the live DB with the repo DB — it would lose all runtime data (bookings, completions, photos, chat history)
-- Test locally first: `python -c "from app import create_app; create_app()"`
+**Rules for data changes:**
+- The migration system is **closed** — no new migration functions should be added
+- Use API endpoints, the AI chat, or one-time scripts in `scripts/` for data changes
+- Never replace the live DB with a fresh import — it contains live booking data, chat history, photos
+- Test boot: `python -c "from app import create_app; create_app()"`
 
 ### Schema Changes
-- New columns: add to `_run_migrations()` at the top of `app.py` using the `(table, column, type)` tuple pattern
+- New columns: add to `migrations/schema.py` using the `(table, column, type)` tuple pattern
 - Also add the column to the model in `models.py`
 - The ALTER TABLE is wrapped in try/except so it's safe to re-run
 
@@ -100,19 +124,20 @@ docs/PROJECT_NOTES.md   # Historical project notes (partially outdated)
 - Password-based login (`TRIP_PASSWORD` env var)
 - Session cookies (24hr lifetime, HTTPOnly, SameSite=Lax, Secure in production)
 - Rate limiting: 5 login attempts per 5 minutes per IP (in-memory)
-- `@app.before_request` redirects unauthenticated users to `/login`
+- `@app.before_request` redirects unauthenticated users to `/login` (currently disabled for pre-trip sharing)
 
 ### Real-time Updates
 - Flask-SocketIO emits events (`accommodation_updated`, `activity_updated`)
 - Client-side Socket.IO listeners refresh UI without page reload
 - Gevent worker model supports WebSocket connections
 
-### AI Chat (blueprints/chat.py)
-- 100+ line system prompt with trip context, personality, and tool instructions
-- 12+ tools for modifying DB records (accommodations, activities, flights, checklists, budget)
+### AI Chat (blueprints/chat/)
+- 140-line system prompt with trip context, personality, and tool instructions (`prompt.py`)
+- 16 tools for modifying DB records: accommodations, activities, flights, checklists, budget (`tools.py` + `executor.py`)
 - Image processing: extracts booking confirmations, flight receipts via Claude vision
-- SSE streaming for incremental response display
-- Context window includes full trip state (all accommodations, activities, flights, transport)
+- SSE streaming for incremental response display (`routes.py`)
+- Dynamic context includes full trip state: all accommodations, activities, flights, transport (`context.py`)
+- Server-side web search tool (Anthropic-managed)
 
 ### Template Filters (defined in create_app)
 - `maps_link(address)` — Google Maps search URL
@@ -123,9 +148,9 @@ docs/PROJECT_NOTES.md   # Historical project notes (partially outdated)
 - Each city has an `AccommodationLocation` with multiple `AccommodationOption` records
 - `is_selected=True` marks the chosen hotel (only one per location)
 - `is_eliminated=True` removes from consideration without deleting
-- Unselected locations show "pending choices" count in the day view
 - `booking_status`: not_booked / booked / confirmed
 - `price_tier` property: `$` (<$60/night), `$$` ($60-120), `$$$` (>$120)
+- Foreign key is `location_id` (NOT `accommodation_location_id`), `rank` is NOT NULL
 
 ### Activity System
 - Activities belong to Days, grouped by `time_slot` (morning/afternoon/evening/night)
@@ -143,28 +168,24 @@ docs/PROJECT_NOTES.md   # Historical project notes (partially outdated)
 3. Register the blueprint in `create_app()` in `app.py`
 4. Add navigation link in `base.html` (bottom nav or "More" menu)
 5. Add JS file in `static/js/` if needed
-6. Add styles to `static/css/app.css`
+6. Add page-specific CSS file in `static/css/`, load via `{% block page_css %}`
+7. Bump service worker cache version in `static/sw.js`
 
 ### Add a new model field
 1. Add the column to the model class in `models.py`
-2. Add an ALTER TABLE entry in `_run_migrations()` in `app.py`
+2. Add an ALTER TABLE entry in `migrations/schema.py` using the `(table, column, type)` tuple pattern
 3. Update any `to_dict()` methods if the field should be in API responses
-
-### Modify existing trip data in production
-1. Write a new idempotent migration function in `app.py`
-2. Add it to the end of the migration call list in `create_app()`
-3. Push to `main` — it runs on next deploy
 
 ### Add a new API endpoint
 - Add the route to the appropriate blueprint
 - Follow existing patterns: return `jsonify()`, emit Socket.IO events for UI updates
-- All routes are auth-gated by the `before_request` hook
+- All routes are auth-gated by the `before_request` hook (when enabled)
 
 ## Deployment
 
 - **Platform:** Railway (auto-deploy from GitHub `main` branch)
 - **Entry:** `Procfile` → `start.py` → Gunicorn with gevent workers
-- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → migrations run → app serves
+- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → schema migrations → legacy verification → schedule validation → app serves
 - **Environment variables:** `SECRET_KEY`, `TRIP_PASSWORD`, `ANTHROPIC_API_KEY`, `RAILWAY_VOLUME_MOUNT_PATH`
 - Production refuses to start if `SECRET_KEY` or `TRIP_PASSWORD` are default values
 
@@ -183,13 +204,11 @@ When making ANY change to the trip data (activities, accommodations, transport, 
 
 ## Things to Be Careful About
 
-- **app.py is 3,065 lines** — most of it is migration functions. Don't refactor these without tests.
 - **No test suite exists.** Changes should be verified manually or by running the app locally.
-- **The CSS is one 4,200-line file.** Changes need care to avoid breaking other pages. Dark mode uses `[data-theme="dark"]` selectors.
-- **source_data/ markdown files are outdated** relative to the live DB. They reflect the original trip plan before 26 migrations of changes.
-- **Booking-Action-Guide.md** references an older 16-day trip structure — the trip is now 14 days.
+- **source_data/ markdown files are outdated** relative to the live DB. They reflect the original trip plan before 39 migrations of changes.
 - **Never force-push or reset main** — Railway auto-deploys from it.
 - **Never replace the production DB** with a fresh import — it contains live booking data, chat history, photos, and completed activities.
+- **Service worker cache** must be bumped on every CSS/HTML/JS change (`static/sw.js`).
 
 ## Running Locally
 
