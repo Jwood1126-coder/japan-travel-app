@@ -3895,8 +3895,16 @@ def create_app(run_data_migrations=True):
             _migrate_transport_checklist_and_data_fixes(app)
             _migrate_remove_kanazawa_hotel(app)
             _migrate_production_data_reapply(app)
-            _migrate_add_transit_directions(app)
-            _migrate_restore_hakone_route(app)
+            try:
+                _migrate_add_transit_directions(app)
+            except Exception as e:
+                print(f"WARNING: transit directions migration failed: {e}")
+                db.session.rollback()
+            try:
+                _migrate_restore_hakone_route(app)
+            except Exception as e:
+                print(f"WARNING: hakone route migration failed: {e}")
+                db.session.rollback()
 
     return app
 

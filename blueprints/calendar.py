@@ -58,6 +58,8 @@ def calendar_view():
     # Sort by check-in so earlier locations are processed first
     accom_by_date = {}
     for loc in sorted(accom_locs, key=lambda a: a.check_in_date or date.min):
+        if not loc.check_in_date or not loc.check_out_date:
+            continue
         opt = options_by_loc.get(loc.id)
         name = opt.name if opt else None
         status = opt.booking_status if opt else 'not_booked'
@@ -155,6 +157,8 @@ def calendar_view():
     accom_spans = []
     for loc in AccommodationLocation.query.order_by(
             AccommodationLocation.sort_order).all():
+        if not loc.check_in_date or not loc.check_out_date:
+            continue
         selected = AccommodationOption.query.filter_by(
             location_id=loc.id, is_selected=True).first()
         if selected:
