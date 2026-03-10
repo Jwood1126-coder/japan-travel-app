@@ -220,6 +220,19 @@ def index():
     overall_pct = int(completed_activities / total_activities * 100) \
         if total_activities else 0
 
+    # Booking stats for dashboard breakdown
+    total_accoms = AccommodationLocation.query.count()
+    booked_accoms = 0
+    for loc in AccommodationLocation.query.all():
+        sel = AccommodationOption.query.filter_by(
+            location_id=loc.id, is_selected=True
+        ).filter(AccommodationOption.booking_status.in_(
+            ['booked', 'confirmed'])).first()
+        if sel:
+            booked_accoms += 1
+    confirmed_activities = Activity.query.filter_by(
+        is_substitute=False, is_confirmed=True).count()
+
     # Location-grouped itinerary
     location_groups = _build_location_groups(days)
 
@@ -235,6 +248,9 @@ def index():
                            days_until=days_until,
                            total_days=len(days),
                            total_activities=total_activities,
+                           booked_accoms=booked_accoms,
+                           total_accoms=total_accoms,
+                           confirmed_activities=confirmed_activities,
                            completed_activities=completed_activities,
                            overall_pct=overall_pct,
                            location_groups=location_groups,

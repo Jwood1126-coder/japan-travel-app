@@ -79,7 +79,7 @@
                 <em>Not selected</em>
             {% endif %}
             {% if cd.accom.check_in %}<span class="cal-accom-tag">Check-in</span>{% endif %}
-            {% if cd.accom.check_out %}<span class="cal-accom-tag out">Check-out</span>{% endif %}
+            {% if cd.accom.check_out and not cd.accom.check_in %}<span class="cal-accom-tag out">Check-out</span>{% endif %}
             {% if cd.accom.status in ('booked', 'confirmed') %}
             <span class="cal-booked-dot"></span>
             {% endif %}

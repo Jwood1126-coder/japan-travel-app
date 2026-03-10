@@ -49,13 +49,19 @@
 
 <!-- Itinerary -->
 <section class="itinerary-section">
-    <div class="itin-progress-row">
-        <div class="itin-progress-bar" role="progressbar"
-             aria-valuenow="{{ overall_pct }}" aria-valuemin="0" aria-valuemax="100"
-             aria-label="Trip progress: {{ completed_activities }} of {{ total_activities }} activities">
-            <div class="itin-progress-fill" style="width: {{ overall_pct }}%"></div>
+    <div class="dash-stats-row">
+        <div class="dash-stat">
+            <span class="dash-stat-val">{{ booked_accoms }}/{{ total_accoms }}</span>
+            <span class="dash-stat-label">stays booked</span>
         </div>
-        <span class="itin-progress-text">{{ completed_activities }}/{{ total_activities }}</span>
+        <div class="dash-stat">
+            <span class="dash-stat-val">{{ confirmed_activities }}/{{ total_activities }}</span>
+            <span class="dash-stat-label">confirmed</span>
+        </div>
+        <div class="dash-stat">
+            <span class="dash-stat-val">{{ completed_activities }}/{{ total_activities }}</span>
+            <span class="dash-stat-label">completed</span>
+        </div>
     </div>
 
     {% for group in location_groups %}

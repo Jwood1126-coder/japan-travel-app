@@ -435,6 +435,31 @@ body {
     margin-bottom: 0.75rem;
 }
 
+.dash-stats-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.2rem;
+    margin: 0 auto 0.8rem;
+    padding: 0.6rem 0;
+}
+.dash-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+.dash-stat-val {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--pico-contrast);
+}
+.dash-stat-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    opacity: 0.6;
+}
+
 .itin-progress-row {
     display: flex;
     align-items: center;
