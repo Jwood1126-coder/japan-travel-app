@@ -1,7 +1,6 @@
 """Production startup script for Railway deployment."""
 import os
 import shutil
-import subprocess
 import sys
 from datetime import datetime
 
@@ -16,7 +15,6 @@ if volume:
     os.makedirs(os.path.join(volume, 'backups'), exist_ok=True)
 
     db_dest = os.path.join(volume, 'data', 'japan_trip.db')
-    db_src = os.path.join(basedir, 'data', 'japan_trip.db')
 
     # Auto-backup before every deploy (if DB exists)
     if os.path.exists(db_dest):
@@ -31,23 +29,14 @@ if volume:
             os.remove(os.path.join(backup_dir, old))
         print("[bootstrap] Using existing volume DB (normal path)")
     else:
-        # First deploy — need to bootstrap the database
-        if os.path.exists(db_src):
-            # Legacy path: copy bundled seed DB from repo
-            print("[bootstrap] First deploy: copying seed DB from repo to volume...")
-            shutil.copy2(db_src, db_dest)
+        # First deploy — bootstrap from seed.db
+        seed_db = os.path.join(basedir, 'data', 'seed.db')
+        if os.path.exists(seed_db):
+            print("[bootstrap] First deploy: copying seed.db to volume...")
+            shutil.copy2(seed_db, db_dest)
         else:
-            # New path: no seed DB in repo — build from markdown source
-            print("[bootstrap] First deploy: no seed DB found, running import_markdown.py...")
-            result = subprocess.run(
-                [sys.executable, os.path.join(basedir, 'import_markdown.py')],
-                cwd=basedir,
-                env={**os.environ, 'RAILWAY_VOLUME_MOUNT_PATH': volume},
-            )
-            if result.returncode != 0:
-                print("[bootstrap] FATAL: import_markdown.py failed", file=sys.stderr)
-                sys.exit(1)
-            print("[bootstrap] Database created from markdown source data")
+            print("[bootstrap] FATAL: data/seed.db not found in repo", file=sys.stderr)
+            sys.exit(1)
 
     # NOTE: Schema migrations are handled by _run_migrations() in app.py
     # using ALTER TABLE. NEVER replace the live DB with the repo DB.

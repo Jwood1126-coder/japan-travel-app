@@ -93,6 +93,8 @@
         font-size: 9pt;
     }
     .option-chip a { text-decoration: none; margin: 0 2px; }
+    .act-optional { color: var(--muted); font-style: italic; }
+    .act-optional::after { content: ' (optional)'; font-size: 8pt; color: #aaa; }
 
     /* Accommodation table */
     .accom-table { width: 100%; border-collapse: collapse; font-size: 10pt; margin-bottom: 8px; }
@@ -267,7 +269,7 @@
     {% if dd.activities %}
     <ul class="activity-list">
         {% for act in dd.activities %}
-        <li>
+        <li{% if act.is_optional %} class="act-optional"{% endif %}>
             <span class="time-slot">{{ act.time_slot or '' }}</span>
             {{ act.title }}
             {% if act.jr_pass_covered %}<span class="jr-badge">JR</span>{% endif %}

@@ -81,25 +81,6 @@ class Activity(db.Model):
     getting_there = db.Column(db.String(500))  # transit tip: how to get here from previous activity
     is_confirmed = db.Column(db.Boolean, default=False)  # user confirmed this activity is in the schedule
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'title': self.title,
-            'description': self.description,
-            'time_slot': self.time_slot,
-            'start_time': self.start_time,
-            'cost_note': self.cost_note,
-            'is_optional': self.is_optional,
-            'is_substitute': self.is_substitute,
-            'is_completed': self.is_completed,
-            'jr_pass_covered': self.jr_pass_covered,
-            'url': self.url,
-            'notes': self.notes,
-            'category': self.category,
-            'why': self.why,
-            'is_confirmed': self.is_confirmed,
-        }
-
 
 class AccommodationLocation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -252,17 +233,6 @@ class ChecklistItem(db.Model):
     accommodation_location = db.relationship('AccommodationLocation',
                                              backref='checklist_item')
 
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'category': self.category,
-            'title': self.title,
-            'is_completed': self.is_completed,
-            'priority': self.priority,
-            'item_type': self.item_type,
-            'status': self.status,
-        }
-
 
 class ChecklistOption(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -336,16 +306,6 @@ class Photo(db.Model):
     width = db.Column(db.Integer)
     height = db.Column(db.Integer)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'filename': self.filename,
-            'thumbnail_filename': self.thumbnail_filename,
-            'caption': self.caption,
-            'taken_at': self.taken_at.isoformat() if self.taken_at else None,
-            'day_id': self.day_id,
-        }
 
 
 class ChatMessage(db.Model):

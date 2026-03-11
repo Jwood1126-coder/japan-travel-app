@@ -38,7 +38,16 @@ guardrails.py           # Runtime validation: booking status, document-first rul
 config.py               # Flask config, env vars, production validation
 wsgi.py                 # Gunicorn entry point (imports create_app)
 start.py                # Railway bootstrap: dir setup, DB backup, seed, launch gunicorn
-import_markdown.py      # Seed script: builds fresh DB from source_data/ markdown files
+import_markdown.py      # Seed script: copies data/seed.db → data/japan_trip.db
+
+data/seed.db            # Canonical seed database (committed, matches confirmed bookings)
+
+scripts/
+  export_seed.py        # Export current DB as new seed.db (strips chat/photos)
+  fix_local_db.py       # One-time data fixes (applied to create current seed.db)
+
+tests/
+  test_smoke.py         # 29 smoke tests: seed integrity, routes, export quality
 
 migrations/
   schema.py             # Schema migrations: ALTER TABLE column additions (idempotent)
@@ -70,7 +79,7 @@ templates/              # Jinja2 templates (base.html is the layout)
 static/css/             # 12 organized CSS files (see CSS Architecture below)
 static/js/              # Per-page JS files (vanilla, no framework)
 static/sw.js            # Service worker (bump cache version on every deploy)
-source_data/            # Original markdown plans (seed data for import_markdown.py)
+source_data/            # Original markdown plans (historical reference, no longer used for seeding)
 Documentation/flights/  # PDF booking confirmations (authoritative source)
 ```
 
@@ -88,15 +97,21 @@ When adding styles:
 
 ## How the Database Works
 
+### Seed Architecture
+- `data/seed.db` is the **canonical seed** committed to git — matches confirmed booking state
+- `import_markdown.py` copies `seed.db` → `japan_trip.db` (use `--force` to overwrite)
+- `source_data/*.md` are historical reference only — no longer used for seeding
+- To update the seed after production changes: download backup, run `python scripts/export_seed.py /path/to/backup.db`
+
 ### Production (Railway)
 - SQLite lives on a **persistent volume** at `$RAILWAY_VOLUME_MOUNT_PATH/data/japan_trip.db`
 - The DB in the git repo (`data/japan_trip.db`) is gitignored and NOT used on Railway
 - `start.py` auto-backs up the DB before every deploy (keeps last 20)
-- On first deploy: runs `import_markdown.py` to build DB from `source_data/*.md`
+- On first deploy: copies `data/seed.db` to the volume
 
 ### Local Development
 - DB lives at `./data/japan_trip.db`
-- Run `python import_markdown.py` to create a fresh local DB from markdown source
+- Run `python import_markdown.py` to initialize from `data/seed.db`
 
 ### The Migration System
 
@@ -308,16 +323,18 @@ When a document is deleted/unlinked:
 - If something unexpected happens, return an error to the user — don't silently continue
 
 ### 7. Testing After Changes
+- **Always run smoke tests:** `python -m pytest tests/test_smoke.py -v` (29 tests, validates seed, routes, export)
 - After any data model change: verify dashboard, calendar, day view, accommodations, documents, checklists
 - After any CSS change: verify every page in both light and dark mode on mobile (375px)
 - After any chat tool change: send a message that triggers the tool, check the DB result
 - Before deploying: run `python -c "from app import create_app; create_app()"` and check for warnings
 - Bump the service worker cache version in `static/sw.js`
+- After updating seed data: run `python scripts/export_seed.py` and commit `data/seed.db`
 
 ## Things to Be Careful About
 
-- **No test suite exists.** Changes should be verified manually or by running the app locally.
-- **source_data/ markdown files are outdated** relative to the live DB. They reflect the original trip plan before 39 migrations of changes.
+- **Smoke tests exist.** Run `python -m pytest tests/test_smoke.py -v` to validate seed integrity, routes, and export quality.
+- **source_data/ markdown files are historical reference only.** Seeding uses `data/seed.db` instead. Do not use markdown files as a data source.
 - **Never force-push or reset main** — Railway auto-deploys from it.
 - **Never replace the production DB** with a fresh import — it contains live booking data, chat history, photos, and completed activities.
 - **Service worker cache** must be bumped on every CSS/HTML/JS change (`static/sw.js`).
@@ -327,8 +344,9 @@ When a document is deleted/unlinked:
 
 ```bash
 pip install -r requirements.txt
-python import_markdown.py    # first time only, creates data/japan_trip.db
-python app.py                # runs on http://localhost:5000
+python import_markdown.py          # first time only, copies seed.db → japan_trip.db
+python app.py                      # runs on http://localhost:5000
+python -m pytest tests/ -v         # run smoke tests
 ```
 
 Default password: `changeme` (override with `TRIP_PASSWORD` env var)

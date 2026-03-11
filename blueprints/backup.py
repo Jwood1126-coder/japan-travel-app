@@ -1,10 +1,9 @@
 import io
 import os
-import shutil
 import sqlite3
 import tempfile
 from datetime import datetime
-from flask import Blueprint, send_file, request, jsonify, current_app, session, redirect, url_for
+from flask import Blueprint, send_file, request, jsonify, current_app
 
 backup_bp = Blueprint('backup', __name__)
 
@@ -26,8 +25,6 @@ def _backup_dir():
 
 @backup_bp.route('/api/backup/download')
 def download_backup():
-    if not session.get('authenticated'):
-        return jsonify({'ok': False, 'error': 'Not authenticated'}), 401
     db = _db_path()
     if not os.path.exists(db):
         return jsonify({'ok': False, 'error': 'No database found'}), 404
@@ -53,8 +50,6 @@ def download_backup():
 
 @backup_bp.route('/api/backup/restore', methods=['POST'])
 def restore_backup():
-    if not session.get('authenticated'):
-        return jsonify({'ok': False, 'error': 'Not authenticated'}), 401
     file = request.files.get('backup')
     if not file or not file.filename:
         return jsonify({'ok': False, 'error': 'No file uploaded'}), 400
@@ -97,8 +92,6 @@ def restore_backup():
 
 @backup_bp.route('/api/backup/list')
 def list_backups():
-    if not session.get('authenticated'):
-        return jsonify({'ok': False, 'error': 'Not authenticated'}), 401
     d = _backup_dir()
     backups = []
     for f in sorted(os.listdir(d), reverse=True):
@@ -112,8 +105,6 @@ def list_backups():
 @backup_bp.route('/api/backup/restore-server/<name>', methods=['POST'])
 def restore_server_backup(name):
     """Restore from a server-side auto-backup."""
-    if not session.get('authenticated'):
-        return jsonify({'ok': False, 'error': 'Not authenticated'}), 401
     if '..' in name or '/' in name or '\\' in name:
         return jsonify({'ok': False, 'error': 'Invalid name'}), 400
     d = _backup_dir()

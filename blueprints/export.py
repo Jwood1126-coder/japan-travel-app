@@ -18,14 +18,18 @@ def export_view():
     accommodations = []
     for loc in accom_locations:
         selected = next((o for o in loc.options if o.is_selected), None)
+        active_options = [o for o in loc.options if not o.is_eliminated]
+        # Skip locations where all options are eliminated (e.g. Kanazawa day-trip)
+        if not selected and not active_options:
+            continue
         accommodations.append({'location': loc, 'selected': selected,
-                               'options': loc.options})
+                               'options': active_options})
 
-    # Build day data with activities
+    # Build day data with activities (exclude substitutes and eliminated)
     day_data = []
     for day in days:
         activities = Activity.query.filter_by(
-            day_id=day.id, is_substitute=False
+            day_id=day.id, is_substitute=False, is_eliminated=False
         ).order_by(Activity.sort_order).all()
         day_data.append({'day': day, 'activities': activities})
 
