@@ -69,6 +69,8 @@ def run_schema_migrations(app):
         ('transport_route', 'url', 'TEXT'),
         # Checklist option location link
         ('checklist_option', 'maps_url', 'TEXT'),
+        # Transport movement grouping
+        ('transport_route', 'route_group', 'TEXT'),
     ]
     for table, column, col_type in migrations:
         try:
@@ -79,6 +81,7 @@ def run_schema_migrations(app):
 
     # --- One-shot data migrations (idempotent, safe to re-run) ---
     _migrate_transport_data(cursor, conn)
+    _migrate_route_groups(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -147,3 +150,17 @@ def _migrate_transport_data(cursor, conn):
             else:
                 cursor.execute("UPDATE transport_route SET maps_url = ? WHERE id = ?",
                                (maps, route_id))
+
+
+def _migrate_route_groups(cursor, conn):
+    """Set route_group on alternative routes for the same movement.
+
+    Idempotent: only sets route_group where it's currently NULL.
+    """
+    # Day 2: Haneda Airport arrival — two alternative routes to Shinjuku area
+    cursor.execute("""
+        UPDATE transport_route SET route_group = 'haneda-to-shinjuku'
+        WHERE route_from = 'Haneda Airport'
+          AND route_group IS NULL
+          AND day_id = (SELECT id FROM day WHERE day_number = 2)
+    """)

@@ -208,6 +208,7 @@ class TransportRoute(db.Model):
     sort_order = db.Column(db.Integer)
     maps_url = db.Column(db.String(500))   # Google Maps route/station link
     url = db.Column(db.String(500))        # Operator website or booking link
+    route_group = db.Column(db.String(50)) # Groups alternative routes for one movement
 
 
 class BudgetItem(db.Model):

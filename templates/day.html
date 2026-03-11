@@ -250,41 +250,66 @@
 </section>
 {% endif %}
 
-{# 4. Ground transport #}
-{% if transport_routes %}
-<section class="transport-banner">
-    <h3 class="slot-heading">{{ icon_train(18) }} Ground Transport</h3>
-    {% for route in transport_routes %}
-    <div class="transport-card-v2">
-        <div class="transport-card-header">
-            <div class="transport-icon">
-                {% if 'Shinkansen' in route.transport_type %}{{ icon_shinkansen(20) }}{% elif 'Bus' in route.transport_type %}{{ icon_bus(20) }}{% elif 'Ferry' in route.transport_type %}{{ icon_ferry(20) }}{% else %}{{ icon_train(20) }}{% endif %}
-            </div>
-            <div class="transport-card-info">
-                <div class="transport-route-text">{{ route.route_from }} &rarr; {{ route.route_to }}</div>
-                <div class="transport-meta">
-                    {{ route.transport_type }}
-                    {% if route.duration %} &middot; {{ route.duration }}{% endif %}
-                    {% if route.jr_pass_covered %} &middot; <span class="jr-inline">JR Pass</span>
-                    {% elif route.cost_if_not_covered %} &middot; <strong>{{ route.cost_if_not_covered }}</strong>{% endif %}
-                </div>
+{# ===== Transport card macro (reused for primary + alternates) ===== #}
+{% macro transport_card(route, is_alternate=false) %}
+<div class="transport-card-v2 {% if is_alternate %}alternate{% endif %}">
+    <div class="transport-card-header">
+        <div class="transport-icon">
+            {% if 'Shinkansen' in route.transport_type %}{{ icon_shinkansen(20) }}{% elif 'Bus' in route.transport_type %}{{ icon_bus(20) }}{% elif 'Ferry' in route.transport_type %}{{ icon_ferry(20) }}{% else %}{{ icon_train(20) }}{% endif %}
+        </div>
+        <div class="transport-card-info">
+            {% if is_alternate %}
+            <div class="transport-route-text">{{ route.transport_type }}{% if route.train_name %} &middot; {{ route.train_name }}{% endif %}</div>
+            {% else %}
+            <div class="transport-route-text">{{ route.route_from }} &rarr; {{ route.route_to }}</div>
+            {% endif %}
+            <div class="transport-meta">
+                {% if not is_alternate %}{{ route.transport_type }}{% endif %}
+                {% if is_alternate and route.route_to %}{{ route.route_from }} &rarr; {{ route.route_to }}{% endif %}
+                {% if route.duration %}{% if not is_alternate or route.route_to %} &middot; {% endif %}{{ route.duration }}{% endif %}
+                {% if route.jr_pass_covered %} &middot; <span class="jr-inline">JR Pass</span>
+                {% elif route.cost_if_not_covered %} &middot; <strong>{{ route.cost_if_not_covered }}</strong>{% endif %}
             </div>
         </div>
-        <div class="transport-action-row">
-            {% if route.maps_url %}
-            <a href="{{ route.maps_url }}" target="_blank" rel="noopener" class="transport-action-btn">{{ icon_pin(14) }} Directions</a>
-            {% endif %}
-            {% if route.url %}
-            <a href="{{ route.url | translate_link }}" target="_blank" rel="noopener" class="transport-action-btn secondary">{{ icon_link(14) }} Website</a>
-            {% endif %}
-        </div>
-        {% if route.notes %}
-        <details class="transport-details">
-            <summary>Details</summary>
-            <div class="transport-card-note">{{ route.notes | linkify_stations }}</div>
-        </details>
+    </div>
+    <div class="transport-action-row">
+        {% if route.maps_url %}
+        <a href="{{ route.maps_url }}" target="_blank" rel="noopener" class="transport-action-btn">{{ icon_pin(14) }} Directions</a>
+        {% endif %}
+        {% if route.url %}
+        <a href="{{ route.url | translate_link }}" target="_blank" rel="noopener" class="transport-action-btn secondary">{{ icon_link(14) }} Website</a>
         {% endif %}
     </div>
+    {% if route.notes %}
+    <details class="transport-details">
+        <summary>Details</summary>
+        <div class="transport-card-note">{{ route.notes | linkify_stations }}</div>
+    </details>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{# 4. Ground transport — rendered as movement groups #}
+{% if transport_movements %}
+<section class="transport-banner">
+    <h3 class="slot-heading">{{ icon_train(18) }} Ground Transport</h3>
+    {% for movement in transport_movements %}
+    {% if movement.routes | length > 1 %}
+    {# Movement with alternatives — group wrapper #}
+    <div class="transport-movement-group">
+        <div class="movement-badge">Recommended</div>
+        {{ transport_card(movement.routes[0]) }}
+        <details class="transport-alternatives">
+            <summary>{{ (movement.routes | length) - 1 }} alternative route{{ 's' if (movement.routes | length) > 2 }}</summary>
+            {% for alt in movement.routes[1:] %}
+            {{ transport_card(alt, is_alternate=true) }}
+            {% endfor %}
+        </details>
+    </div>
+    {% else %}
+    {# Standalone route — no wrapper #}
+    {{ transport_card(movement.routes[0]) }}
+    {% endif %}
     {% endfor %}
 </section>
 {% endif %}

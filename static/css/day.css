@@ -709,6 +709,57 @@
     background: rgba(212,39,106,0.1);
 }
 
+/* ===== Transport Movement Groups ===== */
+
+.transport-movement-group {
+    position: relative;
+    border: 1px solid var(--sakura);
+    border-radius: 12px;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: var(--sakura-light);
+}
+
+.transport-movement-group .transport-card-v2 {
+    margin-bottom: 0;
+    border: none;
+    background: #fff;
+}
+
+.movement-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--jr-green, #16a34a);
+    padding: 2px 8px;
+    margin-bottom: 4px;
+}
+
+.transport-alternatives {
+    margin-top: 4px;
+}
+
+.transport-alternatives summary {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--pico-muted-color);
+    cursor: pointer;
+    padding: 6px 8px;
+}
+
+.transport-alternatives .transport-card-v2.alternate {
+    margin-top: 4px;
+    background: var(--pico-background-color);
+    border: 1px dashed var(--pico-muted-border-color);
+    opacity: 0.9;
+}
+
+.transport-alternatives .transport-card-v2.alternate .transport-route-text {
+    font-size: 0.9rem;
+}
+
 /* ===== Transport Card V2 — Operational transit module ===== */
 
 .transport-card-v2 {

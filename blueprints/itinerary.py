@@ -282,6 +282,21 @@ def day_view(day_number):
                 ).all()
             transport_routes = routes
 
+    # Group routes into movements: routes sharing a route_group are alternatives
+    # for the same transfer; ungrouped routes are standalone legs.
+    transport_movements = []
+    _seen_groups = {}
+    for route in transport_routes:
+        if route.route_group:
+            if route.route_group not in _seen_groups:
+                movement = {'group': route.route_group, 'routes': [route]}
+                _seen_groups[route.route_group] = movement
+                transport_movements.append(movement)
+            else:
+                _seen_groups[route.route_group]['routes'].append(route)
+        else:
+            transport_movements.append({'group': None, 'routes': [route]})
+
     # Flights on this day
     day_flights = Flight.query.filter(
         (Flight.depart_date == day.date) | (Flight.arrive_date == day.date)
@@ -443,6 +458,7 @@ def day_view(day_number):
     return render_template('day.html', day=day, prev_day=prev_day,
                            next_day=next_day, total_days=total_days,
                            transport_routes=transport_routes,
+                           transport_movements=transport_movements,
                            day_flights=day_flights,
                            day_checkin=day_checkin, checkin_option=checkin_option,
                            day_checkout=day_checkout, checkout_option=checkout_option,

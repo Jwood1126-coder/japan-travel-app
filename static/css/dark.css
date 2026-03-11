@@ -46,6 +46,10 @@
 
 [data-theme="dark"] .transport-action-btn.secondary { border-color: #4a2030; }
 
+[data-theme="dark"] .transport-movement-group { background: rgba(75,20,50,0.2); border-color: #4a2030; }
+[data-theme="dark"] .transport-movement-group .transport-card-v2 { background: var(--pico-background-color); }
+[data-theme="dark"] .transport-alternatives .transport-card-v2.alternate { background: rgba(255,255,255,0.03); border-color: #4a2030; }
+
 [data-theme="dark"] .accom-action-row { border-top-color: rgba(255,255,255,0.08); }
 
 [data-theme="dark"] .accom-action-btn.secondary { border-color: #4a2030; }
