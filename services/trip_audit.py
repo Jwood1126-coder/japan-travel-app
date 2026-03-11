@@ -63,6 +63,8 @@ def audit_trip():
     _check_accommodation_chain(selected_accoms, result)
     _check_accommodation_nights(result)
     _check_multi_select(result)
+    _check_eliminated_status(result)
+    _check_duplicate_locations(result)
     _check_route_chain(selected_accoms, result)
     _check_narrative_references(selected_accoms, eliminated_names, result)
     _check_document_integrity(result)
@@ -434,3 +436,57 @@ def _check_transport_day_linkage(result):
             result.warnings.append(
                 f'Unlinked transport: {r.route_from} → {r.route_to} '
                 f'has no day assignment')
+
+
+# ---------------------------------------------------------------------------
+# Check H: Eliminated option status integrity
+# ---------------------------------------------------------------------------
+
+def _check_eliminated_status(result):
+    """Flag eliminated options that still claim booked/confirmed status.
+
+    The service layer prevents this at mutation time, so finding these means
+    something bypassed the service layer (direct DB edit, legacy data, etc.).
+    """
+    for opt in AccommodationOption.query.filter_by(is_eliminated=True).all():
+        if opt.booking_status in ('booked', 'confirmed'):
+            loc = AccommodationLocation.query.get(opt.location_id)
+            loc_name = loc.location_name if loc else '(unknown)'
+            result.warnings.append(
+                f'Eliminated but {opt.booking_status}: "{opt.name}" at '
+                f'{loc_name} — should be cancelled or not_booked')
+
+
+# ---------------------------------------------------------------------------
+# Check I: Duplicate location detection
+# ---------------------------------------------------------------------------
+
+def _check_duplicate_locations(result):
+    """Flag multiple accommodation locations covering the same date range.
+
+    Detects locations with overlapping dates that might be duplicates from
+    legacy data or failed merges. Skips all-eliminated locations.
+    """
+    locs = AccommodationLocation.query.order_by(
+        AccommodationLocation.check_in_date).all()
+    active_locs = [loc for loc in locs
+                   if loc.check_in_date and loc.check_out_date
+                   and loc.options
+                   and not all(o.is_eliminated for o in loc.options)]
+
+    for i, a in enumerate(active_locs):
+        for b in active_locs[i + 1:]:
+            # True overlap (not just same-day transition)
+            if (a.check_in_date < b.check_out_date and
+                    a.check_out_date > b.check_in_date and
+                    a.check_in_date != b.check_out_date and
+                    a.check_out_date != b.check_in_date):
+                # Check if they look like duplicates (same city prefix)
+                a_city = a.location_name.split('(')[0].split(' Stay')[0].strip().lower()
+                b_city = b.location_name.split('(')[0].split(' Stay')[0].strip().lower()
+                if a_city == b_city:
+                    result.warnings.append(
+                        f'Possible duplicate locations: "{a.location_name}" '
+                        f'({a.check_in_date}–{a.check_out_date}) and '
+                        f'"{b.location_name}" '
+                        f'({b.check_in_date}–{b.check_out_date})')

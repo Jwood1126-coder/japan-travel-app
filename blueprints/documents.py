@@ -48,44 +48,89 @@ def seed_document_records():
     return created
 
 
-def auto_link_documents():
-    """Auto-link unlinked Document records to bookings by matching
-    confirmation numbers, name keywords, and date ranges in filenames."""
+def auto_link_documents_exact():
+    """Auto-link unlinked documents using exact identifiers only.
+
+    Safe for boot-time: matches by confirmation number and flight number.
+    These are unique identifiers with near-zero false positive risk.
+    Called automatically on startup.
+    """
     docs = Document.query.all()
     linked = 0
 
-    # Get all confirmed/booked accommodations with their locations
     options = AccommodationOption.query.filter(
         AccommodationOption.is_selected == True,
         AccommodationOption.booking_status.in_(['booked', 'confirmed'])
     ).all()
 
-    # Preload locations for date matching
-    from models import AccommodationLocation
-    loc_by_id = {loc.id: loc for loc in AccommodationLocation.query.all()}
-
     flights = Flight.query.all()
 
     for doc in docs:
-        # Skip docs already linked to something
         if doc.accommodations or doc.flights:
             continue
 
         fname_lower = (doc.original_name or doc.filename).lower()
 
-        # Try to match to accommodations
+        # Exact match: accommodation confirmation number
         matched_accom = False
         for opt in options:
             if opt.document_id:
                 continue
-            # Match by confirmation number
             if opt.confirmation_number and opt.confirmation_number.lower() in fname_lower:
                 opt.document_id = doc.id
                 doc.doc_type = 'accommodation_booking'
                 linked += 1
                 matched_accom = True
                 break
-            # Match by accommodation name keywords
+
+        if not matched_accom:
+            # Exact match: flight confirmation number or flight number
+            for flight in flights:
+                if flight.document_id:
+                    continue
+                if flight.confirmation_number and flight.confirmation_number.lower() in fname_lower:
+                    flight.document_id = doc.id
+                    doc.doc_type = 'flight_receipt'
+                    linked += 1
+                elif flight.flight_number and flight.flight_number.lower() in fname_lower:
+                    flight.document_id = doc.id
+                    doc.doc_type = 'flight_receipt'
+                    linked += 1
+
+    if linked:
+        db.session.commit()
+    return linked
+
+
+def auto_link_documents_fuzzy():
+    """Auto-link unlinked documents using heuristic matching.
+
+    Uses name keywords, date patterns in filenames, and flight date heuristics.
+    Higher false-positive risk than exact matching — should be triggered
+    explicitly (admin endpoint or CLI), not on every boot.
+    """
+    docs = Document.query.all()
+    linked = 0
+
+    options = AccommodationOption.query.filter(
+        AccommodationOption.is_selected == True,
+        AccommodationOption.booking_status.in_(['booked', 'confirmed'])
+    ).all()
+
+    loc_by_id = {loc.id: loc for loc in AccommodationLocation.query.all()}
+    flights = Flight.query.all()
+
+    for doc in docs:
+        if doc.accommodations or doc.flights:
+            continue
+
+        fname_lower = (doc.original_name or doc.filename).lower()
+
+        # Fuzzy match: accommodation name keywords
+        matched_accom = False
+        for opt in options:
+            if opt.document_id:
+                continue
             name_words = opt.name.lower().split()
             if any(w in fname_lower for w in name_words if len(w) > 3):
                 opt.document_id = doc.id
@@ -93,13 +138,13 @@ def auto_link_documents():
                 linked += 1
                 matched_accom = True
                 break
-            # Match by date range (e.g. "Apr 12 – 14", "Apr_12_14", "april_9_12")
+            # Fuzzy match: date range in filename
             loc = loc_by_id.get(opt.location_id)
             if loc and loc.check_in_date and loc.check_out_date:
                 ci = loc.check_in_date
                 co = loc.check_out_date
-                month = ci.strftime('%b').lower()  # "apr"
-                month_full = ci.strftime('%B').lower()  # "april"
+                month = ci.strftime('%b').lower()
+                month_full = ci.strftime('%B').lower()
                 date_patterns = [
                     f'{month}_{ci.day}_{co.day}',
                     f'{month} {ci.day}',
@@ -116,29 +161,21 @@ def auto_link_documents():
                     break
 
         if not matched_accom:
-            # Try to match to flights — don't break after first match,
-            # because multi-leg flights share one confirmation number
+            # Fuzzy match: flight date patterns
             for flight in flights:
                 if flight.document_id:
                     continue
-                matched = False
-                if flight.confirmation_number and flight.confirmation_number.lower() in fname_lower:
-                    matched = True
-                elif flight.flight_number and flight.flight_number.lower() in fname_lower:
-                    matched = True
-                elif flight.depart_date:
-                    # Match flight receipts by date pattern
+                if flight.depart_date:
                     day_str = f'{flight.depart_date.day:02d}'
                     month_str = flight.depart_date.strftime('%b').lower()
                     if ('flight' in fname_lower or 'receipt' in fname_lower or 'eticket' in fname_lower):
                         if f'{day_str}{month_str}' in fname_lower or f'{month_str}{day_str}' in fname_lower:
-                            matched = True
-                if matched:
-                    flight.document_id = doc.id
-                    doc.doc_type = 'flight_receipt'
-                    linked += 1
+                            flight.document_id = doc.id
+                            doc.doc_type = 'flight_receipt'
+                            linked += 1
 
-    db.session.commit()
+    if linked:
+        db.session.commit()
     return linked
 
 
@@ -331,6 +368,17 @@ def unlink_document(doc_id):
 
     db.session.commit()
     return jsonify({'ok': True})
+
+
+@documents_bp.route('/api/documents/auto-link-fuzzy', methods=['POST'])
+def trigger_fuzzy_link():
+    """Explicitly trigger fuzzy document-to-booking matching.
+
+    Uses heuristic matching (name keywords, date patterns) which has
+    higher false-positive risk. Not run automatically on boot.
+    """
+    linked = auto_link_documents_fuzzy()
+    return jsonify({'ok': True, 'linked': linked})
 
 
 @documents_bp.route('/api/documents/file/<path:filename>')

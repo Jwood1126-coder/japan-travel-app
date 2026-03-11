@@ -49,11 +49,16 @@ services/               # Domain service layer — canonical mutation pipeline
   activities.py          # toggle, add, update, eliminate, delete, update_notes, update_day_notes, confirm
   checklists.py          # toggle, update_status, create, delete
   transport.py           # add, update, delete — transport route mutations with validation + Socket.IO
+  flights.py             # update — flight field mutations with booking status + document-first validation
+  budget.py              # record_expense — budget actual amount tracking with validation
   trip_audit.py          # Pre-export audit: accommodation chain, route chain, narrative staleness, activity/transport completeness
 
 scripts/
   export_seed.py        # Export current DB as new seed.db (strips chat/photos)
   fix_local_db.py       # One-time data fixes (applied to create current seed.db)
+  repair_kyoto_overlap.py    # Explicit repair: merge duplicate Kyoto locations (--dry-run supported)
+  repair_eliminated_status.py # Explicit repair: downgrade eliminated+booked options (--dry-run supported)
+  repair_num_nights.py       # Explicit repair: sync num_nights with date arithmetic (--dry-run supported)
 
 tests/
   test_smoke.py         # 29 smoke tests: seed integrity, routes, export quality
@@ -63,7 +68,7 @@ tests/
 migrations/
   schema.py             # Schema migrations: ALTER TABLE column additions (idempotent)
   legacy.py             # Verifies all legacy migrations were applied (sentinel checks)
-  validate.py           # Boot-time schedule validation (date gaps, overpacked days, etc.)
+  validate.py           # Boot-time schedule validation — READ-ONLY (delegates to trip_audit, no mutations)
   archive/              # Frozen reference of all 39 original migration functions (NEVER imported)
 
 blueprints/
@@ -130,13 +135,16 @@ The live production DB was mutated by 39 migration functions that originally liv
 
 1. **`migrations/schema.py`** — Adds missing columns/tables via ALTER TABLE + CREATE TABLE (idempotent)
 2. **`migrations/legacy.py`** — Verifies all 39 legacy migrations were applied (sentinel checks, does NOT re-run them)
-3. **`migrations/validate.py`** — Schedule validation: date gaps, overpacked days, departure conflicts, document integrity
-4. **Document seeding** — `seed_document_records()` syncs files on disk → DB, `auto_link_documents()` matches to bookings
+3. **`migrations/validate.py`** — **Read-only** schedule validation: delegates to trip audit service, prints warnings (no mutations)
+4. **Document sync** — `seed_document_records()` syncs files on disk → DB, `auto_link_documents_exact()` links by confirmation/flight number only
+
+**Boot-time startup is read-only** (except DDL schema changes and disk→DB document sync). No data repair runs at boot. All repair logic lives in explicit scripts under `scripts/` that must be run manually.
 
 **Rules for data changes:**
 - The migration system is **closed** — no new migration functions should be added
 - Use API endpoints, the AI chat, or one-time scripts in `scripts/` for data changes
 - Never replace the live DB with a fresh import — it contains live booking data, chat history, photos
+- For data repair: use `scripts/repair_*.py` with `--dry-run` first, then without
 - Test boot: `python -c "from app import create_app; create_app()"`
 
 ### Schema Changes
@@ -170,7 +178,8 @@ not_booked → researching → booked → confirmed → completed
 - `Document` records in the DB represent uploaded files (PDFs, images)
 - `AccommodationOption.document_id` and `Flight.document_id` link bookings to their proof
 - On boot, `seed_document_records()` syncs files on disk → DB records
-- On boot, `auto_link_documents()` matches unlinked documents to bookings by confirmation number, name keywords, and date patterns
+- On boot, `auto_link_documents_exact()` links documents to bookings by confirmation/flight number only (low false-positive risk)
+- Fuzzy matching (name keywords, date patterns) available via `POST /api/documents/auto-link-fuzzy` — not run automatically
 
 ### Planned vs Confirmed Visual Language
 - **Confirmed** (doc-backed): solid green left border, 📄 icon, document link shown
@@ -213,6 +222,8 @@ Pre-export reconciliation that compares canonical structured facts against narra
 - Stale narrative references (activity text mentioning eliminated hotels)
 - Activity completeness: missing categories, missing time_slots, book_ahead without notes
 - Transport day linkage: routes not assigned to a day
+- Eliminated options with active booking status (booked/confirmed)
+- Possible duplicate locations (same city, overlapping dates)
 
 **Narrative reference detection**: Extracts brand names from eliminated hotel options and scans active activity titles/descriptions. Uses word-boundary matching and filters common English words to avoid false positives.
 
@@ -221,10 +232,12 @@ Pre-export reconciliation that compares canonical structured facts against narra
 **API**: `GET /api/trip/audit` returns the full audit result as JSON.
 
 ### Boot-time Validation (`migrations/validate.py`)
-Delegates to the trip audit service. Runs on every boot, prints warnings (does not block startup). Also includes:
-- **Kyoto overlap fix**: One-time reconciliation of legacy overlapping Kyoto accommodation locations (corrects dates, merges duplicates, normalizes names to "Kyoto (Stay 1)"/"Kyoto (Stay 2)"). No-op when data is already clean.
-- **num_nights auto-sync**: Safety net that syncs stored `num_nights` with date arithmetic.
-- **Eliminated status fix**: Downgrades eliminated options that still claim booked/confirmed to cancelled.
+**Read-only.** Delegates to the trip audit service. Runs on every boot, prints warnings (does not block startup). Performs no data mutations — all repair logic has been extracted to explicit scripts:
+- `scripts/repair_kyoto_overlap.py` — merge duplicate Kyoto locations, correct dates
+- `scripts/repair_eliminated_status.py` — downgrade eliminated+booked options to cancelled
+- `scripts/repair_num_nights.py` — sync stored num_nights with date arithmetic
+
+All scripts support `--dry-run` for safe inspection before committing changes.
 
 ## Service Layer (`services/`)
 
@@ -318,7 +331,7 @@ Each service function owns: **input validation → DB write → cascade side eff
 
 - **Platform:** Railway (auto-deploy from GitHub `main` branch)
 - **Entry:** `Procfile` → `start.py` → Gunicorn with gevent workers
-- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → schema migrations → legacy verification → schedule validation → document seeding/auto-linking → app serves
+- **Boot sequence:** `start.py` (backup DB, seed if needed) → `wsgi.py` (create_app) → schema DDL → legacy verification → read-only audit → document sync (disk→DB + exact-match linking) → app serves
 - **Environment variables:** `SECRET_KEY`, `TRIP_PASSWORD`, `ANTHROPIC_API_KEY`, `RAILWAY_VOLUME_MOUNT_PATH`
 - Production refuses to start if `SECRET_KEY` or `TRIP_PASSWORD` are default values
 

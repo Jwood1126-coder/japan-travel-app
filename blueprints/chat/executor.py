@@ -3,14 +3,14 @@
 Chat-specific logic (fuzzy matching by name) lives here.
 All mutations delegate to services/ for validation, cascade, and emit.
 """
-from models import (db, ChecklistItem, Day, Activity, AccommodationOption,
+from models import (ChecklistItem, Day, Activity, AccommodationOption,
                     AccommodationLocation, Flight, BudgetItem, TransportRoute)
-from guardrails import (validate_booking_status, validate_non_negative,
-                        validate_document_status)
 import services.accommodations as accom_svc
 import services.activities as activity_svc
 import services.checklists as checklist_svc
 import services.transport as transport_svc
+import services.flights as flight_svc
+import services.budget as budget_svc
 
 
 def execute_tool(tool_name, tool_input):
@@ -23,23 +23,15 @@ def execute_tool(tool_name, tool_input):
             ).first()
             if not flight:
                 return {"success": False, "error": f"Flight {flight_num} not found in itinerary"}
-            if tool_input.get('booking_status'):
-                try:
-                    new_status = validate_booking_status(tool_input['booking_status'])
-                    validate_document_status(new_status, flight.document_id,
-                                             f'flight {flight.flight_number}')
-                    flight.booking_status = new_status
-                except ValueError as e:
-                    return {"success": False, "error": str(e)}
-            if tool_input.get('confirmation_number'):
-                flight.confirmation_number = tool_input['confirmation_number']
-            if tool_input.get('depart_time'):
-                flight.depart_time = tool_input['depart_time']
-            if tool_input.get('arrive_time'):
-                flight.arrive_time = tool_input['arrive_time']
-            if tool_input.get('notes'):
-                flight.notes = tool_input['notes']
-            db.session.commit()
+            fields = {}
+            for field in ('booking_status', 'confirmation_number',
+                          'depart_time', 'arrive_time', 'notes'):
+                if tool_input.get(field) is not None:
+                    fields[field] = tool_input[field]
+            try:
+                flight = flight_svc.update(flight.id, fields)
+            except ValueError as e:
+                return {"success": False, "error": str(e)}
             return {"success": True, "message": f"Updated flight {flight.flight_number} — status: {flight.booking_status}"}
 
         elif tool_name == "update_accommodation":
@@ -164,14 +156,15 @@ def execute_tool(tool_name, tool_input):
             item = BudgetItem.query.filter(
                 BudgetItem.category.ilike(f"%{tool_input['category']}%")
             ).first()
-            if item:
-                amount = validate_non_negative(tool_input['actual_amount'], 'actual_amount')
-                item.actual_amount = (item.actual_amount or 0) + amount
-                if tool_input.get('notes'):
-                    item.notes = (item.notes or '') + '\n' + tool_input['notes']
-                db.session.commit()
-                return {"success": True, "message": f"Updated budget: {item.category} — actual: ${item.actual_amount:.0f}"}
-            return {"success": False, "error": f"Budget category '{tool_input['category']}' not found"}
+            if not item:
+                return {"success": False, "error": f"Budget category '{tool_input['category']}' not found"}
+            try:
+                item = budget_svc.record_expense(
+                    item.id, tool_input['actual_amount'],
+                    notes=tool_input.get('notes'))
+            except ValueError as e:
+                return {"success": False, "error": str(e)}
+            return {"success": True, "message": f"Updated budget: {item.category} — actual: ${item.actual_amount:.0f}"}
 
         elif tool_name == "add_checklist_item":
             try:
