@@ -76,4 +76,74 @@ def run_schema_migrations(app):
         except sqlite3.OperationalError:
             pass  # Column already exists
     conn.commit()
+
+    # --- One-shot data migrations (idempotent, safe to re-run) ---
+    _migrate_transport_data(cursor, conn)
+
+    conn.commit()
     conn.close()
+
+
+def _migrate_transport_data(cursor, conn):
+    """Split Haneda combined route into two cards + enrich all routes with maps_url.
+
+    Idempotent: checks current state before each change.
+    """
+    # Check if route 13 still has the old combined transport_type
+    cursor.execute("SELECT id, transport_type FROM transport_route WHERE id = 13")
+    row = cursor.fetchone()
+    if row and 'OR' in (row[1] or ''):
+        # Still the old combined "Keikyu Line + subway OR Limousine Bus" — split it
+        cursor.execute("""
+            UPDATE transport_route SET
+                transport_type = 'Keikyu Line + subway',
+                train_name = 'Keikyu Airport Express → Toei Oedo Line',
+                duration = '~75 min',
+                cost_if_not_covered = '~¥800',
+                notes = 'Keikyu Line to Shinagawa, transfer to Toei Oedo Line to Higashi-Shinjuku. Use IC card (Suica/Pasmo).',
+                maps_url = 'https://www.google.com/maps/dir/Haneda+Airport+Terminal+3,+Tokyo/Higashi-Shinjuku+Station',
+                url = 'https://www.keikyu.co.jp/en/',
+                sort_order = 1
+            WHERE id = 13
+        """)
+
+    # Insert Limousine Bus route if it doesn't exist yet
+    cursor.execute("SELECT id FROM transport_route WHERE transport_type = 'Limousine Bus'")
+    if not cursor.fetchone():
+        cursor.execute("""
+            INSERT INTO transport_route (route_from, route_to, transport_type, train_name,
+                duration, jr_pass_covered, cost_if_not_covered, notes, day_id, sort_order, maps_url, url)
+            VALUES (
+                'Haneda Airport', 'Shinjuku', 'Limousine Bus', 'Airport Limousine Bus',
+                '~60-85 min', 0, '~¥1,300',
+                'Direct bus from Haneda to Shinjuku Bus Terminal. No transfers. Runs every 20-30 min. Then 10 min walk to hotel.',
+                (SELECT id FROM day WHERE day_number = 2), 2,
+                'https://www.google.com/maps/dir/Haneda+Airport+Terminal+3,+Tokyo/Shinjuku+Expressway+Bus+Terminal',
+                'https://www.limousinebus.co.jp/en/'
+            )
+        """)
+
+    # Enrich all routes with maps_url where missing
+    _route_data = {
+        1: ('https://www.google.com/maps/dir/Tokyo+Station/Odawara+Station', 'https://www.jreast.co.jp/multi/en/'),
+        2: ('https://www.google.com/maps/dir/Tokyo+Station/Nagoya+Station', 'https://www.jreast.co.jp/multi/en/'),
+        3: ('https://www.google.com/maps/dir/Nagoya+Station/Takayama+Station', 'https://touristpass.jp/en/'),
+        4: ('https://www.google.com/maps/dir/Takayama+Nohi+Bus+Center/Shirakawa-go+Bus+Terminal', None),
+        5: ('https://www.google.com/maps/dir/Shirakawa-go+Bus+Terminal/Kanazawa+Station', None),
+        6: ('https://www.google.com/maps/dir/Kanazawa+Station/Tsuruga+Station', None),
+        7: ('https://www.google.com/maps/dir/Tsuruga+Station/Kyoto+Station', None),
+        8: ('https://www.google.com/maps/dir/Kyoto+Station/Hiroshima+Station', None),
+        9: ('https://www.google.com/maps/dir/Miyajimaguchi+Station/Miyajima+Ferry+Terminal', 'https://www.jr-miyajimaferry.co.jp/en/'),
+        10: ('https://www.google.com/maps/dir/Kyoto+Station/Tokyo+Station', None),
+        12: ('https://www.google.com/maps/dir/Kyoto+Station/Shin-Osaka+Station', None),
+    }
+    for route_id, (maps, url) in _route_data.items():
+        cursor.execute("SELECT maps_url FROM transport_route WHERE id = ?", (route_id,))
+        row = cursor.fetchone()
+        if row and not row[0]:
+            if url:
+                cursor.execute("UPDATE transport_route SET maps_url = ?, url = ? WHERE id = ?",
+                               (maps, url, route_id))
+            else:
+                cursor.execute("UPDATE transport_route SET maps_url = ? WHERE id = ?",
+                               (maps, route_id))
