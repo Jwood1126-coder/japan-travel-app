@@ -3,7 +3,7 @@
 {% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/day.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes, icon_translate, icon_lightbulb %}
+{% from "icons.html" import icon_book, icon_bellhop, icon_hotel, icon_pin, icon_train, icon_shinkansen, icon_bus, icon_ferry, icon_plane, icon_sun, icon_cloud_sun, icon_moon, icon_stars, icon_ticket, icon_pencil, icon_pushpin, icon_refresh, icon_notes, icon_lightbulb %}
 <a href="{{ url_for('itinerary.index') }}" class="back-to-overview">&larr; All Days</a>
 <header class="day-header">
     <div class="day-nav-row">
@@ -67,8 +67,7 @@
                 <span class="accom-pending-name">{{ opt.name }}</span>
                 <span class="accom-pending-price">{{ opt.price_tier }}</span>
                 {% if opt.booking_url %}
-                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="accom-pending-link">View</a>
-                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="translate-btn sm" title="Translate">{{ icon_translate(12) }}</a>
+                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="accom-pending-link">View</a>
                 {% endif %}
             </div>
             {% endfor %}
@@ -180,8 +179,7 @@
                 <span class="accom-pending-name">{{ opt.name }}</span>
                 <span class="accom-pending-price">{{ opt.price_tier }}</span>
                 {% if opt.booking_url %}
-                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="accom-pending-link">Book</a>
-                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="translate-btn sm" title="Translate">{{ icon_translate(12) }}</a>
+                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="accom-pending-link">Book</a>
                 {% endif %}
             </div>
             {% endfor %}
@@ -258,10 +256,9 @@
                 </a>
                 {% endif %}
                 {% if activity.url %}
-                <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
+                <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="activity-url-link">
                     {{ icon_ticket(14) }} Tickets / Info
                 </a>
-                <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
                 {% endif %}
                 {% if activity.cost_note %}
                 <div class="activity-cost">{{ activity.cost_note }}</div>
@@ -331,7 +328,7 @@
                     </a>
                     {% endif %}
                     {% if activity.url %}
-                    <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
+                    <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="activity-url-link">
                         {{ icon_ticket(14) }} Tickets / Info
                     </a>
                     {% endif %}
@@ -441,10 +438,9 @@
             </a>
             {% endif %}
             {% if activity.url %}
-            <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-url-link">
+            <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="activity-url-link">
                 {{ icon_ticket(14) }} Tickets / Info
             </a>
-            <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
             {% endif %}
         </div>
     </div>

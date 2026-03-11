@@ -3,7 +3,7 @@
 {% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/accommodations.css') }}">{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_hotel, icon_pin, icon_budget, icon_translate, icon_delete, icon_chevron, icon_check %}
+{% from "icons.html" import icon_hotel, icon_pin, icon_budget, icon_delete, icon_chevron, icon_check %}
 <header>
     <h1>{{ icon_hotel(22) }} Accommodations</h1>
     <p>Pick one option per location. Track your bookings.</p>
@@ -162,16 +162,12 @@
 
             <div class="option-links">
                 {% if option.booking_url %}
-                <a href="{{ option.booking_url }}" target="_blank" rel="noopener"
-                   class="book-link">Website</a>
                 <a href="{{ option.booking_url | translate_link }}" target="_blank" rel="noopener"
-                   class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
+                   class="book-link">Website</a>
                 {% endif %}
                 {% if option.alt_booking_url %}
-                <a href="{{ option.alt_booking_url }}" target="_blank" rel="noopener"
-                   class="book-link alt">Link</a>
                 <a href="{{ option.alt_booking_url | translate_link }}" target="_blank" rel="noopener"
-                   class="translate-btn" title="Open translated to English">{{ icon_translate(14) }} EN</a>
+                   class="book-link alt">Link</a>
                 {% endif %}
             </div>
             <div class="editable-url">

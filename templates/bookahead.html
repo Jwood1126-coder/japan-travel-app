@@ -3,7 +3,7 @@
 {% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/activities.css') }}">{% endblock %}
 
 {% block content %}
-{% from "icons.html" import icon_ticket, icon_pin, icon_link, icon_translate, icon_lightbulb %}
+{% from "icons.html" import icon_ticket, icon_pin, icon_link, icon_lightbulb %}
 <header>
     <h1>{{ icon_ticket(22) }} Book Ahead</h1>
     <p class="book-ahead-intro">Activities that need advance tickets, reservations, or preparation. Sorted by trip day so you can plan ahead.</p>
@@ -46,11 +46,8 @@
     {% endif %}
     <div class="book-ahead-links">
         {% if a.url %}
-        <a href="{{ a.url }}" target="_blank" rel="noopener" class="doc-link">
+        <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="doc-link">
             {{ icon_link(14) }} Book / Details
-        </a>
-        <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="translate-btn" title="Translate">
-            {{ icon_translate(14) }} EN
         </a>
         {% endif %}
         {% if a.maps_url %}

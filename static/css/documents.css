@@ -105,33 +105,6 @@
 
 .doc-link:hover, .navigate-link:hover { text-decoration: underline; }
 
-/* Translate button — inline next to external links */
-
-.translate-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 0.75rem;
-    color: var(--muted-color);
-    text-decoration: none;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid color-mix(in srgb, var(--muted-color) 30%, transparent);
-    margin-left: 6px;
-    vertical-align: middle;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
-}
-
-.translate-btn:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 8%, transparent);
-}
-
-.translate-btn svg { vertical-align: -1px; }
-
-.translate-btn.sm { font-size: 0.7rem; padding: 1px 4px; margin-left: 4px; }
-
 /* Document file list */
 
 .doc-file-list { padding: 0 0 8px; }
@@ -231,13 +204,6 @@
     .petal { animation: none; display: none; }
     .loc-group, .next-up-card, .doc-section, .act-location-group,
     .flight-card-tripit, .doc-card, .act-browse-card { animation: none !important; }
-}
-
-.translate-btn {
-    min-height: 44px;
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 12px;
 }
 
 .doc-link {
