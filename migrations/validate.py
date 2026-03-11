@@ -3,13 +3,17 @@
 Prints warnings on boot so developers see issues immediately.
 The same audit runs before export to gate rendering.
 """
-from models import AccommodationLocation, db
+from datetime import date as date_type
+from models import AccommodationLocation, AccommodationOption, ChecklistItem, db
 from services.trip_audit import audit_trip
 
 
 def validate_schedule(app):
     """Post-migration schedule validation. Prints warnings for conflicts.
     Runs on every boot to catch data issues early."""
+
+    # One-time fix: reconcile Kyoto accommodation overlap from legacy data
+    _fix_kyoto_overlap()
 
     # Auto-fix: sync num_nights with date arithmetic (safety net)
     _autofix_num_nights()
@@ -47,6 +51,131 @@ def _autofix_num_nights():
                 db.session.commit()
                 print(f"  AUTO-FIX: '{loc.location_name}' num_nights {old} → {expected} "
                       f"(from dates {loc.check_in_date} to {loc.check_out_date})")
+
+
+def _fix_kyoto_overlap():
+    """One-time fix: reconcile overlapping Kyoto accommodation locations.
+
+    Production DB has legacy data where Kyoto stays overlap. The confirmed
+    booking chain is:
+        Kyoto Stay 1 (Tsukiya-Mikazuki): Apr 12–14 (2 nights)
+        Kyoto Stay 2 (Kyotofish Miyagawa): Apr 14–16 (2 nights)
+
+    This fix:
+    1. Corrects dates on any Kyoto location that overlaps with these ranges
+    2. Merges duplicate Kyoto locations (e.g. "Kyoto Stay 2 (2 nights)" + "Kyoto Stay 2")
+    3. Normalizes location names to "Kyoto (Stay 1)" / "Kyoto (Stay 2)"
+    """
+    # Canonical Kyoto dates from booking confirmations
+    KYOTO_CANONICAL = {
+        1: {'name': 'Kyoto (Stay 1)', 'check_in': date_type(2026, 4, 12),
+            'check_out': date_type(2026, 4, 14), 'sort_order': 5,
+            'hotel_keyword': 'tsukiya'},
+        2: {'name': 'Kyoto (Stay 2)', 'check_in': date_type(2026, 4, 14),
+            'check_out': date_type(2026, 4, 16), 'sort_order': 6,
+            'hotel_keyword': 'kyotofish'},
+    }
+
+    kyoto_locs = AccommodationLocation.query.filter(
+        AccommodationLocation.location_name.ilike('%kyoto%stay%')
+    ).order_by(AccommodationLocation.check_in_date).all()
+
+    if not kyoto_locs:
+        return  # No Kyoto locations found (shouldn't happen)
+
+    # Identify which canonical slot each location belongs to, by checking
+    # which confirmed hotel is among its options
+    slot_map = {}  # canonical_slot_num -> list of matching locations
+    for loc in kyoto_locs:
+        for slot_num, canon in KYOTO_CANONICAL.items():
+            keyword = canon['hotel_keyword']
+            if any(keyword in (opt.name or '').lower() for opt in loc.options):
+                slot_map.setdefault(slot_num, []).append(loc)
+                break
+        else:
+            # No confirmed hotel found — try matching by date proximity
+            for slot_num, canon in KYOTO_CANONICAL.items():
+                if loc.check_in_date and abs((loc.check_in_date - canon['check_in']).days) <= 1:
+                    slot_map.setdefault(slot_num, []).append(loc)
+                    break
+
+    changed = False
+    for slot_num, canon in KYOTO_CANONICAL.items():
+        locs_for_slot = slot_map.get(slot_num, [])
+        if not locs_for_slot:
+            continue
+
+        # Pick the primary location (the one with the confirmed hotel selected)
+        primary = None
+        duplicates = []
+        for loc in locs_for_slot:
+            has_confirmed = any(
+                canon['hotel_keyword'] in (opt.name or '').lower()
+                and opt.is_selected
+                for opt in loc.options
+            )
+            if has_confirmed and primary is None:
+                primary = loc
+            else:
+                duplicates.append(loc)
+
+        # If no selected match, pick the first one
+        if primary is None:
+            primary = locs_for_slot[0]
+            duplicates = locs_for_slot[1:]
+
+        # Fix dates on primary location
+        if (primary.check_in_date != canon['check_in'] or
+                primary.check_out_date != canon['check_out']):
+            old_in, old_out = primary.check_in_date, primary.check_out_date
+            primary.check_in_date = canon['check_in']
+            primary.check_out_date = canon['check_out']
+            primary.num_nights = (canon['check_out'] - canon['check_in']).days
+            changed = True
+            print(f"  FIX-KYOTO: '{primary.location_name}' dates "
+                  f"{old_in}–{old_out} → {canon['check_in']}–{canon['check_out']}")
+
+        # Fix name
+        if primary.location_name != canon['name']:
+            old_name = primary.location_name
+            primary.location_name = canon['name']
+            changed = True
+            print(f"  FIX-KYOTO: renamed '{old_name}' → '{canon['name']}'")
+
+        # Fix sort_order
+        if primary.sort_order != canon['sort_order']:
+            primary.sort_order = canon['sort_order']
+            changed = True
+
+        # Merge duplicates: move options + checklist refs to primary, then delete
+        for dup in duplicates:
+            print(f"  FIX-KYOTO: merging duplicate '{dup.location_name}' (id={dup.id}) "
+                  f"into '{primary.location_name}' (id={primary.id})")
+            for opt in list(dup.options):
+                # Check if primary already has this hotel
+                existing = next(
+                    (o for o in primary.options
+                     if o.name and opt.name and o.name.lower() == opt.name.lower()),
+                    None
+                )
+                if existing:
+                    # Duplicate option — delete from duplicate location
+                    db.session.delete(opt)
+                else:
+                    # Move option to primary location
+                    opt.location_id = primary.id
+                    max_rank = max((o.rank for o in primary.options), default=0)
+                    opt.rank = max_rank + 1
+            # Reassign checklist items pointing to the duplicate
+            for cl in ChecklistItem.query.filter_by(
+                    accommodation_location_id=dup.id).all():
+                cl.accommodation_location_id = primary.id
+            db.session.delete(dup)
+            changed = True
+
+    if changed:
+        db.session.commit()
+        print("  FIX-KYOTO: Kyoto accommodation overlap resolved")
 
 
 def _autofix_eliminated_status():
