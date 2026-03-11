@@ -55,6 +55,8 @@ scripts/
 
 tests/
   test_smoke.py         # 29 smoke tests: seed integrity, routes, export quality
+  test_services.py      # 19 service layer tests: mutations, cascades, validation
+  conftest.py           # Restores DB from seed after test runs
 
 migrations/
   schema.py             # Schema migrations: ALTER TABLE column additions (idempotent)

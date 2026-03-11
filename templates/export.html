@@ -88,6 +88,9 @@
     .export-link:hover { text-decoration: underline; }
     .export-link.maps { color: #2d8a4e; }
     .not-booked { font-size: 9pt; color: var(--muted); }
+    .status-confirmed { font-size: 8pt; color: #2d8a4e; font-weight: 700; }
+    .status-booked { font-size: 8pt; color: #b8860b; font-weight: 600; }
+    .status-planned { font-size: 8pt; color: var(--muted); font-style: italic; }
     .option-chip {
         display: inline;
         font-size: 9pt;
@@ -210,6 +213,7 @@
     <span>{{ f.depart_date.strftime('%b %d') if f.depart_date else '' }}</span>
     <span>{{ f.depart_time or '' }}{% if f.arrive_time %} &rarr; {{ f.arrive_time }}{% endif %}</span>
     {% if f.confirmation_number %}<span class="confirm">{{ f.confirmation_number }}</span>{% endif %}
+    {% if f.booking_status == 'confirmed' and f.document_id %}<span class="status-confirmed">Confirmed</span>{% elif f.booking_status != 'confirmed' %}<span class="status-planned">{{ f.booking_status or 'Planned' }}</span>{% endif %}
     {% if 'Delta' in f.airline %}<a href="https://www.delta.com/mytrips/" target="_blank" rel="noopener" class="flight-link">Manage</a>{% endif %}
     {% if 'United' in f.airline %}<a href="https://www.united.com/en/us/managereservation/mytrips" target="_blank" rel="noopener" class="flight-link">Manage</a>{% endif %}
 </div>
@@ -220,7 +224,7 @@
 <h2>Accommodations</h2>
 <table class="accom-table">
 <thead>
-    <tr><th>Location</th><th>Dates</th><th>Hotel</th><th>Links</th></tr>
+    <tr><th>Location</th><th>Dates</th><th>Hotel</th><th>Status</th><th>Links</th></tr>
 </thead>
 <tbody>
 {% for a in accommodations %}
@@ -229,6 +233,15 @@
     <td>{{ a.location.check_in_date.strftime('%b %d') }} &ndash; {{ a.location.check_out_date.strftime('%b %d') }} ({{ a.location.num_nights }}N)</td>
     {% if a.selected %}
     <td class="hotel-name">{{ a.selected.name }}</td>
+    <td>
+        {% if a.selected.booking_status == 'confirmed' and a.selected.document_id %}
+            <span class="status-confirmed">Confirmed</span>
+        {% elif a.selected.booking_status == 'booked' %}
+            <span class="status-booked">Booked</span>
+        {% else %}
+            <span class="status-planned">Planned</span>
+        {% endif %}
+    </td>
     <td class="accom-links">
         {% if a.selected.confirmation_number %}<strong>{{ a.selected.confirmation_number }}</strong><br>{% endif %}
         {% if a.selected.booking_url %}<a href="{{ a.selected.booking_url }}" target="_blank" rel="noopener" class="export-link">Booking</a>{% endif %}
@@ -239,7 +252,7 @@
     <tr><td colspan="4" style="font-size:9pt;color:#888;padding-top:0;">&#x1f4cd; {{ a.selected.address }}</td></tr>
     {% endif %}
     {% else %}
-    <td colspan="2" class="not-booked">
+    <td colspan="3" class="not-booked">
         Not booked &mdash; Options:
         {% for opt in a.options %}
             {% if not opt.is_eliminated %}
