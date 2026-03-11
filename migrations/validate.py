@@ -65,6 +65,7 @@ def _fix_kyoto_overlap():
     1. Corrects dates on any Kyoto location that overlaps with these ranges
     2. Merges duplicate Kyoto locations (e.g. "Kyoto Stay 2 (2 nights)" + "Kyoto Stay 2")
     3. Normalizes location names to "Kyoto (Stay 1)" / "Kyoto (Stay 2)"
+    4. Ensures only one option per slot is selected (the canonical hotel)
     """
     # Canonical Kyoto dates from booking confirmations
     KYOTO_CANONICAL = {
@@ -76,28 +77,38 @@ def _fix_kyoto_overlap():
             'hotel_keyword': 'kyotofish'},
     }
 
+    # Broad search: catch all Kyoto-related accommodation locations
     kyoto_locs = AccommodationLocation.query.filter(
-        AccommodationLocation.location_name.ilike('%kyoto%stay%')
+        AccommodationLocation.location_name.ilike('%kyoto%')
     ).order_by(AccommodationLocation.check_in_date).all()
 
     if not kyoto_locs:
         return  # No Kyoto locations found (shouldn't happen)
 
+    print(f"  FIX-KYOTO: found {len(kyoto_locs)} Kyoto location(s): "
+          f"{[(loc.id, loc.location_name) for loc in kyoto_locs]}")
+
     # Identify which canonical slot each location belongs to, by checking
-    # which confirmed hotel is among its options
+    # which confirmed hotel is among its options (use direct query, not relationship)
     slot_map = {}  # canonical_slot_num -> list of matching locations
     for loc in kyoto_locs:
+        opts = AccommodationOption.query.filter_by(location_id=loc.id).all()
+        matched = False
         for slot_num, canon in KYOTO_CANONICAL.items():
             keyword = canon['hotel_keyword']
-            if any(keyword in (opt.name or '').lower() for opt in loc.options):
+            if any(keyword in (opt.name or '').lower() for opt in opts):
                 slot_map.setdefault(slot_num, []).append(loc)
+                matched = True
                 break
-        else:
+        if not matched:
             # No confirmed hotel found — try matching by date proximity
             for slot_num, canon in KYOTO_CANONICAL.items():
                 if loc.check_in_date and abs((loc.check_in_date - canon['check_in']).days) <= 1:
                     slot_map.setdefault(slot_num, []).append(loc)
                     break
+
+    slot_info = {k: [(l.id, l.location_name) for l in v] for k, v in slot_map.items()}
+    print(f"  FIX-KYOTO: slot mapping: {slot_info}")
 
     changed = False
     for slot_num, canon in KYOTO_CANONICAL.items():
@@ -109,10 +120,11 @@ def _fix_kyoto_overlap():
         primary = None
         duplicates = []
         for loc in locs_for_slot:
+            opts = AccommodationOption.query.filter_by(location_id=loc.id).all()
             has_confirmed = any(
                 canon['hotel_keyword'] in (opt.name or '').lower()
                 and opt.is_selected
-                for opt in loc.options
+                for opt in opts
             )
             if has_confirmed and primary is None:
                 primary = loc
@@ -148,34 +160,70 @@ def _fix_kyoto_overlap():
             changed = True
 
         # Merge duplicates: move options + checklist refs to primary, then delete
+        # Use direct queries instead of relationship to avoid stale cache issues
         for dup in duplicates:
             print(f"  FIX-KYOTO: merging duplicate '{dup.location_name}' (id={dup.id}) "
                   f"into '{primary.location_name}' (id={primary.id})")
-            for opt in list(dup.options):
-                # Check if primary already has this hotel
-                existing = next(
-                    (o for o in primary.options
-                     if o.name and opt.name and o.name.lower() == opt.name.lower()),
-                    None
-                )
-                if existing:
-                    # Duplicate option — delete from duplicate location
+
+            dup_opts = AccommodationOption.query.filter_by(location_id=dup.id).all()
+            primary_opts = AccommodationOption.query.filter_by(location_id=primary.id).all()
+            primary_names = {(o.name or '').lower() for o in primary_opts}
+            max_rank = max((o.rank for o in primary_opts), default=0)
+
+            for opt in dup_opts:
+                opt_name_lower = (opt.name or '').lower()
+                if opt_name_lower in primary_names:
+                    # Duplicate option — delete it
+                    print(f"    deleting duplicate option '{opt.name}' (id={opt.id})")
                     db.session.delete(opt)
                 else:
                     # Move option to primary location
+                    max_rank += 1
+                    print(f"    moving option '{opt.name}' (id={opt.id}) → rank {max_rank}")
                     opt.location_id = primary.id
-                    max_rank = max((o.rank for o in primary.options), default=0)
-                    opt.rank = max_rank + 1
+                    opt.rank = max_rank
+                    primary_names.add(opt_name_lower)
+
+            # Flush moves/deletes BEFORE deleting the location to avoid
+            # SQLAlchemy relationship cascade nullifying moved options
+            db.session.flush()
+
             # Reassign checklist items pointing to the duplicate
             for cl in ChecklistItem.query.filter_by(
                     accommodation_location_id=dup.id).all():
                 cl.accommodation_location_id = primary.id
+
             db.session.delete(dup)
+            db.session.flush()
+            changed = True
+
+        # After merge, ensure only the canonical hotel is selected at this location
+        all_opts = AccommodationOption.query.filter_by(location_id=primary.id).all()
+        canonical_opt = None
+        for opt in all_opts:
+            if canon['hotel_keyword'] in (opt.name or '').lower():
+                if canonical_opt is None:
+                    canonical_opt = opt
+                else:
+                    # Multiple options matching the keyword — keep the first selected
+                    if opt.is_selected and not canonical_opt.is_selected:
+                        canonical_opt = opt
+        # Deselect all, then select only the canonical one
+        for opt in all_opts:
+            if opt.is_selected and opt != canonical_opt:
+                print(f"  FIX-KYOTO: deselecting '{opt.name}' (not the canonical hotel)")
+                opt.is_selected = False
+                changed = True
+        if canonical_opt and not canonical_opt.is_selected:
+            print(f"  FIX-KYOTO: selecting canonical '{canonical_opt.name}'")
+            canonical_opt.is_selected = True
             changed = True
 
     if changed:
         db.session.commit()
         print("  FIX-KYOTO: Kyoto accommodation overlap resolved")
+    else:
+        print("  FIX-KYOTO: no changes needed (data already clean)")
 
 
 def _autofix_eliminated_status():
