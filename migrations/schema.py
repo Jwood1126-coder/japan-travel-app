@@ -91,6 +91,7 @@ def run_schema_migrations(app):
     _migrate_production_ready(cursor, conn)
     _migrate_url_integrity(cursor, conn)
     _migrate_fix_eliminated_booking_status(cursor, conn)
+    _migrate_cancel_kyotofish(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -1310,3 +1311,32 @@ def _migrate_fix_eliminated_booking_status(cursor, conn):
     affected = cursor.rowcount
     if affected:
         print(f'  Fixed {affected} eliminated option(s) with active booking status → cancelled')
+
+
+def _migrate_cancel_kyotofish(cursor, conn):
+    """Cancel Kyotofish Miyagawa booking for Kyoto Stay 2.
+
+    Booking was cancelled by user. Unselect, clear document link, and
+    re-open other options for consideration.
+
+    Idempotent: only acts if Kyotofish is still selected/booked.
+    """
+    cursor.execute("""
+        UPDATE accommodation_option
+        SET booking_status = 'cancelled', is_selected = 0, document_id = NULL
+        WHERE name LIKE '%Kyotofish%Miyagawa%'
+          AND (is_selected = 1 OR booking_status IN ('booked', 'confirmed'))
+    """)
+    if cursor.rowcount:
+        print(f'  Cancelled Kyotofish Miyagawa booking')
+        # Re-open other options for this location
+        cursor.execute("""
+            UPDATE accommodation_option
+            SET is_eliminated = 0
+            WHERE location_id = (
+                SELECT location_id FROM accommodation_option
+                WHERE name LIKE '%Kyotofish%Miyagawa%'
+            )
+              AND name NOT LIKE '%Kyotofish%'
+              AND is_eliminated = 1
+        """)

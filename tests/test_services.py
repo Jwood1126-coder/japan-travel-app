@@ -575,13 +575,12 @@ class TestTripAudit:
         assert isinstance(result.warnings, list)
         assert isinstance(result.stale_refs, set)
 
-    def test_audit_exportable_with_clean_data(self, ctx):
-        """Current seed should be exportable (no blockers)."""
+    def test_audit_detects_chain_gap(self, ctx):
+        """Kyoto Stay 2 is open — audit should flag the chain gap."""
         from services.trip_audit import audit_trip
         result = audit_trip()
-        assert result.exportable is True
-        assert result.ok is True
-        assert len(result.blockers) == 0
+        assert result.exportable is False
+        assert any('gap' in b.lower() or 'no selected' in b.lower() for b in result.blockers)
 
     def test_audit_detects_multi_select(self, ctx):
         """Selecting a second option at a location should produce a blocker."""
@@ -648,7 +647,8 @@ class TestTripAudit:
         assert 'blockers' in d
         assert 'warnings' in d
         assert 'stale_activity_ids' in d
-        assert d['exportable'] is True
+        # Chain gap exists (Kyoto Stay 2 open), so not exportable
+        assert d['exportable'] is False
 
     def test_brand_extraction(self, ctx):
         from services.trip_audit import _extract_brand
@@ -736,10 +736,10 @@ class TestUpdateLocationDates:
     def test_rejects_overlapping_dates(self, ctx):
         from services.accommodations import update_location_dates
         from datetime import date
-        # Try to move Osaka (id=7) to overlap with Kyoto Stay 2 (Apr 14-16)
+        # Try to move Osaka (id=7) to overlap with Kyoto Stay 1 (Apr 12-14)
         with pytest.raises(ValueError, match='overlap'):
             with patch('services.accommodations.socketio'):
-                update_location_dates(7, date(2026, 4, 15), date(2026, 4, 18))
+                update_location_dates(7, date(2026, 4, 13), date(2026, 4, 16))
 
 
 # ==========================================================================

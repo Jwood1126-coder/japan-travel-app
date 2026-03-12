@@ -8,11 +8,11 @@ A Flask + SQLite PWA for planning and managing a Japan trip. Deployed on Railway
 
 **`Documentation/flights/` contains the PDF booking confirmations. These are the AUTHORITATIVE source for all accommodation and flight data.** Never override booking details from PDFs with inferences, guesses, or "schedule audits."
 
-### Confirmed accommodation chain (ALL BOOKED):
+### Confirmed accommodation chain:
 1. **Sotetsu Fresa Inn** — Tokyo, Apr 6–9 (3n) — Agoda #976558450
 2. **TAKANOYU** — Takayama, Apr 9–12 (3n) — Airbnb #HMDDRX4NFX (host Hiroto)
 3. **Tsukiya-Mikazuki** — Kyoto, Apr 12–14 (2n) — Airbnb #HMXTP9H2Z9
-4. **Kyotofish Miyagawa** — Kyoto, Apr 14–16 (2n) — Airbnb (host Karen)
+4. **TBD** — Kyoto, Apr 14–16 (2n) — Kyotofish Miyagawa cancelled, looking for replacement
 5. **Hotel The Leben Osaka** — Osaka, Apr 16–18 (2n) — Agoda #976698966
 
 ### NO KANAZAWA OVERNIGHT. Day 8 is transit only: Takayama → Shirakawa-go → Kanazawa → Kyoto.
@@ -191,7 +191,7 @@ The confirmed accommodation chain defines the trip structure:
 1. Sotetsu Fresa Inn → Tokyo, Apr 6–9
 2. TAKANOYU → Takayama, Apr 9–12
 3. Tsukiya-Mikazuki → Kyoto, Apr 12–14
-4. Kyotofish Miyagawa → Kyoto, Apr 14–16
+4. TBD → Kyoto, Apr 14–16 (Kyotofish cancelled)
 5. Hotel The Leben Osaka → Osaka, Apr 16–18
 
 Days get their city from the accommodation covering that date. Transport routes connect consecutive stays.

@@ -12,11 +12,11 @@ from models import (db, Trip, Day, Activity, Flight, AccommodationLocation,
                     AccommodationOption, TransportRoute, Location)
 
 # -- Confirmed bookings (from Documentation/flights/ PDFs) --
+# Kyoto Stay 2 (Apr 14-16) is open — Kyotofish Miyagawa cancelled
 CONFIRMED_CHAIN = [
     ('Tokyo', 'Sotetsu Fresa Inn Higashi-Shinjuku', date(2026, 4, 6), date(2026, 4, 9), 3),
     ('Takayama', 'TAKANOYU', date(2026, 4, 9), date(2026, 4, 12), 3),
     ('Kyoto (Stay 1)', 'Tsukiya-Mikazuki', date(2026, 4, 12), date(2026, 4, 14), 2),
-    ('Kyoto (Stay 2)', 'Kyotofish Miyagawa', date(2026, 4, 14), date(2026, 4, 16), 2),
     ('Osaka', 'Hotel The Leben Osaka', date(2026, 4, 16), date(2026, 4, 18), 2),
 ]
 
@@ -64,6 +64,7 @@ class TestAccommodationChain:
                 assert any(hotel_name in n for n in selected_names), \
                     f"Expected '{hotel_name}' selected for {loc_name}, got {selected_names}"
 
+    @pytest.mark.skip(reason="Kyoto Stay 2 open — gap in chain until replacement booked")
     def test_accommodation_dates_form_contiguous_chain(self, app):
         """Check-out of one stay == check-in of the next."""
         with app.app_context():
@@ -213,19 +214,19 @@ class TestExport:
     """Verify the export PDF contains correct data."""
 
     def test_export_contains_confirmed_hotels(self, client):
-        resp = client.get('/export')
+        resp = client.get('/export?force=1')
         html = resp.data.decode()
         for _, hotel_name, *_ in CONFIRMED_CHAIN:
             assert hotel_name in html, f"Export missing confirmed hotel: {hotel_name}"
 
     def test_export_has_no_stale_references(self, client):
-        resp = client.get('/export')
+        resp = client.get('/export?force=1')
         html = resp.data.decode()
         for stale in STALE_HOTEL_NAMES:
             assert stale not in html, f"Export contains stale reference: {stale}"
 
     def test_export_excludes_kanazawa(self, client):
-        resp = client.get('/export')
+        resp = client.get('/export?force=1')
         html = resp.data.decode()
         # Kanazawa should appear in transport but NOT in accommodation table
         accom_section = html.split('Accommodations')[1].split('Day-by-Day')[0]
