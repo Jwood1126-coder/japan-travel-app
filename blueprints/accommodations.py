@@ -33,7 +33,8 @@ def accommodations_view():
                               'selected options', 'night'))]
     accom_warnings = [w for w in audit.warnings
                       if any(kw in w.lower() for kw in
-                             ('night', 'accommodation', 'stay'))]
+                             ('night', 'accommodation', 'stay'))
+                      and 'accommodation chain says' not in w.lower()]
     return render_template('accommodations.html',
                            locations=locations, loc_status=loc_status,
                            accom_blockers=accom_blockers,

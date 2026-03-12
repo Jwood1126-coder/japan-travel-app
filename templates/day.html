@@ -169,7 +169,7 @@
 <section class="accommodation-day-card checkout {% if checkout_option.document_id %}doc-backed{% else %}doc-planned{% endif %}">
     <div class="accom-day-icon">{{ icon_bellhop(24) }}</div>
     <div class="accom-day-info">
-        <div class="accom-day-label">Check out &middot; {{ day_checkout.location_name }}{% if checkout_option.document_id %} <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>{% endif %}</div>
+        <div class="accom-day-label">Check out &middot; {{ day_checkout.location_name }}</div>
         <div class="accom-day-name">{{ checkout_option.name }}</div>
         {% if checkout_option.check_out_info %}
         <div class="accom-day-detail">{{ checkout_option.check_out_info }}</div>
@@ -324,7 +324,7 @@
         <div class="accom-card-top">
             <div class="accom-day-icon">{{ icon_hotel(24) }}</div>
             <div class="accom-day-info">
-                <div class="accom-day-label">Check in{% if checkin_option.document_id %} <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>{% endif %}</div>
+                <div class="accom-day-label">Check in</div>
                 <div class="accom-day-name">{{ checkin_option.name }}</div>
                 {% if checkin_option.confirmation_number %}
                 <div class="accom-day-conf"><span class="conf-label">Conf:</span> <span class="conf-value">{{ checkin_option.confirmation_number }}</span></div>

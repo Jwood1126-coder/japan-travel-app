@@ -98,9 +98,6 @@
                 ${{ option.price_low|int }}/nt
                 {% endif %}
             </div>
-            {% if option.document_id %}
-            <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
-            {% endif %}
             {% if option.booking_status in ('booked', 'confirmed') %}
             <span class="option-booked-badge">{{ icon_check(12) }}</span>
             {% endif %}
