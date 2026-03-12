@@ -85,6 +85,7 @@ def run_schema_migrations(app):
     _migrate_activity_time_slots(cursor, conn)
     _migrate_day_location_fixes(cursor, conn)
     _migrate_departure_day_data(cursor, conn)
+    _migrate_itinerary_refinement(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -306,3 +307,381 @@ def _migrate_departure_day_data(cursor, conn):
         WHERE route_from = 'Shinagawa' AND route_to LIKE '%Haneda%'
           AND sort_order != 2
     """)
+
+
+def _migrate_itinerary_refinement(cursor, conn):
+    """Travel-agent schedule refinement: move activities between days, fix anchors/optionals,
+    fold description items into parents, fix TeamLab and Byodo-in placement.
+
+    Idempotent: each operation checks current state before changing.
+    Uses content-based lookups (NOT hardcoded IDs).
+    """
+    # --- 1. TeamLab: update to Biovortex Kyoto and move to Day 10 evening ---
+    cursor.execute("""
+        SELECT id, day_id FROM activity
+        WHERE title LIKE '%TeamLab%Planets%'
+          AND is_eliminated = 0
+    """)
+    tl = cursor.fetchone()
+    if tl:
+        day10_id = _day_id(cursor, 10)
+        cursor.execute("""
+            UPDATE activity SET
+                title = 'teamLab Biovortex Kyoto',
+                description = 'Japan''s largest teamLab museum — 10,000+ sqm across four floors with 50+ immersive artworks. Opened Oct 2025. Walk barefoot through water, light, and living ecosystems. 7-minute walk from Kyoto Station. Book timed entry in advance (¥3,600–4,200). Open until 9:30 PM in April.',
+                notes = 'Book at teamlab.art/e/kyoto/ — timed entry, sells out. Allow 2.5–3 hours. Extended April hours: 9 AM–9:30 PM.',
+                day_id = ?,
+                time_slot = 'evening',
+                sort_order = 8,
+                book_ahead = 1,
+                is_optional = 0
+            WHERE id = ?
+        """, (day10_id, tl[0]))
+
+    # --- 2. Byodo-in: move from Day 10 to Day 9 morning (south Kyoto flow from Fushimi Inari) ---
+    day9_id = _day_id(cursor, 9)
+    day10_id = _day_id(cursor, 10)
+    cursor.execute("""
+        SELECT id FROM activity
+        WHERE title LIKE '%Byodo-in%'
+          AND day_id = ?
+    """, (day10_id,))
+    byodo = cursor.fetchone()
+    if byodo:
+        # Bump Day 9 sort_order >= 3 to make room
+        cursor.execute("""
+            UPDATE activity SET sort_order = sort_order + 1
+            WHERE day_id = ? AND sort_order >= 3
+        """, (day9_id,))
+        cursor.execute("""
+            UPDATE activity SET
+                day_id = ?,
+                time_slot = 'morning',
+                sort_order = 3
+            WHERE id = ?
+        """, (day9_id, byodo[0]))
+
+    # --- 3. Move Day 5 overflow to Day 6 (Sanmachi, sake, crafts, Jinya) ---
+    day5_id = _day_id(cursor, 5)
+    day6_id = _day_id(cursor, 6)
+
+    _move_activity(cursor, day5_id, day6_id, '%Sanmachi Suji%', 'afternoon', 10, is_optional=0)
+    _move_activity(cursor, day5_id, day6_id, '%Sake brewer%', 'afternoon', 11, is_optional=1)
+    _move_activity(cursor, day5_id, day6_id, '%Craft shops%', 'afternoon', 12, is_optional=1)
+    _move_activity(cursor, day5_id, day6_id, '%Jinya%', 'afternoon', 13, is_optional=1)
+
+    # --- 4. Promote anchors to required ---
+    _set_optional(cursor, '%Check into Sotetsu%', 2, False)
+    _set_optional(cursor, '%Check out%Sotetsu%', 5, False)
+    _set_optional(cursor, '%Check into TAKANOYU%', 5, False)
+    _set_optional(cursor, '%Kinkaku-ji%', 10, False)
+    _set_optional(cursor, '%Peace Memorial%', 11, False)
+    _set_optional(cursor, '%Miyagawa%Morning%Market%', 6, False)
+    _set_optional(cursor, '%Hida Folk%', 6, False)
+    _set_optional(cursor, '%izakaya%', 6, False)
+    _set_optional(cursor, '%Kiyomizu-dera%', 9, False)
+    _set_optional(cursor, '%Hanamikoji%', 9, False)
+
+    # --- 5. Demote to optional ---
+    for pattern, day_num in [
+        ('%Evening walk%explore%', 2),
+        ('%Late-night ramen%', 2),
+        ('%PRIORITY%SLEEP%', 2),
+        ('%scenic train%', 5),
+        ('%Hida beef%', 5),
+        ('%Keihan Line%', 9),
+        ('%Be respectful%', 9),
+        ('%Kamo River%night%', 9),
+        ('%Shinsekai%', 12),
+        ('%Kimono rental%', 12),
+        ('%Sit on%RIGHT%', 13),
+        ('%Confirmed open%', 13),
+        ('%Sushi omakase%', 13),
+        ('%Tsukiji%', 14),
+        ('%Don Quijote%', 14),
+        ('%Uniqlo%', 14),
+        ('%Tenryu-ji%', 10),
+        ('%Togetsukyo%', 10),
+    ]:
+        _set_optional(cursor, pattern, day_num, True)
+
+    # Demote Nishiki Market on Day 10
+    _set_optional(cursor, '%Nishiki Market%', 10, True)
+
+    # --- 6. Fold description items into parents then delete ---
+    # Each tuple: (child_pattern, parent_pattern, day_num, text_to_append)
+    _folds = [
+        # Day 3
+        ('%oldest temple%628%', '%Senso-ji%', 3, "Tokyo's oldest temple (founded 628 AD)."),
+        ('%Nakamise-dori%250m%', '%Senso-ji%', 3, 'Nakamise-dori: 250m of traditional shops selling snacks, souvenirs, crafts.'),
+        ('%Massive Shinto%', '%Meiji Shrine%', 3, 'Massive Shinto shrine hidden in a 170-acre forest in the middle of Tokyo.'),
+        ('%Cover charge%300%', '%Golden Gai%', 3, 'Cover charge: ¥300–1,000. Drinks: ¥500–800. Just bar-hop and explore.'),
+        ('%Grab a stool%', '%Omoide%', 3, 'Grab a stool elbow-to-elbow with salarymen.'),
+        # Day 5
+        ('%scenic train ride%', '%Hida%Express%', 5, "One of Japan's most scenic train rides — mountain gorges, rivers, tiny villages."),
+        # Day 9
+        ('%2 km path%cherry%', '%Philosopher%Path%', 9, '2 km path lined with cherry trees and small temples.'),
+        # Day 10
+        ('%Entry%500%best light%', '%Kinkaku-ji%', 10, 'Entry: ¥500. Get there ~9 AM for best light and fewer people.'),
+        ('%dashimaki tamago%', '%Nishiki%', 10, 'Try: dashimaki tamago, fresh mochi, matcha soft serve, Kyoto pickles, grilled seafood.'),
+        ('%souvenir shopping%tea%', '%Nishiki%', 10, 'Good for souvenir shopping — packaged tea, spices, ceramics.'),
+        # Day 11
+        ('%Deeply moving%museum%', '%Peace Memorial%', 11, 'Deeply moving — individual human stories, letters, belongings, shadows burned into stone.'),
+        ('%Free to walk%park%museum%200%', '%Peace Memorial%', 11, 'Free to walk the park; museum entry ¥200.'),
+        ('%Okonomimura%stalls%', '%okonomiyaki%', 11, 'Okonomimura building near Peace Park has dozens of stalls — pick any busy one.'),
+        ('%high tide%float%low tide%', '%Torii Gate%', 11, 'At high tide it appears to float; at low tide you can walk to it.'),
+        ('%deer roam%', '%Torii Gate%', 11, 'Friendly wild deer roam the island.'),
+        ('%momiji manju%', '%Torii Gate%', 11, 'Try momiji manju — maple leaf-shaped cakes with various fillings.'),
+        # Day 14
+        ('%Tax-free%passport%', '%omiyage%terminal%', 14, 'Tax-free shopping available with passport.'),
+    ]
+    for child_pat, parent_pat, day_num, text in _folds:
+        day_id = _day_id(cursor, day_num)
+        cursor.execute("SELECT id FROM activity WHERE title LIKE ? AND day_id = ?",
+                        (child_pat, day_id))
+        child = cursor.fetchone()
+        cursor.execute("SELECT id, description FROM activity WHERE title LIKE ? AND day_id = ?",
+                        (parent_pat, day_id))
+        parent = cursor.fetchone()
+        if child and parent:
+            existing = parent[1] or ''
+            new_desc = (existing + ' ' + text).strip() if existing else text
+            cursor.execute("UPDATE activity SET description = ? WHERE id = ?",
+                            (new_desc, parent[0]))
+            cursor.execute("DELETE FROM activity WHERE id = ?", (child[0],))
+
+    # --- 7. Fold Day 2 dinner alternatives into one ---
+    day2_id = _day_id(cursor, 2)
+    cursor.execute("SELECT id, description FROM activity WHERE title LIKE '%Light dinner%' AND day_id = ?",
+                    (day2_id,))
+    dinner = cursor.fetchone()
+    if dinner:
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%Walk-up ramen%' AND day_id = ?",
+                        (day2_id,))
+        ramen = cursor.fetchone()
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%onigiri%bento%' AND day_id = ?",
+                        (day2_id,))
+        konbini = cursor.fetchone()
+        if ramen or konbini:
+            existing = dinner[1] or ''
+            new_desc = existing + ' Options: Walk-up ramen shop (¥800–1,200). Or grab onigiri + bento from 7-Eleven/FamilyMart (genuinely delicious, ¥500 total).'
+            cursor.execute("UPDATE activity SET description = ? WHERE id = ?",
+                            (new_desc.strip(), dinner[0]))
+            if ramen:
+                cursor.execute("DELETE FROM activity WHERE id = ?", (ramen[0],))
+            if konbini:
+                cursor.execute("DELETE FROM activity WHERE id = ?", (konbini[0],))
+
+    # --- 8. Consolidate Day 14 flight items into one ---
+    day14_id = _day_id(cursor, 14)
+    # Check if already consolidated
+    cursor.execute("SELECT id FROM activity WHERE title LIKE '%Flights home%' AND day_id = ?",
+                    (day14_id,))
+    if not cursor.fetchone():
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%UA876%' AND day_id = ?",
+                        (day14_id,))
+        ua876 = cursor.fetchone()
+        if ua876:
+            cursor.execute("""
+                UPDATE activity SET
+                    title = 'Flights home: UA876 → SFO → UA1470 → CLE',
+                    description = 'UA876 HND→SFO, layover, UA1470 SFO→CLE. Home by 10:13 PM.'
+                WHERE id = ?
+            """, (ua876[0],))
+            for pat in ['%Layover%', '%UA1470%', '%HOME BY%']:
+                cursor.execute("SELECT id FROM activity WHERE title LIKE ? AND day_id = ?",
+                                (pat, day14_id))
+                row = cursor.fetchone()
+                if row:
+                    cursor.execute("DELETE FROM activity WHERE id = ?", (row[0],))
+        else:
+            # Flight items already deleted but consolidated item missing — create it
+            cursor.execute("""
+                INSERT INTO activity (day_id, title, description, time_slot, sort_order,
+                    is_optional, is_substitute, is_confirmed, is_eliminated, book_ahead)
+                VALUES (?, 'Flights home: UA876 → SFO → UA1470 → CLE',
+                    'UA876 HND→SFO, layover, UA1470 SFO→CLE. Home by 10:13 PM.',
+                    'afternoon', 9, 0, 0, 0, 0, 0)
+            """, (day14_id,))
+
+    # --- 9. Delete pure vibe/status notes ---
+    for pat, day_num in [
+        ('%most memorable night%', 5),
+        ('%Confirmed open%', 13),
+    ]:
+        day_id = _day_id(cursor, day_num)
+        cursor.execute("DELETE FROM activity WHERE title LIKE ? AND day_id = ?",
+                        (pat, day_id))
+
+    # --- 10. Move Day 13 logistics to Day 12 (checkout/checkin match reservation dates) ---
+    day12_id = _day_id(cursor, 12)
+    day13_id = _day_id(cursor, 13)
+
+    # Kyotofish checkout → Day 12 morning
+    cursor.execute("""
+        SELECT id FROM activity WHERE title LIKE '%Check out%Kyotofish%' AND day_id = ?
+    """, (day13_id,))
+    row = cursor.fetchone()
+    if row:
+        cursor.execute("""
+            UPDATE activity SET day_id = ?, time_slot = 'morning', sort_order = 0, is_optional = 0
+            WHERE id = ?
+        """, (day12_id, row[0]))
+
+    # Leben check-in → Day 12 morning
+    cursor.execute("""
+        SELECT id FROM activity WHERE title LIKE '%Check into Hotel%Leben%' AND day_id = ?
+    """, (day13_id,))
+    row = cursor.fetchone()
+    if row:
+        cursor.execute("""
+            UPDATE activity SET day_id = ?, time_slot = 'morning', sort_order = 1, is_optional = 0
+            WHERE id = ?
+        """, (day12_id, row[0]))
+
+    # Train tip + ekiben → Day 12
+    cursor.execute("""
+        SELECT id FROM activity WHERE title LIKE '%RIGHT side%train%' AND day_id = ?
+    """, (day13_id,))
+    row = cursor.fetchone()
+    if row:
+        cursor.execute("""
+            UPDATE activity SET day_id = ?, time_slot = 'morning', sort_order = 2, is_optional = 1
+            WHERE id = ?
+        """, (day12_id, row[0]))
+
+    cursor.execute("""
+        SELECT id FROM activity WHERE title LIKE '%ekiben%' AND day_id = ?
+    """, (day13_id,))
+    row = cursor.fetchone()
+    if row:
+        cursor.execute("""
+            UPDATE activity SET day_id = ?, time_slot = 'morning', sort_order = 3, is_optional = 1
+            WHERE id = ?
+        """, (day12_id, row[0]))
+
+    # --- 11. Update day titles ---
+    cursor.execute("""
+        UPDATE day SET title = 'KYOTO → OSAKA BUFFER DAY'
+        WHERE day_number = 12 AND title NOT LIKE '%BUFFER%'
+    """)
+    cursor.execute("""
+        UPDATE day SET title = 'LAST FULL DAY — OSAKA'
+        WHERE day_number = 13 AND title LIKE '%KYOTO%OSAKA%'
+    """)
+
+    # --- 12. Update Day 13 morning activity for Osaka context ---
+    cursor.execute("""
+        UPDATE activity SET
+            title = 'Morning: Sleep in, explore Osaka at your own pace',
+            description = 'Last full day — no agenda required. Revisit a favorite spot, wander Namba, or just rest.'
+        WHERE title LIKE '%last Kyoto explorations%'
+          AND day_id = ?
+    """, (day13_id,))
+
+    # --- 13. Add Dotonbori to Day 12 if not present ---
+    cursor.execute("SELECT id FROM activity WHERE title LIKE '%Dotonbori%' AND day_id = ?",
+                    (day12_id,))
+    if not cursor.fetchone():
+        cursor.execute("""
+            INSERT INTO activity (day_id, title, description, time_slot, sort_order,
+                is_optional, is_substitute, is_confirmed, is_eliminated, book_ahead)
+            VALUES (?, 'Dotonbori at night',
+                'Osaka''s signature nighttime experience — neon lights, street food, canal reflections. Try takoyaki and okonomiyaki. The Glico Running Man sign is here.',
+                'evening', 20, 1, 0, 0, 0, 0)
+        """, (day12_id,))
+
+    # --- 14. Fold Hida beef + futon into parents on Day 5 ---
+    cursor.execute("""
+        SELECT id, description FROM activity WHERE title LIKE '%kaiseki dinner%' AND day_id = ?
+    """, (day5_id,))
+    kaiseki = cursor.fetchone()
+    if kaiseki:
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%Hida beef%' AND day_id = ? AND title NOT LIKE '%sushi%'",
+                        (day5_id,))
+        hida = cursor.fetchone()
+        if hida:
+            existing = kaiseki[1] or ''
+            cursor.execute("UPDATE activity SET description = ? WHERE id = ?",
+                            ((existing + " Hida beef (the region's famous wagyu) will be featured.").strip(), kaiseki[0]))
+            cursor.execute("DELETE FROM activity WHERE id = ?", (hida[0],))
+
+    cursor.execute("""
+        SELECT id, description FROM activity WHERE title LIKE '%onsen%bath%TAKANOYU%' AND day_id = ?
+    """, (day5_id,))
+    onsen = cursor.fetchone()
+    if onsen:
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%futon%tatami%' AND day_id = ?",
+                        (day5_id,))
+        futon = cursor.fetchone()
+        if futon:
+            existing = onsen[1] or ''
+            cursor.execute("UPDATE activity SET description = ? WHERE id = ?",
+                            ((existing + ' Sleep on futon laid out on tatami mats by the staff while you were at dinner.').strip(), onsen[0]))
+            cursor.execute("DELETE FROM activity WHERE id = ?", (futon[0],))
+
+    # Fold Day 9 Gion geisha timing note
+    cursor.execute("""
+        SELECT id, description FROM activity WHERE title LIKE '%Hanamikoji%' AND day_id = ?
+    """, (day9_id,))
+    gion = cursor.fetchone()
+    if gion:
+        cursor.execute("SELECT id FROM activity WHERE title LIKE '%5:30%7:00%' AND day_id = ?",
+                        (day9_id,))
+        timing = cursor.fetchone()
+        if timing:
+            existing = gion[1] or ''
+            cursor.execute("UPDATE activity SET description = ? WHERE id = ?",
+                            ((existing + ' Best time: 5:30–7:00 PM as geiko and maiko walk to engagements.').strip(), gion[0]))
+            cursor.execute("DELETE FROM activity WHERE id = ?", (timing[0],))
+
+    # Day 14: checkout to required, morning slot
+    cursor.execute("""
+        UPDATE activity SET is_optional = 0, time_slot = 'morning', sort_order = 1
+        WHERE title LIKE '%check out%grab bags%'
+          AND day_id = ?
+    """, (day14_id,))
+
+    # Day 12: Kyotofish checkout + Leben check-in required
+    cursor.execute("""
+        UPDATE activity SET is_optional = 0
+        WHERE title LIKE '%Check out%Kyotofish%' AND day_id = ?
+    """, (day12_id,))
+    cursor.execute("""
+        UPDATE activity SET is_optional = 0
+        WHERE title LIKE '%Check into Hotel%Leben%' AND day_id = ?
+    """, (day12_id,))
+
+    conn.commit()
+
+
+def _day_id(cursor, day_number):
+    """Get day table ID for a given day number."""
+    cursor.execute("SELECT id FROM day WHERE day_number = ?", (day_number,))
+    row = cursor.fetchone()
+    return row[0] if row else None
+
+
+def _move_activity(cursor, from_day_id, to_day_id, title_pattern, time_slot, sort_order, is_optional=None):
+    """Move an activity between days by content match. Idempotent."""
+    cursor.execute("SELECT id FROM activity WHERE title LIKE ? AND day_id = ?",
+                    (title_pattern, from_day_id))
+    row = cursor.fetchone()
+    if row:
+        updates = "day_id = ?, time_slot = ?, sort_order = ?"
+        params = [to_day_id, time_slot, sort_order]
+        if is_optional is not None:
+            updates += ", is_optional = ?"
+            params.append(is_optional)
+        params.append(row[0])
+        cursor.execute(f"UPDATE activity SET {updates} WHERE id = ?", params)
+
+
+def _set_optional(cursor, title_pattern, day_number, optional):
+    """Set is_optional on an activity by content match. Idempotent."""
+    day_id = _day_id(cursor, day_number)
+    if day_id:
+        cursor.execute("""
+            UPDATE activity SET is_optional = ?
+            WHERE title LIKE ? AND day_id = ? AND is_optional != ?
+        """, (1 if optional else 0, title_pattern, day_id, 1 if optional else 0))

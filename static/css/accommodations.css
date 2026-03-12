@@ -26,11 +26,27 @@
 .loc-group-accom {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    padding: 10px 14px;
     border-top: 1px solid var(--pico-muted-border-color, #e2e8f0);
-    font-size: 0.8rem;
-    background: rgba(0,0,0,0.02);
+    font-size: 0.82rem;
+    background: var(--sakura-light);
+}
+
+.loc-group-accom .loc-accom-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.loc-group-accom .booking-badge {
+    flex-shrink: 0;
+}
+
+.loc-group-accom .doc-backed-icon {
+    flex-shrink: 0;
 }
 
 /* Accommodations */

@@ -102,7 +102,7 @@
 
 [data-theme="dark"] .itin-day-row:hover { background: #2a1a2a; }
 
-[data-theme="dark"] .loc-group-accom { border-color: #333; background: rgba(255,255,255,0.03); }
+[data-theme="dark"] .loc-group-accom { border-color: #333; background: rgba(255,255,255,0.05); }
 
 [data-theme="dark"] .itin-progress-bar { background: #333; }
 
