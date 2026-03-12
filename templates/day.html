@@ -92,14 +92,14 @@
             {% if activity.cost_note %}
             <div class="activity-cost">{{ activity.cost_note }}</div>
             {% endif %}
-            {% if activity.description or activity.getting_there or activity.book_ahead_note or activity.why %}
+            {% if activity.getting_there %}
+            <div class="activity-transit-tip">&#x1F686; {{ activity.getting_there | linkify_stations }}</div>
+            {% endif %}
+            {% if activity.description or activity.book_ahead_note or activity.why %}
             <details class="activity-details">
                 <summary>Details</summary>
                 {% if activity.description %}
                 <p>{{ activity.description }}</p>
-                {% endif %}
-                {% if activity.getting_there %}
-                <div class="activity-transit-tip">&#x1F686; {{ activity.getting_there | linkify_stations }}</div>
                 {% endif %}
                 {% if activity.book_ahead_note %}
                 <div class="activity-book-tip">&#x1F3AB; {{ activity.book_ahead_note }}</div>
@@ -340,7 +340,12 @@
             </div>
             <div class="accom-day-status">
                 <span class="booking-badge {{ checkin_option.booking_status }}">
-                    {{ checkin_option.booking_status | replace('_', ' ') | title }}
+                    {% if checkin_option.booking_status == 'confirmed' %}Confirmed
+                    {% elif checkin_option.booking_status == 'booked' %}Reserved
+                    {% elif checkin_option.booking_status == 'researching' %}Looking into
+                    {% elif checkin_option.booking_status == 'not_booked' %}Needs booking
+                    {% elif checkin_option.booking_status == 'cancelled' %}Cancelled
+                    {% else %}{{ checkin_option.booking_status | replace('_', ' ') | title }}{% endif %}
                 </span>
             </div>
         </div>

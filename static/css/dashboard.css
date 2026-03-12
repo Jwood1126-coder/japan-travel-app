@@ -496,28 +496,36 @@
 
 /* --- Quick Links (Dashboard) --- */
 
-.quick-links-section {
-    margin-top: 1rem;
+.quick-links-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
 }
 
-.quick-link-card {
-    display: flex;
+.quick-links-row::-webkit-scrollbar { display: none; }
+
+.quick-link-chip {
+    display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1rem;
+    gap: 4px;
+    padding: 6px 12px;
     background: var(--sakura-light);
     border: 1px solid var(--sakura);
-    border-radius: var(--radius);
+    border-radius: 20px;
     text-decoration: none;
     color: var(--sakura-text);
-    font-weight: 500;
-    font-size: 0.9rem;
+    font-weight: 600;
+    font-size: 0.78rem;
+    white-space: nowrap;
     transition: background 0.15s;
 }
 
-.quick-link-card:hover { background: var(--sakura); color: #fff; }
+.quick-link-chip:hover { background: var(--sakura); color: #fff; }
 
-.quick-link-card svg { vertical-align: -3px; }
+.quick-link-chip svg { vertical-align: -1px; }
 
 /* Day dividers within location groups */
 
@@ -610,7 +618,7 @@
     box-shadow: 0 4px 20px rgba(242, 181, 196, 0.25);
 }
 
-.quick-link-card:hover {
+.quick-link-chip:hover {
     box-shadow: 0 2px 12px rgba(242, 181, 196, 0.3);
 }
 

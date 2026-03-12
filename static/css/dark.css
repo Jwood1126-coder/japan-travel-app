@@ -102,7 +102,7 @@
 
 [data-theme="dark"] .itin-day-row:hover { background: #2a1a2a; }
 
-[data-theme="dark"] .loc-group-accom { border-color: #333; background: rgba(255,255,255,0.05); }
+[data-theme="dark"] .loc-group-accom { border-color: #333; }
 
 [data-theme="dark"] .itin-progress-bar { background: #333; }
 
@@ -229,7 +229,7 @@
 
 [data-theme="dark"] .itin-day-row.today { background: rgba(255,183,197,0.08); }
 
-[data-theme="dark"] .quick-link-card { background: #2a1a2a; border-color: #4a2030; color: var(--sakura-text); }
+[data-theme="dark"] .quick-link-chip { background: #2a1a2a; border-color: #4a2030; color: var(--sakura-text); }
 
 /* Dark mode */
 
@@ -257,7 +257,7 @@
 
 [data-theme="dark"] .eliminate-btn { background: #2a2a2a; border-color: #555; color: #ccc; }
 
-[data-theme="dark"] .eliminate-btn.active { background: #3a1a1a; border-color: #844; color: #e88; }
+[data-theme="dark"] .eliminate-btn.active { background: #4a1a1a; border-color: #b55; color: #faa; }
 
 [data-theme="dark"] .delete-option-btn { background: #2a1515; border-color: #844; color: #e88; }
 
@@ -378,7 +378,7 @@
 
 [data-theme="dark"] .next-up-card:hover { box-shadow: 0 4px 20px rgba(212, 39, 106, 0.15); }
 
-[data-theme="dark"] .quick-link-card:hover { box-shadow: 0 2px 12px rgba(212, 39, 106, 0.2); }
+[data-theme="dark"] .quick-link-chip:hover { box-shadow: 0 2px 12px rgba(212, 39, 106, 0.2); }
 
 [data-theme="dark"] .swipe-content { background: var(--pico-background-color, #1e1e1e); }
 

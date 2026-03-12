@@ -237,7 +237,7 @@
             <div class="option-detail-actions">
                 <button class="eliminate-btn {% if option.is_eliminated %}active{% endif %}"
                         onclick="eliminateOption({{ option.id }})">
-                    {% if option.is_eliminated %}✓ Ruled Out{% else %}✕ Rule Out{% endif %}
+                    {% if option.is_eliminated %}✓ Skipped{% else %}✕ Skip{% endif %}
                 </button>
                 <button class="delete-option-btn"
                         onclick="deleteOption({{ option.id }}, '{{ option.name | e }}')">

@@ -85,14 +85,14 @@
     <div class="act-browse-card {% if a.is_eliminated %}eliminated{% endif %} {% if a.is_confirmed %}confirmed{% endif %}" data-activity-id="{{ a.id }}" data-day="{{ d.day_number }}" data-category="{{ a.category or '' }}" data-search="{{ a.title | lower }} {{ a.description | lower if a.description else '' }} {{ d.title | lower }} {{ a.category or '' }}">
         <div class="act-browse-header">
             <span class="act-browse-title">{{ a.title }}</span>
-            {% if a.is_confirmed %}<span class="confirmed-badge">{{ icon_check(12) }} Confirmed</span>{% endif %}
+            {% if a.is_confirmed %}<span class="confirmed-badge">{{ icon_check(12) }} Doing this</span>{% endif %}
             {% if a.category %}
             <span class="cat-badge cat-{{ a.category }}">{{ category_labels.get(a.category, a.category) }}</span>
             {% endif %}
             {% if a.book_ahead %}<span class="book-ahead-badge">Book Ahead</span>{% endif %}
             {% if a.is_optional %}<span class="optional-badge">Optional</span>{% endif %}
             {% if a.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}
-            {% if a.is_eliminated %}<span class="ruled-out-badge">Ruled Out</span>{% endif %}
+            {% if a.is_eliminated %}<span class="ruled-out-badge">Skipped</span>{% endif %}
         </div>
         <div class="act-browse-meta">
             {% if a.time_slot %}{{ a.time_slot | title }}{% endif %}
@@ -136,16 +136,16 @@
             </a>
             {% endif %}
             <button class="confirm-btn {% if a.is_confirmed %}active{% endif %}" onclick="confirmActivity({{ a.id }})">
-                {% if a.is_confirmed %}{{ icon_check(12) }} Confirmed{% else %}Confirm{% endif %}
+                {% if a.is_confirmed %}{{ icon_check(12) }} Doing this{% else %}{{ icon_check(12) }} Doing this{% endif %}
             </button>
             <button class="eliminate-btn {% if a.is_eliminated %}active{% endif %}" onclick="eliminateActivity({{ a.id }})">
-                {% if a.is_eliminated %}&#x2713; Ruled Out{% else %}&#x2715; Rule Out{% endif %}
+                {% if a.is_eliminated %}&#x2713; Skipped{% else %}&#x2715; Skip{% endif %}
             </button>
             <button class="act-delete-btn" onclick="deleteActivity({{ a.id }}, '{{ a.title | e }}')" title="Delete">
                 {{ icon_delete(14) }}
             </button>
         </div>
-        <textarea class="act-notes" placeholder="Notes..."
+        <textarea class="act-notes" placeholder="Your notes..."
                   onchange="updateActNotes({{ a.id }}, this.value)">{{ a.notes or '' }}</textarea>
     </div>
     {% endfor %}
@@ -190,10 +190,10 @@
                 <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="doc-link">{{ icon_link(14) }} Details</a>
                 {% endif %}
                 <button class="confirm-btn {% if a.is_confirmed %}active{% endif %}" onclick="confirmActivity({{ a.id }})">
-                    {% if a.is_confirmed %}Confirmed{% else %}Confirm{% endif %}
+                    {% if a.is_confirmed %}{{ icon_check(12) }} Doing this{% else %}{{ icon_check(12) }} Doing this{% endif %}
                 </button>
                 <button class="eliminate-btn {% if a.is_eliminated %}active{% endif %}" onclick="eliminateActivity({{ a.id }})">
-                    {% if a.is_eliminated %}&#x2713; Ruled Out{% else %}&#x2715; Rule Out{% endif %}
+                    {% if a.is_eliminated %}&#x2713; Skipped{% else %}&#x2715; Skip{% endif %}
                 </button>
             </div>
         </div>
@@ -344,20 +344,20 @@ async function eliminateActivity(id) {
             if (data.is_eliminated) {
                 card.classList.add('eliminated');
                 btn.classList.add('active');
-                btn.innerHTML = '&#x2713; Ruled Out';
+                btn.innerHTML = '&#x2713; Skipped';
                 if (!badge) {
                     const b = document.createElement('span');
                     b.className = 'ruled-out-badge';
-                    b.textContent = 'Ruled Out';
+                    b.textContent = 'Skipped';
                     card.querySelector('.act-browse-header').appendChild(b);
                 }
             } else {
                 card.classList.remove('eliminated');
                 btn.classList.remove('active');
-                btn.innerHTML = '&#x2715; Rule Out';
+                btn.innerHTML = '&#x2715; Skip';
                 if (badge) badge.remove();
             }
-            showToast(data.is_eliminated ? 'Ruled out' : 'Restored');
+            showToast(data.is_eliminated ? 'Skipped' : 'Restored');
         }
     } catch (err) {
         showToast('Failed', 'error');
@@ -375,20 +375,20 @@ async function confirmActivity(id) {
             if (data.is_confirmed) {
                 card.classList.add('confirmed');
                 btn.classList.add('active');
-                btn.innerHTML = '&#x2713; Confirmed';
+                btn.innerHTML = '&#x2713; Doing this';
                 if (!badge) {
                     const b = document.createElement('span');
                     b.className = 'confirmed-badge';
-                    b.textContent = 'Confirmed';
+                    b.textContent = 'Doing this';
                     card.querySelector('.act-browse-header').insertBefore(b, card.querySelector('.act-browse-header').children[1]);
                 }
             } else {
                 card.classList.remove('confirmed');
                 btn.classList.remove('active');
-                btn.innerHTML = 'Confirm';
+                btn.innerHTML = 'Doing this';
                 if (badge) badge.remove();
             }
-            showToast(data.is_confirmed ? 'Confirmed' : 'Unconfirmed');
+            showToast(data.is_confirmed ? 'Locked in!' : 'Unmarked');
         }
     } catch (err) {
         showToast('Failed', 'error');

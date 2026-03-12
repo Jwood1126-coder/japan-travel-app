@@ -58,7 +58,7 @@
             <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
             {% endif %}
             {% if flight.booking_status and flight.booking_status != 'not_booked' %}
-            <span class="booking-badge {{ flight.booking_status }}">{{ flight.booking_status | replace('_', ' ') | title }}</span>
+            <span class="booking-badge {{ flight.booking_status }}">{% if flight.booking_status == 'confirmed' %}Confirmed{% elif flight.booking_status == 'booked' %}Reserved{% elif flight.booking_status == 'researching' %}Looking into{% else %}{{ flight.booking_status | replace('_', ' ') | title }}{% endif %}</span>
             {% endif %}
         </div>
         <div class="flight-route-visual">
@@ -100,9 +100,9 @@
             <div class="doc-detail-row">
                 <span class="doc-detail-label">Status</span>
                 <select class="status-select" onchange="updateFlightStatus({{ flight.id }}, this.value)">
-                    <option value="not_booked" {{ 'selected' if not flight.booking_status or flight.booking_status == 'not_booked' }}>Not Booked</option>
-                    <option value="researching" {{ 'selected' if flight.booking_status == 'researching' }}>Researching</option>
-                    <option value="booked" {{ 'selected' if flight.booking_status == 'booked' }}>Booked</option>
+                    <option value="not_booked" {{ 'selected' if not flight.booking_status or flight.booking_status == 'not_booked' }}>Needs booking</option>
+                    <option value="researching" {{ 'selected' if flight.booking_status == 'researching' }}>Looking into</option>
+                    <option value="booked" {{ 'selected' if flight.booking_status == 'booked' }}>Reserved</option>
                     <option value="confirmed" {{ 'selected' if flight.booking_status == 'confirmed' }}>Confirmed</option>
                     <option value="cancelled" {{ 'selected' if flight.booking_status == 'cancelled' }}>Cancelled</option>
                 </select>
@@ -152,7 +152,7 @@
             {% if opt.document_id %}
             <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
             {% endif %}
-            <span class="booking-badge {{ opt.booking_status }}">{{ opt.booking_status | replace('_', ' ') | title }}</span>
+            <span class="booking-badge {{ opt.booking_status }}">{% if opt.booking_status == 'confirmed' %}Confirmed{% elif opt.booking_status == 'booked' %}Reserved{% elif opt.booking_status == 'researching' %}Looking into{% elif opt.booking_status == 'not_booked' %}Needs booking{% else %}{{ opt.booking_status | replace('_', ' ') | title }}{% endif %}</span>
         </div>
         <div class="doc-card-meta">
             {{ loc.location_name }} &middot;

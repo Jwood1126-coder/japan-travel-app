@@ -28,10 +28,9 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 6px 8px;
-    padding: 10px 14px;
+    padding: 8px 14px;
     border-top: 1px solid var(--pico-muted-border-color, #e2e8f0);
     font-size: 0.82rem;
-    background: var(--sakura-light);
 }
 
 .loc-group-accom .loc-accom-name {
@@ -47,6 +46,8 @@
 
 .loc-group-accom .doc-backed-icon {
     flex-shrink: 0;
+    font-size: 0.7rem;
+    opacity: 0.6;
 }
 
 /* Accommodations */

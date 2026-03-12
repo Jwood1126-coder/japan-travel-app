@@ -418,13 +418,13 @@ async function eliminateOption(optionId) {
             if (data.is_eliminated) {
                 card.classList.add('eliminated');
                 btn.classList.add('active');
-                btn.textContent = '✓ Ruled Out';
+                btn.textContent = '✓ Skipped';
             } else {
                 card.classList.remove('eliminated');
                 btn.classList.remove('active');
-                btn.textContent = '✕ Rule Out';
+                btn.textContent = '✕ Skip';
             }
-            showToast(data.is_eliminated ? 'Ruled out' : 'Restored');
+            showToast(data.is_eliminated ? 'Skipped' : 'Restored');
         }
     } catch (err) {
         console.error('Eliminate failed:', err);

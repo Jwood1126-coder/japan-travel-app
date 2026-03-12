@@ -114,8 +114,8 @@
     </div>
     <div class="event-status-badge {{ event.status }}">
         {% if event.status == 'confirmed' %}Confirmed
-        {% elif event.status == 'booked' %}Booked
-        {% elif event.status == 'not_booked' %}Not Booked
+        {% elif event.status == 'booked' %}Reserved
+        {% elif event.status == 'not_booked' %}Needs booking
         {% elif event.status == 'jr_covered' %}JR Pass
         {% elif event.status == 'ticket_needed' %}Need Ticket
         {% elif event.status == 'upcoming' %}Upcoming
