@@ -190,7 +190,7 @@
             {% endif %}
             {% if opt.booking_url %}
             <div class="doc-detail-row">
-                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="doc-link">View booking</a>
+                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="doc-link">View booking</a>
             </div>
             {% endif %}
             {% set linked_docs = doc_links.get('accom_' ~ loc.id, []) %}
@@ -283,7 +283,7 @@
             {% endif %}
             {% if a.url %}
             <div class="doc-detail-row">
-                <a href="{{ a.url | translate_link }}" target="_blank" rel="noopener" class="doc-link">{{ icon_link(14) }} Details / Tickets</a>
+                <a href="{{ a.url }}" target="_blank" rel="noopener" class="doc-link">{{ icon_link(14) }} Details / Tickets</a>
             </div>
             {% endif %}
         </div>

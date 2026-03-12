@@ -85,7 +85,7 @@
                 <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="activity-action-btn">{{ icon_pin(14) }} {{ activity.address }}</a>
                 {% endif %}
                 {% if activity.url %}
-                <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="activity-action-btn secondary">{{ icon_ticket(14) }} Tickets / Info</a>
+                <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-action-btn secondary">{{ icon_ticket(14) }} Tickets / Info</a>
                 {% endif %}
             </div>
             {% endif %}
@@ -200,7 +200,7 @@
                 <span class="accom-pending-name">{{ opt.name }}</span>
                 <span class="accom-pending-price">{{ opt.price_tier }}</span>
                 {% if opt.booking_url %}
-                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="accom-pending-link">View</a>
+                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="accom-pending-link">View</a>
                 {% endif %}
             </div>
             {% endfor %}
@@ -280,7 +280,7 @@
         <a href="{{ route.maps_url }}" target="_blank" rel="noopener" class="transport-action-btn">{{ icon_pin(14) }} Directions</a>
         {% endif %}
         {% if route.url %}
-        <a href="{{ route.url | translate_link }}" target="_blank" rel="noopener" class="transport-action-btn secondary">{{ icon_link(14) }} Website</a>
+        <a href="{{ route.url }}" target="_blank" rel="noopener" class="transport-action-btn secondary">{{ icon_link(14) }} Website</a>
         {% endif %}
     </div>
     {% if route.notes %}
@@ -372,7 +372,7 @@
                 <span class="accom-pending-name">{{ opt.name }}</span>
                 <span class="accom-pending-price">{{ opt.price_tier }}</span>
                 {% if opt.booking_url %}
-                <a href="{{ opt.booking_url | translate_link }}" target="_blank" rel="noopener" class="accom-pending-link">Book</a>
+                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="accom-pending-link">Book</a>
                 {% endif %}
             </div>
             {% endfor %}
@@ -439,7 +439,7 @@
                 <a href="{{ activity.address | maps_link }}" target="_blank" rel="noopener" class="activity-action-btn">{{ icon_pin(14) }} {{ activity.address }}</a>
                 {% endif %}
                 {% if activity.url %}
-                <a href="{{ activity.url | translate_link }}" target="_blank" rel="noopener" class="activity-action-btn secondary">{{ icon_ticket(14) }} Tickets / Info</a>
+                <a href="{{ activity.url }}" target="_blank" rel="noopener" class="activity-action-btn secondary">{{ icon_ticket(14) }} Tickets / Info</a>
                 {% endif %}
             </div>
             {% endif %}

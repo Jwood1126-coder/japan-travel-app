@@ -73,6 +73,7 @@ def audit_trip():
     _check_activity_completeness(result)
     _check_transport_day_linkage(result)
     _check_day_location_consistency(selected_accoms, result)
+    _check_url_completeness(selected_accoms, result)
 
     return result
 
@@ -537,3 +538,33 @@ def _check_day_location_consistency(selected_accoms, result):
                         f'Day {day.day_number} ({day.date}): assigned to '
                         f'{location.name} but accommodation chain says '
                         f'{expected_loc_name}')
+
+
+# ---------------------------------------------------------------------------
+# Check K: URL completeness for selected trip objects
+# ---------------------------------------------------------------------------
+
+GENERIC_HOMEPAGES = {'https://www.agoda.com/', 'https://www.booking.com/',
+                     'https://www.airbnb.com/'}
+
+
+def _check_url_completeness(selected_accoms, result):
+    """Flag selected accommodations and transport routes with weak/missing URLs."""
+    for loc, opt in selected_accoms:
+        issues = []
+        if not opt.maps_url and not opt.address:
+            issues.append('no maps link or address')
+        url = opt.booking_url or ''
+        if not url:
+            issues.append('no website link')
+        elif url.rstrip('/') + '/' in GENERIC_HOMEPAGES:
+            issues.append(f'generic homepage URL ({url})')
+        if issues:
+            result.warnings.append(
+                f'Weak links: {opt.name} — {", ".join(issues)}')
+
+    for route in TransportRoute.query.all():
+        if not route.url and not route.maps_url:
+            result.warnings.append(
+                f'Transport missing links: {route.route_from} → {route.route_to} '
+                f'— no website or directions URL')

@@ -89,6 +89,7 @@ def run_schema_migrations(app):
     _migrate_remove_daytrip_transport(cursor, conn)
     _migrate_checklist_simplify(cursor, conn)
     _migrate_production_ready(cursor, conn)
+    _migrate_url_integrity(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -1208,5 +1209,83 @@ def _migrate_production_ready(cursor, conn):
         rows = cursor.fetchall()
         for i, (aid,) in enumerate(rows):
             cursor.execute("UPDATE activity SET sort_order = ? WHERE id = ?", (i + 1, aid))
+
+    conn.commit()
+
+
+def _migrate_url_integrity(cursor, conn):
+    """Fix missing/generic URLs for selected accommodations and transport routes.
+
+    Idempotent: only updates NULL or known-bad values (generic Agoda homepage).
+    Uses content-based lookups (NOT hardcoded IDs).
+    """
+
+    # --- 1. Selected accommodation URLs ---
+    _accom_urls = [
+        # (name_pattern, booking_url, alt_booking_url, maps_url)
+        ('%Sotetsu Fresa%Higashi%',
+         'https://en.sotetsu-hotels.com/fresa-inn/higashishinjuku/',
+         None,
+         None),  # maps_url already set
+        ('%TAKANOYU%',
+         None,
+         None,
+         'https://www.google.com/maps/search/?api=1&query=TAKANOYU+Takayama+Japan'),
+        ('%Tsukiya%Mikazuki%',
+         'https://tsukiya-kyoto.com/english/',
+         'https://tsukiya-kyoto.com/mikazuki.php',
+         'https://www.google.com/maps/search/?api=1&query=Tsukiya+Mikazuki+Kyoto+Shimogyo'),
+        ('%Kyotofish%Miyagawa%',
+         'https://www.kyotofish.net/',
+         'https://www.airbnb.com/rooms/47141239',
+         'https://www.google.com/maps/search/?api=1&query=Kyotofish+Miyagawa+Higashiyama+Kyoto'),
+        ('%Hotel%Leben%Osaka%',
+         'https://leben-hotels.jp/en/',
+         None,
+         'https://www.google.com/maps/search/?api=1&query=Hotel+The+Leben+Osaka+Shinsaibashi'),
+    ]
+    GENERIC_AGODA = 'https://www.agoda.com/'
+
+    for name_pat, booking, alt_booking, maps in _accom_urls:
+        cursor.execute("""
+            SELECT id, booking_url, alt_booking_url, maps_url FROM accommodation_option
+            WHERE name LIKE ? AND is_selected = 1
+        """, (name_pat,))
+        row = cursor.fetchone()
+        if not row:
+            continue
+        opt_id, cur_booking, cur_alt, cur_maps = row
+
+        # Fix booking_url if missing or generic homepage
+        if booking and (not cur_booking or cur_booking == GENERIC_AGODA):
+            cursor.execute("UPDATE accommodation_option SET booking_url = ? WHERE id = ?",
+                           (booking, opt_id))
+        # Fix alt_booking_url if missing
+        if alt_booking and not cur_alt:
+            cursor.execute("UPDATE accommodation_option SET alt_booking_url = ? WHERE id = ?",
+                           (alt_booking, opt_id))
+        # Fix maps_url if missing
+        if maps and not cur_maps:
+            cursor.execute("UPDATE accommodation_option SET maps_url = ? WHERE id = ?",
+                           (maps, opt_id))
+
+    # --- 2. Transport route URLs (fill missing operator sites) ---
+    _transport_urls = [
+        # (route_from_pattern, route_to_pattern, url_to_set)
+        ('%Kanazawa%', '%Tsuruga%', 'https://www.westjr.co.jp/global/en/'),
+        ('%Tsuruga%', '%Kyoto%', 'https://www.westjr.co.jp/global/en/'),
+        ('%Kyoto%', '%Osaka%', 'https://www.westjr.co.jp/global/en/'),
+        ('%Kyoto%', '%Tokyo%', 'https://smart-ex.jp/en/'),
+        ('%Shin-Osaka%', '%Tokyo%', 'https://smart-ex.jp/en/'),
+        ('%Shinagawa%', '%Haneda%', 'https://www.keikyu.co.jp/en/'),
+        ('%Takayama%', '%Shirakawa%', 'https://www.nouhibus.co.jp/english/'),
+        ('%Shirakawa%', '%Kanazawa%', 'https://www.nouhibus.co.jp/english/'),
+    ]
+    for from_pat, to_pat, url in _transport_urls:
+        cursor.execute("""
+            UPDATE transport_route SET url = ?
+            WHERE route_from LIKE ? AND route_to LIKE ?
+              AND (url IS NULL OR url = '')
+        """, (url, from_pat, to_pat))
 
     conn.commit()

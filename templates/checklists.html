@@ -18,7 +18,7 @@
         <span class="check-desc">{{ item.description }}</span>
         {% endif %}
         {% if item.url %}
-        <a href="{{ item.url | translate_link }}" target="_blank" rel="noopener" class="task-link-icon"
+        <a href="{{ item.url }}" target="_blank" rel="noopener" class="task-link-icon"
            onclick="event.stopPropagation()">{{ icon_link(16) }}</a>
         {% endif %}
         {% if deletable %}
