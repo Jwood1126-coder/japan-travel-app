@@ -7,6 +7,7 @@ checklists_bp = Blueprint('checklists', __name__)
 
 # Map categories to high-level groupings
 CATEGORY_MAP = {
+    'preparation': 'preparation',
     'pre_departure_today': 'preparation',
     'pre_departure_week': 'preparation',
     'pre_departure_miles': 'preparation',
@@ -177,7 +178,7 @@ def update_option_notes(option_id):
     return jsonify({'ok': True})
 
 
-ADDABLE_CATEGORIES = {'pre_departure_month', 'packing_essential', 'packing_helpful'}
+ADDABLE_CATEGORIES = {'preparation', 'pre_departure_month', 'packing_essential', 'packing_helpful'}
 
 
 @checklists_bp.route('/api/checklists', methods=['POST'])
@@ -192,7 +193,7 @@ def create_checklist_item():
     return jsonify({'ok': True, 'id': item.id})
 
 
-DELETABLE_CATEGORIES = {'pre_departure_month', 'packing_essential', 'packing_helpful'}
+DELETABLE_CATEGORIES = {'preparation', 'pre_departure_month', 'packing_essential', 'packing_helpful'}
 
 
 @checklists_bp.route('/api/checklists/<int:item_id>', methods=['DELETE'])

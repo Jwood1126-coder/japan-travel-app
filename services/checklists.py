@@ -4,8 +4,8 @@ from models import db, ChecklistItem, ChecklistOption, AccommodationOption
 from extensions import socketio
 
 VALID_STATUSES = {'pending', 'researching', 'decided', 'booked', 'completed'}
-ADDABLE_CATEGORIES = {'pre_departure_month', 'packing_essential', 'packing_helpful'}
-DELETABLE_CATEGORIES = {'pre_departure_month', 'packing_essential', 'packing_helpful'}
+ADDABLE_CATEGORIES = {'preparation', 'pre_departure_month', 'packing_essential', 'packing_helpful'}
+DELETABLE_CATEGORIES = {'preparation', 'pre_departure_month', 'packing_essential', 'packing_helpful'}
 VALID_PRIORITIES = {'high', 'medium', 'low'}
 
 

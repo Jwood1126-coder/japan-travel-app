@@ -90,66 +90,15 @@
     border: 2px solid var(--sakura);
 }
 
-/* ===== Decision Checklist Items ===== */
+/* Item description hint text */
 
-.decision-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    padding: 8px 0;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.decision-title {
-    flex: 1;
-    font-weight: 600;
-    font-size: 0.95rem;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.decision-status-badge {
-    font-size: 0.75rem;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-weight: 700;
-    white-space: nowrap;
-    flex-shrink: 0;
-    cursor: pointer;
-    min-height: 28px;
-    display: inline-flex;
-    align-items: center;
-    transition: opacity 0.15s;
-}
-
-.decision-status-badge:hover { opacity: 0.8; }
-
-.decision-status-badge.pending { background: #f3f4f6; color: #6b7280; }
-
-.decision-status-badge.researching { background: #dbeafe; color: #1e40af; }
-
-.decision-status-badge.decided { background: #d1fae5; color: #065f46; }
-
-.decision-status-badge.booked { background: #d1fae5; color: #065f46; }
-
-.decision-status-badge.completed { background: var(--jr-green); color: #fff; }
-
-/* Options panel */
-
-.checklist-options-panel {
-    padding: 0 0 0.5rem 24px;
-}
-
-/* Option cards (nested inside checklist items) */
-
-.cl-option-card {
-    border: 1px solid var(--pico-muted-border-color);
-    border-radius: 8px;
-    margin-bottom: 0.4rem;
-    overflow: hidden;
+.check-desc {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--pico-muted-color);
+    line-height: 1.3;
+    margin-top: 2px;
+    width: 100%;
 }
 
 /* Delete item button */
@@ -226,13 +175,10 @@
 .checklist-item-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    flex-wrap: wrap;
+    gap: 4px 8px;
     flex: 1;
     min-height: 44px;
-}
-
-.decision-header {
-    min-height: 48px;
 }
 
 /* Active states for touch feedback */

@@ -87,6 +87,7 @@ def run_schema_migrations(app):
     _migrate_departure_day_data(cursor, conn)
     _migrate_itinerary_refinement(cursor, conn)
     _migrate_remove_daytrip_transport(cursor, conn)
+    _migrate_checklist_simplify(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -759,5 +760,101 @@ def _migrate_remove_daytrip_transport(cursor, conn):
                     maps_url = 'https://www.google.com/maps/dir/Miyajimaguchi+Station/Miyajima+Ferry+Terminal'
                 WHERE id = ?
             """, (row[0],))
+
+    conn.commit()
+
+
+def _migrate_checklist_simplify(cursor, conn):
+    """Simplify checklist: consolidate categories, remove stale items, add missing items.
+
+    - Merge pre_departure_* categories into 'preparation'
+    - Remove "Buy remaining miles" (stale — flights confirmed)
+    - Convert Visit Japan Web from decision to task
+    - Fix priority values (were set to category names)
+    - Add missing practical items (cash, offline maps, confirmations)
+
+    Idempotent: checks existence before each operation.
+    """
+    # --- 1. Delete stale "Buy remaining miles" ---
+    cursor.execute("DELETE FROM checklist_item WHERE title LIKE '%remaining miles%'")
+
+    # --- 2. Consolidate categories to 'preparation' ---
+    cursor.execute("""
+        UPDATE checklist_item SET category = 'preparation'
+        WHERE category LIKE 'pre_departure_%'
+    """)
+
+    # --- 3. Convert Visit Japan Web from decision to task ---
+    cursor.execute("SELECT id FROM checklist_item WHERE title LIKE '%Visit Japan Web%'")
+    vjw = cursor.fetchone()
+    if vjw:
+        cursor.execute("""
+            UPDATE checklist_item SET
+                item_type = 'task',
+                url = 'https://www.vjw.digital.go.jp/',
+                description = 'Pre-fill customs & immigration forms online before landing. Skip paper forms — QR code at immigration.'
+            WHERE id = ?
+        """, (vjw[0],))
+        cursor.execute("DELETE FROM checklist_option WHERE checklist_item_id = ?", (vjw[0],))
+
+    # --- 4. Fix priority values ---
+    cursor.execute("""
+        UPDATE checklist_item SET priority = 'high'
+        WHERE title LIKE '%Passport%' OR title LIKE '%JR Pass%'
+           OR title LIKE '%eSIM%' OR title LIKE '%Visit Japan Web%'
+    """)
+    cursor.execute("""
+        UPDATE checklist_item SET priority = 'medium'
+        WHERE priority NOT IN ('high', 'medium', 'low')
+    """)
+
+    # --- 5. Add missing practical items ---
+    new_items = [
+        ('Get Japanese yen before departure (¥30-50k cash)',
+         'Japan is still cash-heavy for small restaurants, shrines, vending machines, and rural areas.',
+         'high'),
+        ('Download offline Google Maps for Kansai + Chubu regions',
+         'Essential backup when underground or in rural areas with spotty signal.',
+         'medium'),
+        ('Save/print all accommodation confirmation emails',
+         'Have backup confirmations accessible offline in case of connectivity issues.',
+         'medium'),
+    ]
+    for title, desc, pri in new_items:
+        cursor.execute("SELECT id FROM checklist_item WHERE title LIKE ?",
+                       ('%' + title[:30] + '%',))
+        if not cursor.fetchone():
+            cursor.execute("SELECT MAX(sort_order) FROM checklist_item WHERE category = 'preparation'")
+            max_order = (cursor.fetchone()[0] or 0) + 1
+            cursor.execute("""
+                INSERT INTO checklist_item
+                    (category, title, description, item_type, status, priority, sort_order, is_completed)
+                VALUES ('preparation', ?, ?, 'task', 'pending', ?, ?, 0)
+            """, (title, desc, pri, max_order))
+
+    # --- 6. Add packing item ---
+    cursor.execute("SELECT id FROM checklist_item WHERE title LIKE '%Cash belt%'")
+    if not cursor.fetchone():
+        cursor.execute("SELECT MAX(sort_order) FROM checklist_item WHERE category = 'packing_essential'")
+        max_order = (cursor.fetchone()[0] or 0) + 1
+        cursor.execute("""
+            INSERT INTO checklist_item
+                (category, title, description, item_type, status, priority, sort_order, is_completed)
+            VALUES ('packing_essential', 'Cash belt or hidden pouch',
+                    'For carrying yen safely — pickpocketing is rare but losing cash hurts.',
+                    'task', 'pending', 'medium', ?, 0)
+        """, (max_order,))
+
+    # --- 7. Re-sort preparation: high priority first ---
+    cursor.execute("""
+        SELECT id FROM checklist_item
+        WHERE category = 'preparation'
+        ORDER BY
+            CASE priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END,
+            sort_order
+    """)
+    rows = cursor.fetchall()
+    for i, (item_id,) in enumerate(rows):
+        cursor.execute("UPDATE checklist_item SET sort_order = ? WHERE id = ?", (i + 1, item_id))
 
     conn.commit()
