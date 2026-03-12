@@ -222,14 +222,19 @@ def index():
     overall_pct = int(completed_activities / total_activities * 100) \
         if total_activities else 0
 
-    # Booking stats for dashboard breakdown
-    total_accoms = AccommodationLocation.query.count()
+    # Booking stats for dashboard breakdown — only count locations that need a booking
+    # (i.e., have at least one non-eliminated option or a selected option)
+    total_accoms = 0
     booked_accoms = 0
     for loc in AccommodationLocation.query.all():
-        sel = AccommodationOption.query.filter_by(
-            location_id=loc.id, is_selected=True
-        ).filter(AccommodationOption.booking_status.in_(
-            ['booked', 'confirmed'])).first()
+        opts = AccommodationOption.query.filter_by(location_id=loc.id).all()
+        has_active = any(not o.is_eliminated for o in opts)
+        has_selected = any(o.is_selected for o in opts)
+        if not has_active and not has_selected:
+            continue  # Skip locations like Kanazawa (all eliminated, day-trip only)
+        total_accoms += 1
+        sel = next((o for o in opts if o.is_selected and
+                    o.booking_status in ('booked', 'confirmed')), None)
         if sel:
             booked_accoms += 1
     confirmed_activities = Activity.query.filter_by(

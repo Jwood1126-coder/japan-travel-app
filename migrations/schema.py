@@ -1340,3 +1340,13 @@ def _migrate_cancel_kyotofish(cursor, conn):
               AND name NOT LIKE '%Kyotofish%'
               AND is_eliminated = 1
         """)
+
+    # Clean up quick_notes that still reference the cancelled booking
+    cursor.execute("""
+        UPDATE accommodation_location
+        SET quick_notes = 'Second half of Kyoto. Private teahouse in Miyagawacho geisha district.'
+        WHERE location_name LIKE '%Kyoto%Stay 2%'
+          AND quick_notes LIKE '%BOOKED%Kyotofish%'
+    """)
+    if cursor.rowcount:
+        print(f'  Cleaned Kyoto Stay 2 quick_notes (removed cancelled booking reference)')
