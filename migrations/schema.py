@@ -86,6 +86,7 @@ def run_schema_migrations(app):
     _migrate_day_location_fixes(cursor, conn)
     _migrate_departure_day_data(cursor, conn)
     _migrate_itinerary_refinement(cursor, conn)
+    _migrate_remove_daytrip_transport(cursor, conn)
 
     conn.commit()
     conn.close()
@@ -685,3 +686,78 @@ def _set_optional(cursor, title_pattern, day_number, optional):
             UPDATE activity SET is_optional = ?
             WHERE title LIKE ? AND day_id = ? AND is_optional != ?
         """, (1 if optional else 0, title_pattern, day_id, 1 if optional else 0))
+
+
+def _migrate_remove_daytrip_transport(cursor, conn):
+    """Remove day-trip transport routes (Hakone, Hiroshima, Miyajima).
+
+    Inter-city day trips use Google Maps links + description notes instead of
+    dedicated transport cards. Transport cards are reserved for reservation-to-
+    reservation moves only.
+
+    Idempotent: checks existence before each operation.
+    Uses content-based lookups (NOT hardcoded IDs).
+    """
+    # --- 1. Delete Hakone day-trip route (Tokyo → Odawara) ---
+    cursor.execute("""
+        DELETE FROM transport_route
+        WHERE route_from LIKE '%Tokyo%' AND route_to LIKE '%Odawara%'
+    """)
+
+    # --- 2. Delete Hiroshima day-trip routes (Kyoto → Hiroshima, Hiroshima → Miyajima) ---
+    cursor.execute("""
+        DELETE FROM transport_route
+        WHERE route_from LIKE '%Kyoto%' AND route_to LIKE '%Hiroshima%'
+    """)
+    cursor.execute("""
+        DELETE FROM transport_route
+        WHERE route_from LIKE '%Hiroshima%' AND route_to LIKE '%Miyajima%'
+    """)
+
+    # --- 3. Fold transport info into Hakone Loop activity description ---
+    day4_id = _day_id(cursor, 4)
+    if day4_id:
+        cursor.execute("""
+            SELECT id, description FROM activity
+            WHERE title LIKE '%Hakone Loop%' AND day_id = ?
+        """, (day4_id,))
+        row = cursor.fetchone()
+        if row and 'Shinkansen' not in (row[1] or ''):
+            cursor.execute("""
+                UPDATE activity SET
+                    description = 'Shinkansen from Tokyo Station to Odawara (~35 min, JR Pass covered), then Hakone Free Pass loop circuit:',
+                    maps_url = 'https://www.google.com/maps/dir/Tokyo+Station/Odawara+Station'
+                WHERE id = ?
+            """, (row[0],))
+
+    # --- 4. Fold transport info into Hiroshima activity description ---
+    day11_id = _day_id(cursor, 11)
+    if day11_id:
+        cursor.execute("""
+            SELECT id, description FROM activity
+            WHERE title LIKE '%Hiroshima Peace Memorial%' AND day_id = ?
+        """, (day11_id,))
+        row = cursor.fetchone()
+        if row and 'Shinkansen' not in (row[1] or ''):
+            cursor.execute("""
+                UPDATE activity SET
+                    description = 'Shinkansen from Kyoto Station to Hiroshima (~1h 45min, JR Pass covered). ' || description,
+                    maps_url = 'https://www.google.com/maps/dir/Kyoto+Station/Hiroshima+Station'
+                WHERE id = ?
+            """, (row[0],))
+
+    # --- 5. Fold ferry info into Miyajima torii gate activity ---
+        cursor.execute("""
+            SELECT id, description FROM activity
+            WHERE title LIKE '%Itsukushima Torii%' AND day_id = ?
+        """, (day11_id,))
+        row = cursor.fetchone()
+        if row and 'JR Ferry' not in (row[1] or ''):
+            cursor.execute("""
+                UPDATE activity SET
+                    description = 'JR Ferry from Miyajimaguchi to Miyajima (~10 min, JR Pass covered). ' || description,
+                    maps_url = 'https://www.google.com/maps/dir/Miyajimaguchi+Station/Miyajima+Ferry+Terminal'
+                WHERE id = ?
+            """, (row[0],))
+
+    conn.commit()

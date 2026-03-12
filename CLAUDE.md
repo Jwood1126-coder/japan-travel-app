@@ -196,6 +196,12 @@ The confirmed accommodation chain defines the trip structure:
 
 Days get their city from the accommodation covering that date. Transport routes connect consecutive stays.
 
+### Transport Philosophy
+- **Transport cards are for inter-city/reservation moves only** — e.g., Tokyo→Takayama, Kanazawa→Kyoto, Kyoto→Osaka
+- **Day trips** (Hakone, Hiroshima/Miyajima) do NOT get transport cards — transit info is folded into the first activity's description
+- **Intra-city navigation** between activities is handled by Google Maps links on each activity, not transport cards
+- Activity descriptions should mention general transit tips (e.g., "near X station", "most people take the bus from Y")
+
 ## Guardrails & Validation
 
 ### Runtime Enforcement (`guardrails.py`)
@@ -340,7 +346,7 @@ Each service function owns: **input validation → DB write → cascade side eff
 When making ANY change to the trip data (activities, accommodations, transport, checklists), think like a travel agent — not just a database operator:
 
 - **Conflict detection:** Check for schedule overlaps, impossible timelines (activity in Kyoto at 2 PM + Osaka at 2:30 PM), and overpacked days. A day with 10+ activities is unrealistic.
-- **Transportation consistency:** Every activity needs a way to get there. If `getting_there` is empty on a sightseeing activity, fill it. When activities span different neighborhoods, account for transit time (20-30 min within Kyoto, 45-60 min across Tokyo, 2+ hours between cities).
+- **Transportation consistency:** Transport cards are reserved for inter-city/reservation moves. Intra-city navigation relies on Google Maps links and activity description notes. When activities span different neighborhoods, account for transit time (20-30 min within Kyoto, 45-60 min across Tokyo, 2+ hours between cities).
 - **Ripple effects:** Changing one thing affects others. Moving a hotel check-in date affects the previous hotel's checkout. Moving an activity to a different day may invalidate its `getting_there` directions. Booking a restaurant should replace the generic "dinner out" placeholder.
 - **Schedule gaps:** If a day has morning and evening activities but nothing in the afternoon, that's either intentional rest or a gap to flag.
 - **Data consistency across views:** The dashboard, calendar, day view, and checklist all pull from the same data. Changes must be consistent everywhere — don't update an accommodation name in one place without ensuring the calendar and dashboard reflect it. The `_build_location_groups()` function aggregates across multiple AccommodationLocation records per city.
