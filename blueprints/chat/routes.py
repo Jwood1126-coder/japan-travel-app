@@ -251,8 +251,11 @@ def send_message():
                     yield f"data: {json.dumps({'text': full_response})}\n\n"
 
             # If the last round had tool results, do one final streaming call for summary
+            # Use tool_choice=none to prevent the model from requesting more tools
+            # in the summary — those would be silently dropped by the stream reader.
             if tool_results:
-                followup_kwargs = dict(base_kwargs, messages=messages)
+                followup_kwargs = dict(base_kwargs, messages=messages,
+                                       tool_choice={"type": "none"})
                 with client.messages.stream(**followup_kwargs) as stream:
                     for text in stream.text_stream:
                         full_response += text

@@ -334,3 +334,5 @@ def execute_tool(tool_name, tool_input):
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+    return {"success": False, "error": f"Unknown tool: {tool_name}"}

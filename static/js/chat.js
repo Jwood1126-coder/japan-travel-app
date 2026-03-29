@@ -57,9 +57,13 @@ function renderChatMarkdown(text) {
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
-    // Markdown links: [text](url) -> clickable <a>
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" class="chat-link">$1</a>');
+    // Markdown links: [text](url) -> clickable <a> (only safe protocols)
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, linkText, url) {
+        if (/^(\/|https?:\/\/)/.test(url)) {
+            return '<a href="' + url + '" class="chat-link">' + linkText + '</a>';
+        }
+        return linkText;
+    });
     // Bold: **text** -> <strong>
     html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
     // Line breaks
