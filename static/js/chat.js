@@ -50,6 +50,23 @@ function scrollToBottom() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
+function renderChatMarkdown(text) {
+    // Lightweight markdown: links, bold, line breaks — safe for chat bubbles
+    // Escape HTML first to prevent XSS
+    let html = text
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    // Markdown links: [text](url) -> clickable <a>
+    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
+        '<a href="$2" class="chat-link">$1</a>');
+    // Bold: **text** -> <strong>
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    // Line breaks
+    html = html.replace(/\n/g, '<br>');
+    return html;
+}
+
 function addBubble(role, text, imageUrls) {
     const bubble = document.createElement('div');
     bubble.className = `chat-bubble ${role}`;
@@ -66,7 +83,11 @@ function addBubble(role, text, imageUrls) {
 
     const content = document.createElement('div');
     content.className = 'bubble-content';
-    content.textContent = text;
+    if (role === 'assistant') {
+        content.innerHTML = renderChatMarkdown(text);
+    } else {
+        content.textContent = text;
+    }
     bubble.appendChild(content);
     chatMessages.appendChild(bubble);
     scrollToBottom();
@@ -186,8 +207,9 @@ async function sendMessage() {
     // Sync DOM with buffer on tab return
     const visHandler = () => {
         if (document.visibilityState === 'visible' && assistantContent && responseBuffer) {
-            if (assistantContent.textContent !== responseBuffer) {
-                assistantContent.textContent = responseBuffer;
+            const rendered = renderChatMarkdown(responseBuffer);
+            if (assistantContent.innerHTML !== rendered) {
+                assistantContent.innerHTML = rendered;
                 scrollToBottom();
             }
         }
@@ -266,7 +288,7 @@ async function sendMessage() {
                                 thinking.remove();
                                 assistantContent = addBubble('assistant', '');
                             }
-                            assistantContent.textContent = responseBuffer;
+                            assistantContent.innerHTML = renderChatMarkdown(responseBuffer);
                             scrollToBottom();
                         }
                         if (data.processing) {

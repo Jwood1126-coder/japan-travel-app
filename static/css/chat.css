@@ -110,6 +110,25 @@ body.chat-page .bottom-nav {
     border-bottom-left-radius: 4px;
 }
 
+.chat-link {
+    color: var(--accent, #d4789c);
+    text-decoration: underline;
+    font-weight: 600;
+}
+.chat-link:hover { opacity: 0.8; }
+
+.chat-retry { text-align: center; padding: 8px; }
+.retry-btn {
+    background: var(--accent, #e8a0b4);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 .chat-input-bar {
     display: flex;
     gap: 8px;
