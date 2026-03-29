@@ -122,11 +122,28 @@ def update_checklist_status(item_id):
     import services.checklists as checklist_svc
     data = request.get_json()
     item = ChecklistItem.query.get_or_404(item_id)
-    new_status = data.get('status', item.status)
-    try:
-        checklist_svc.update_status(item_id, new_status)
-    except ValueError as e:
-        return jsonify({'ok': False, 'error': str(e)}), 400
+
+    # Update status if provided
+    new_status = data.get('status')
+    if new_status:
+        try:
+            checklist_svc.update_status(item_id, new_status)
+        except ValueError as e:
+            return jsonify({'ok': False, 'error': str(e)}), 400
+
+    # Update optional fields
+    if 'url' in data:
+        item.url = data['url'] or None
+    if 'description' in data:
+        item.description = data['description'] or None
+    if 'title' in data and data['title']:
+        item.title = data['title']
+    if 'priority' in data:
+        item.priority = data['priority']
+    db.session.commit()
+
+    from extensions import socketio
+    socketio.emit('checklist_updated', {'id': item.id})
     return jsonify({'ok': True})
 
 
