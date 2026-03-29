@@ -165,6 +165,17 @@ def update_activity_notes(activity_id):
     return jsonify({'ok': True})
 
 
+@activities_bp.route('/api/activities/<int:activity_id>/update', methods=['PUT'])
+def update_activity(activity_id):
+    """General-purpose activity field update."""
+    data = request.get_json()
+    try:
+        activity_svc.update(activity_id, data)
+    except ValueError as e:
+        return jsonify({'ok': False, 'error': str(e)}), 400
+    return jsonify({'ok': True})
+
+
 @activities_bp.route('/api/activities/<int:activity_id>/unflag-bookahead', methods=['POST'])
 def unflag_bookahead(activity_id):
     activity_svc.unflag_bookahead(activity_id)
