@@ -349,6 +349,19 @@ def day_view(day_number):
                 location_id=day_checkout.id, is_eliminated=False
             ).order_by(AccommodationOption.rank).all()
 
+    # Tonight's accommodation: find the selected option whose stay covers this night
+    tonight_option = None
+    tonight_locs = AccommodationLocation.query.filter(
+        AccommodationLocation.check_in_date <= day.date,
+        AccommodationLocation.check_out_date > day.date
+    ).all()
+    for loc in tonight_locs:
+        opt = AccommodationOption.query.filter_by(
+            location_id=loc.id, is_selected=True).first()
+        if opt:
+            tonight_option = opt
+            break
+
     # Build set of booked hotel name keywords for filtering
     booked_keywords = set()
     booked_options = AccommodationOption.query.filter(
@@ -483,7 +496,8 @@ def day_view(day_number):
                            day_checkout=day_checkout, checkout_option=checkout_option,
                            checkin_options_pending=checkin_options_pending,
                            checkout_options_pending=checkout_options_pending,
-                           hidden_activity_ids=hidden_ids)
+                           hidden_activity_ids=hidden_ids,
+                           tonight_option=tonight_option)
 
 
 @itinerary_bp.route('/api/activities/<int:activity_id>/toggle', methods=['POST'])

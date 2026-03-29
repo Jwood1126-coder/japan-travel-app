@@ -41,6 +41,22 @@
     {% endif %}
 </header>
 
+{# Tonight's accommodation summary #}
+{% if tonight_option %}
+<div class="tonight-stay-banner">
+    <span class="tonight-label">&#x1F3E8; Tonight:</span>
+    <span class="tonight-name">{{ tonight_option.name }}</span>
+    {% if tonight_option.check_in_info %}
+    <span class="tonight-checkin">Check-in {{ tonight_option.check_in_info }}</span>
+    {% endif %}
+    {% if tonight_option.maps_url %}
+    <a href="{{ tonight_option.maps_url }}" target="_blank" rel="noopener" class="tonight-nav">Navigate</a>
+    {% elif tonight_option.address %}
+    <a href="{{ tonight_option.address | maps_link }}" target="_blank" rel="noopener" class="tonight-nav">Navigate</a>
+    {% endif %}
+</div>
+{% endif %}
+
 {# ===== Activity card macro ===== #}
 {% set slots = ['morning', 'afternoon', 'evening', 'night'] %}
 {% set slot_labels = {'morning': 'Morning', 'afternoon': 'Afternoon', 'evening': 'Evening', 'night': 'Night'} %}
@@ -95,12 +111,12 @@
             {% if activity.getting_there %}
             <div class="activity-transit-tip">&#x1F686; {{ activity.getting_there | linkify_stations }}</div>
             {% endif %}
-            {% if activity.description or activity.book_ahead_note or activity.why %}
+            {% if activity.description %}
+            <p class="activity-desc">{{ activity.description }}</p>
+            {% endif %}
+            {% if activity.book_ahead_note or activity.why %}
             <details class="activity-details">
-                <summary>Details</summary>
-                {% if activity.description %}
-                <p>{{ activity.description }}</p>
-                {% endif %}
+                <summary>Booking & Tips</summary>
                 {% if activity.book_ahead_note %}
                 <div class="activity-book-tip">&#x1F3AB; {{ activity.book_ahead_note }}</div>
                 {% endif %}
@@ -178,6 +194,9 @@
         <a href="{{ checkout_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
             {{ icon_pin(14) }}{{ checkout_option.address }}
         </a>
+        {% endif %}
+        {% if checkout_option.phone %}
+        <div class="accom-day-phone"><a href="tel:{{ checkout_option.phone }}">&#x1F4DE; {{ checkout_option.phone }}</a></div>
         {% endif %}
         <div class="accom-action-row">
             {% if checkout_option.maps_url %}
@@ -327,7 +346,11 @@
                 <div class="accom-day-label">Check in</div>
                 <div class="accom-day-name">{{ checkin_option.name }}</div>
                 {% if checkin_option.confirmation_number %}
-                <div class="accom-day-conf"><span class="conf-label">Conf:</span> <span class="conf-value">{{ checkin_option.confirmation_number }}</span></div>
+                <div class="accom-day-conf">
+                    <span class="conf-label">Conf:</span>
+                    <span class="conf-value" id="conf-{{ checkin_option.id }}">{{ checkin_option.confirmation_number }}</span>
+                    <button class="copy-conf-btn" onclick="copyConf('conf-{{ checkin_option.id }}')" title="Copy confirmation number">&#x1F4CB;</button>
+                </div>
                 {% endif %}
                 {% if checkin_option.check_in_info %}
                 <div class="accom-day-detail">{{ checkin_option.check_in_info }}</div>
@@ -336,6 +359,9 @@
                 <a href="{{ checkin_option.address | maps_link }}" target="_blank" rel="noopener" class="maps-link">
                     {{ icon_pin(14) }}{{ checkin_option.address }}
                 </a>
+                {% endif %}
+                {% if checkin_option.phone %}
+                <div class="accom-day-phone"><a href="tel:{{ checkin_option.phone }}">&#x1F4DE; {{ checkin_option.phone }}</a></div>
                 {% endif %}
             </div>
             <div class="accom-day-status">
@@ -408,6 +434,14 @@
 </section>
 {% endif %}
 
+<!-- Day notes -->
+<section class="day-notes-section">
+    <h3>{{ icon_notes(18) }} Day Notes</h3>
+    <textarea id="dayNotes" class="day-notes-input"
+              placeholder="Add notes for this day..."
+              onchange="saveDayNotes({{ day.id }}, this.value)">{{ day.notes or '' }}</textarea>
+</section>
+
 <!-- Substitutes (collapsed) -->
 {% set subs = day.activities | selectattr('is_substitute') | list %}
 {% if subs %}
@@ -448,16 +482,18 @@
     {% endfor %}
 </details>
 {% endif %}
-
-<!-- Day notes -->
-<section class="day-notes-section">
-    <h3>{{ icon_notes(18) }} Day Notes</h3>
-    <textarea id="dayNotes" class="day-notes-input"
-              placeholder="Add notes for this day..."
-              onchange="saveDayNotes({{ day.id }}, this.value)">{{ day.notes or '' }}</textarea>
-</section>
 {% endblock %}
 
 {% block scripts %}
 <script src="{{ url_for('static', filename='js/itinerary.js') }}"></script>
+<script>
+function copyConf(elemId) {
+    const text = document.getElementById(elemId).textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = '\u2705';
+        setTimeout(() => btn.textContent = '\uD83D\uDCCB', 1500);
+    });
+}
+</script>
 {% endblock %}

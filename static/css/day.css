@@ -963,3 +963,52 @@
 }
 
 .activity-action-btn svg { vertical-align: -2px; flex-shrink: 0; }
+
+/* Tonight's Stay Banner */
+.tonight-stay-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    background: var(--sakura-light, #fef0f4);
+    border-radius: 8px;
+    font-size: 0.82rem;
+    flex-wrap: wrap;
+}
+.tonight-label { font-weight: 700; white-space: nowrap; }
+.tonight-name { font-weight: 600; }
+.tonight-checkin { color: var(--pico-muted-color); }
+.tonight-nav {
+    margin-left: auto;
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* Copy Confirmation Button & Phone Links */
+.copy-conf-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    padding: 2px 6px;
+    margin-left: 4px;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+.copy-conf-btn:hover { background: var(--sakura-light, #fef0f4); }
+
+.accom-day-phone a {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.activity-desc {
+    font-size: 0.82rem;
+    color: var(--pico-muted-color);
+    margin: 4px 0 2px;
+    line-height: 1.4;
+}
