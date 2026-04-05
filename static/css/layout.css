@@ -187,3 +187,24 @@
         padding: 0.75rem;
     }
 }
+
+/* iPhone safe areas for landscape / notch */
+@media (max-width: 414px) {
+    .app-main {
+        padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+        padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    }
+
+    .bottom-nav {
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
+    }
+
+    .more-menu-sheet {
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .nav-label {
+        font-size: 0.6rem;
+    }
+}

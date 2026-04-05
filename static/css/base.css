@@ -39,6 +39,16 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* Prevent iOS auto-zoom on focus */
+input, textarea, select {
+    font-size: 16px;
+}
+
+/* Eliminate 300ms tap delay on iOS */
+a, button, label, [onclick] {
+    touch-action: manipulation;
+}
+
 /* Firefox */
 
 * {
