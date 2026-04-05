@@ -23,6 +23,9 @@
 <body>
     {% from "icons.html" import icon_home, icon_check, icon_chat, icon_more, icon_hotel, icon_book, icon_moon, icon_logout, icon_clipboard, icon_lightbulb, icon_ticket %}
     <main class="container app-main">
+        {% if request.endpoint and request.endpoint not in ('itinerary.index', 'itinerary.day_view', 'login') %}
+        <a href="#" onclick="event.preventDefault(); window.history.length > 1 ? history.back() : location.href='/'" class="back-to-overview">&larr; Back</a>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
 

@@ -1,3 +1,15 @@
+/* Global back button */
+.back-to-overview {
+    display: inline-block;
+    font-size: 0.8rem;
+    color: var(--pico-muted-color);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+}
+.back-to-overview:hover {
+    color: var(--accent);
+}
+
 .flight-direction {
     font-size: 0.7rem;
     text-transform: uppercase;

@@ -93,6 +93,7 @@ def run_schema_migrations(app):
     _migrate_fix_eliminated_booking_status(cursor, conn)
     _migrate_cancel_kyotofish(cursor, conn)
     _migrate_book_kumomachiya(cursor, conn)
+    _migrate_apps_reference(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -1509,3 +1510,86 @@ def _migrate_book_kumomachiya(cursor, conn):
     """)
 
     conn.commit()
+
+
+def _migrate_apps_reference(cursor, conn):
+    """Add Essential Apps & Connectivity section to Reference Guide."""
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__apps_reference_v1' in row[0]:
+        return
+
+    print('Migration: adding Essential Apps & Connectivity reference section...')
+
+    records = [
+        (25, 'apps_connectivity', 'GO Taxi — Ride Hailing',
+         'Japan\'s #1 ride-hailing app (like Uber). Works in Tokyo, Kyoto, Osaka, and most cities. '
+         'Supports international phone numbers. Essential for late nights, luggage-heavy transfers, '
+         'or when trains stop running (~midnight).'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/go-taxi/id1476751070" target="_blank">📱 App Store</a>'
+         ' · <a href="https://play.google.com/store/apps/details?id=jp.and.and.taxiapp" target="_blank">Google Play</a>'),
+
+        (26, 'apps_connectivity', 'Tabelog — Restaurant Reviews',
+         'Japan\'s most trusted restaurant review site — the local Yelp. Over 75 million real reviews. '
+         'Ratings are tougher: <strong>3.5+ is genuinely excellent</strong>. English support available.'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/tabelog/id763497587" target="_blank">📱 App Store</a>'
+         ' · <a href="https://play.google.com/store/apps/details?id=com.kakaku.tabelog" target="_blank">Google Play</a>'),
+
+        (27, 'apps_connectivity', 'NAVITIME for Japan Travel — Transit',
+         'Dedicated transit app for tourists covering trains, buses, and shinkansen. '
+         'Multilingual (13 languages). Shows platform numbers, station maps, and transfer info. '
+         'Great complement to Google Maps for complex routes.'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/japan-travel-navitime/id418160961" target="_blank">📱 App Store</a>'
+         ' · <a href="https://play.google.com/store/apps/details?id=com.navitime.inbound.walk" target="_blank">Google Play</a>'),
+
+        (28, 'apps_connectivity', 'PayPay — Mobile Payments',
+         'Japan\'s most popular mobile payment app. Many smaller restaurants and shops that don\'t '
+         'take credit cards will accept PayPay. QR code based. Worth setting up before you go.'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/paypay/id1435783608" target="_blank">📱 App Store</a>'
+         ' · <a href="https://play.google.com/store/apps/details?id=jp.ne.paypay.android.app" target="_blank">Google Play</a>'),
+
+        (29, 'apps_connectivity', 'Google Translate — Offline Japanese',
+         'Download the <strong>Japanese offline language pack</strong> before you leave. '
+         'Camera translation is incredible for menus, signs, and train schedules.'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/google-translate/id414706506" target="_blank">📱 App Store</a>'
+         ' · <a href="https://play.google.com/store/apps/details?id=com.google.android.apps.translate" target="_blank">Google Play</a>'
+         '<br><br>⚠️ <strong>Download the offline pack on WiFi before departure!</strong>'),
+
+        (30, 'apps_connectivity', 'Google Maps — Offline Maps',
+         'Download <strong>offline maps</strong> for: Tokyo, Hakone, Takayama, Kyoto, Osaka, and '
+         'Hiroshima before leaving. Train routing works great — shows platform numbers, transfer times, fares.'
+         '<br><br>💡 In Google Maps → Profile → Offline Maps → Select region → Download'),
+
+        (31, 'apps_connectivity', 'T-Mobile International Plan',
+         'T-Mobile works in Japan on Softbank/NTT Docomo networks. Coverage is solid everywhere '
+         'including Takayama and Shirakawa-go.'
+         '<br><br>'
+         '<strong>Check your plan:</strong> Go5G Plus/Next includes 5GB free high-speed international data. '
+         'After that, unlimited at 256kbps (fine for maps/messaging).'
+         '<br><br>'
+         '<strong>International Pass add-ons</strong> (buy in T-Life app):<br>'
+         '• 10-Day Pass: $35 for 5GB high-speed<br>'
+         '• 30-Day Pass: $50 for 15GB high-speed<br>'
+         'Each phone needs its own pass. For 14 days, the 30-Day Pass ($50/phone) is best value.'
+         '<br><br>'
+         '<a href="https://apps.apple.com/app/t-life/id561625752" target="_blank">📱 T-Life App</a>'
+         ' · <a href="https://www.t-mobile.com/cell-phone-plans/international-roaming-plans/results/japan" target="_blank">🌐 T-Mobile Japan Plans</a>'),
+    ]
+
+    for sort_order, section, title, content in records:
+        cursor.execute(
+            'INSERT INTO reference_content (sort_order, section, title, content) VALUES (?, ?, ?, ?)',
+            (sort_order, section, title, content))
+
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __apps_reference_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__apps_reference_v1%')
+    """)
+
+    conn.commit()
+    print(f'  Added {len(records)} reference items for Essential Apps & Connectivity')
