@@ -98,6 +98,7 @@ def run_schema_migrations(app):
     _migrate_fix_route_days_v1(cursor, conn)
     _migrate_transport_audit_v1(cursor, conn)
     _migrate_address_fix_v1(cursor, conn)
+    _migrate_takanoyu_host_info_v1(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -1963,3 +1964,42 @@ def _migrate_address_fix_v1(cursor, conn):
 
     conn.commit()
     print('  Address fix v1 complete — Tsukiya address corrected, Arashio Stable links added')
+
+
+def _migrate_takanoyu_host_info_v1(cursor, conn):
+    """Add TAKANOYU host details from Airbnb message (Hiroto).
+
+    Adds: phone numbers, check-in instructions, precise Google Maps pin,
+    walking directions from Takayama Station, and taxi tip.
+    One-shot: uses sentinel to run only once.
+    """
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__takanoyu_host_v1' in row[0]:
+        return
+
+    # Update TAKANOYU accommodation with host info
+    cursor.execute("""
+        UPDATE accommodation_option
+        SET phone = '0577-34-3561',
+            check_in_info = 'Check in at the TAKANOYU front desk (public bath/sento). Owner: Hiroto 080-3642-8406',
+            maps_url = 'https://www.google.com/maps/place/%E9%B7%B9%E3%81%AE%E6%B9%AF/@36.1412441,137.2650927,18z',
+            user_notes = '20 min walk from Takayama Station. Taxi ~10 min, ~¥1,000 (say "TAKANOYU" to driver). Walking: from station turn left at Washington Hotel Plaza, follow Route 462 straight ~15 min to Daikokuya Soba Restaurant, turn right, walk along Enako River 3 min, look for tall chimney on left — signboard reads たかの湯.'
+        WHERE name LIKE '%TAKANOYU%'
+    """)
+
+    # Update the Nagoya→Takayama transport route getting_there with taxi tip
+    cursor.execute("""
+        UPDATE transport_route
+        SET notes = 'JR Pass covers Hida Limited Express. ~4 trains/day. Reserve seats at Nagoya Station JR ticket office. Scenic route through the Japanese Alps — sit on the left side for best views. From Takayama Station to TAKANOYU: 20 min walk or taxi ~¥1,000 (10 min). Say TAKANOYU to the driver.'
+        WHERE route_from LIKE '%Nagoya%' AND route_to LIKE '%Takayama%'
+    """)
+
+    # Set sentinel
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __takanoyu_host_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__takanoyu_host_v1%')
+    """)
+
+    conn.commit()
+    print('  TAKANOYU host info added — phone, check-in, maps pin, walking directions')
