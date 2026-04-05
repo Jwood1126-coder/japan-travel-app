@@ -95,6 +95,7 @@ def run_schema_migrations(app):
     _migrate_book_kumomachiya(cursor, conn)
     _migrate_apps_reference(cursor, conn)
     _migrate_checklist_cleanup_v1(cursor, conn)
+    _migrate_fix_route_days_v1(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -1669,3 +1670,90 @@ def _migrate_checklist_cleanup_v1(cursor, conn):
 
     conn.commit()
     print('  Checklist cleanup v1 complete')
+
+
+def _migrate_fix_route_days_v1(cursor, conn):
+    """Fix transport routes linked to wrong days, remove duplicates, fix activity time slots."""
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__fix_route_days_v1' in row[0]:
+        return
+
+    # Get day IDs by day_number for reassignment
+    cursor.execute("SELECT id, day_number FROM day")
+    day_map = {num: did for did, num in cursor.fetchall()}
+
+    # 1. Kanazawa → Kyoto: should be Day 8, not Day 9
+    #    (transit through Kanazawa on the Shirakawa-go travel day)
+    if 8 in day_map:
+        cursor.execute("""
+            UPDATE transport_route SET day_id = ?
+            WHERE route_from LIKE '%Kanazawa%' AND route_to LIKE '%Kyoto%'
+        """, (day_map[8],))
+        if cursor.rowcount:
+            print('  Fixed Kanazawa→Kyoto route: now Day 8')
+
+    # 2. Hiroshima streetcar: should be Day 11, not Day 12
+    if 11 in day_map:
+        cursor.execute("""
+            UPDATE transport_route SET day_id = ?
+            WHERE route_from LIKE '%Hiroshima Station%' AND route_to LIKE '%Peace Park%'
+        """, (day_map[11],))
+        if cursor.rowcount:
+            print('  Fixed Hiroshima streetcar route: now Day 11')
+
+    # 3. Hiroshima → Kyoto Shinkansen return: should be Day 11, not Day 12
+    if 11 in day_map:
+        cursor.execute("""
+            UPDATE transport_route SET day_id = ?
+            WHERE route_from LIKE '%Hiroshima%' AND route_to LIKE '%Kyoto%' AND transport_type LIKE '%Shinkansen%'
+        """, (day_map[11],))
+        if cursor.rowcount:
+            print('  Fixed Hiroshima→Kyoto Shinkansen return: now Day 11')
+
+    # 4. Kyoto → Fushimi Inari: should be Day 9, not Day 10
+    if 9 in day_map:
+        cursor.execute("""
+            UPDATE transport_route SET day_id = ?
+            WHERE route_from LIKE '%Kyoto Station%' AND route_to LIKE '%Fushimi Inari%'
+        """, (day_map[9],))
+        if cursor.rowcount:
+            print('  Fixed Kyoto→Fushimi Inari route: now Day 9')
+
+    # 5. Remove duplicate Day 14 Shinkansen
+    #    Keep "Osaka → Shinagawa" (more accurate), delete "Shin-Osaka → Tokyo"
+    cursor.execute("""
+        DELETE FROM transport_route
+        WHERE route_from LIKE '%Shin-Osaka%' AND route_to LIKE '%Tokyo%'
+              AND transport_type LIKE '%Shinkansen%'
+    """)
+    if cursor.rowcount:
+        print('  Removed duplicate Shin-Osaka→Tokyo route (keeping Osaka→Shinagawa)')
+
+    # 6. Rename Kanazawa routes to clarify it's a transit stop, not a destination
+    cursor.execute("""
+        UPDATE transport_route
+        SET route_to = 'Kanazawa Station (transit)',
+            notes = COALESCE(notes, '') || ' Transfer at Kanazawa Station to Hokuriku Shinkansen/Thunderbird for Kyoto.'
+        WHERE route_from LIKE '%Shirakawa-go%' AND route_to LIKE '%Kanazawa%'
+    """)
+    if cursor.rowcount:
+        print('  Clarified Shirakawa-go→Kanazawa as transit stop')
+
+    # 7. Fix Day 14 checkout activity: should be morning slot, not afternoon
+    if 14 in day_map:
+        cursor.execute("""
+            UPDATE activity SET time_slot = 'morning'
+            WHERE day_id = ? AND title LIKE '%Check out%Hotel%Leben%' AND time_slot = 'afternoon'
+        """, (day_map[14],))
+        if cursor.rowcount:
+            print('  Fixed Day 14 checkout: now morning slot')
+
+    # Set sentinel
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __fix_route_days_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__fix_route_days_v1%')
+    """)
+
+    conn.commit()
+    print('  Route day assignments and cleanup complete')
