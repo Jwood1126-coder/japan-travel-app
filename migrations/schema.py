@@ -100,6 +100,7 @@ def run_schema_migrations(app):
     _migrate_address_fix_v1(cursor, conn)
     _migrate_takanoyu_host_info_v1(cursor, conn)
     _migrate_tsukiya_host_info_v1(cursor, conn)
+    _migrate_kumomachiya_host_info_v1(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -2037,3 +2038,36 @@ def _migrate_tsukiya_host_info_v1(cursor, conn):
 
     conn.commit()
     print('  Tsukiya host info added — check-in times, breakfast, shared bath note')
+
+
+def _migrate_kumomachiya_host_info_v1(cursor, conn):
+    """Add KumoMachiya KOSUGI host details from Airbnb message.
+
+    Adds: self check-in process, luggage storage rules, door lock password timing,
+    passport requirement, emergency phone, and Google Maps link.
+    One-shot: uses sentinel to run only once.
+    """
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__kumomachiya_host_v1' in row[0]:
+        return
+
+    cursor.execute("""
+        UPDATE accommodation_option
+        SET check_in_info = 'Self check-in from 4:00 PM. Door lock password sent via Airbnb ~11:30 AM on arrival day (Apr 14). Must upload passport photos for all guests via Airbnb message BEFORE arrival.',
+            check_out_info = 'No luggage storage after check-out',
+            phone = '070-4326-4235 (emergency only, staff hours 9:30-18:30)',
+            maps_url = 'https://maps.app.goo.gl/bN5ufs1M7jg76THa8',
+            address = '282-3 Sugiyacho, Shimogyo-ku, Kyoto 600-8078',
+            user_notes = 'SELF CHECK-IN — no front desk. Luggage drop-off from 12 PM on check-in day (leave inside entrance, send them a photo, then leave until 4 PM due to cleaning). No parking. No smoking. ACTION NEEDED: upload passport photos + names/ages/addresses of all guests via Airbnb message to receive door code.'
+        WHERE name LIKE '%KumoMachiya%'
+    """)
+
+    # Set sentinel
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __kumomachiya_host_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__kumomachiya_host_v1%')
+    """)
+
+    conn.commit()
+    print('  KumoMachiya host info added — self check-in, passport req, luggage rules')
