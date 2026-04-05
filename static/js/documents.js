@@ -1,3 +1,43 @@
+// Search/filter documents
+function filterDocs(query) {
+    const q = query.toLowerCase().trim();
+    const items = document.querySelectorAll('.searchable');
+    const sections = document.querySelectorAll('.searchable-section');
+
+    if (!q) {
+        // Show everything
+        items.forEach(el => el.style.display = '');
+        sections.forEach(s => {
+            s.style.display = '';
+            // Restore original open state
+            if (s.dataset.wasOpen !== undefined) {
+                s.open = s.dataset.wasOpen === 'true';
+                delete s.dataset.wasOpen;
+            }
+        });
+        return;
+    }
+
+    items.forEach(el => {
+        const searchText = el.getAttribute('data-search') || el.textContent.toLowerCase();
+        el.style.display = searchText.includes(q) ? '' : 'none';
+    });
+
+    // Auto-open sections that have visible results, hide empty ones
+    sections.forEach(s => {
+        const visibleItems = s.querySelectorAll('.searchable:not([style*="display: none"])');
+        if (visibleItems.length === 0) {
+            s.style.display = 'none';
+        } else {
+            s.style.display = '';
+            if (s.dataset.wasOpen === undefined) {
+                s.dataset.wasOpen = s.open;
+            }
+            s.open = true;
+        }
+    });
+}
+
 function updateFlightConfirmation(flightId, value) {
     fetch(`/api/documents/flight/${flightId}/confirmation`, {
         method: 'PUT',

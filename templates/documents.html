@@ -8,41 +8,69 @@
     <h1>{{ icon_clipboard(22) }} Travel Documents</h1>
 </header>
 
-<!-- Uploaded Documents (PDFs, confirmations) -->
+<!-- Search bar -->
+<div class="doc-search-bar">
+    <input type="search" id="docSearch" class="doc-search-input" placeholder="Search documents, flights, hotels..." oninput="filterDocs(this.value)">
+</div>
+
+<!-- Linked Documents (organized by booking) -->
+{% if linked_docs %}
 <details class="doc-section" open>
-    <summary class="doc-section-title">&#x1F4C4; Documents &amp; Confirmations</summary>
-    {% if all_docs %}
+    <summary class="doc-section-title">&#x2705; Linked Documents ({{ linked_docs|length }})</summary>
     <div class="doc-file-list">
-        {% for doc in all_docs %}
-        <div class="doc-file-row" data-filename="{{ doc.filename }}">
-            <span class="doc-file-icon">{% if doc.file_type == 'pdf' %}&#x1F4D1;{% else %}&#x1F5BC;{% endif %}</span>
+        {% for doc in linked_docs %}
+        <div class="doc-file-row searchable" data-filename="{{ doc.filename }}" data-search="{{ (doc_display[doc.id].clean_name ~ ' ' ~ (doc_display[doc.id].link_desc or '')) | lower }}">
+            <span class="doc-file-icon">{% if doc.doc_type == 'flight_receipt' %}&#x2708;{% elif doc.doc_type == 'accommodation_booking' %}&#x1F3E8;{% elif doc.file_type == 'pdf' %}&#x1F4D1;{% else %}&#x1F5BC;{% endif %}</span>
+            <div class="doc-file-info">
+                <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                   target="_blank" rel="noopener" class="doc-file-link">{{ doc_display[doc.id].clean_name }}</a>
+                {% if doc_display[doc.id].link_desc %}
+                <span class="doc-file-linked-to">&#x1F517; {{ doc_display[doc.id].link_desc }}</span>
+                {% endif %}
+            </div>
             <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-               target="_blank" rel="noopener" class="doc-file-link">{{ doc.original_name or doc.filename }}</a>
-            {% if doc.accommodations or doc.flights %}
-            <span class="doc-linked-badge" title="Linked to booking">&#x1F517;</span>
-            {% endif %}
+               download="{{ doc.original_name or doc.filename }}" class="doc-download-btn" title="Download">&#x2B07;</a>
+        </div>
+        {% endfor %}
+    </div>
+</details>
+{% endif %}
+
+<!-- Unlinked Documents -->
+{% if unlinked_docs %}
+<details class="doc-section">
+    <summary class="doc-section-title">&#x1F4C4; Unlinked Documents ({{ unlinked_docs|length }})</summary>
+    <div class="doc-file-list">
+        {% for doc in unlinked_docs %}
+        <div class="doc-file-row searchable" data-filename="{{ doc.filename }}" data-search="{{ doc_display[doc.id].clean_name | lower }}">
+            <span class="doc-file-icon">{% if doc.file_type == 'pdf' %}&#x1F4D1;{% else %}&#x1F5BC;{% endif %}</span>
+            <div class="doc-file-info">
+                <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                   target="_blank" rel="noopener" class="doc-file-link">{{ doc_display[doc.id].clean_name }}</a>
+                <span class="doc-file-unlinked">Not linked to a booking</span>
+            </div>
             <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
                download="{{ doc.original_name or doc.filename }}" class="doc-download-btn" title="Download">&#x2B07;</a>
             <button class="doc-delete-btn" onclick="deleteDocument('{{ doc.filename }}')" title="Delete">&#x2715;</button>
         </div>
         {% endfor %}
     </div>
-    {% else %}
-    <p class="doc-empty-hint">No documents uploaded yet.</p>
-    {% endif %}
-    <div class="doc-upload-area">
-        <label class="doc-upload-btn">
-            &#x2B06; Upload Document
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" id="docUploadInput"
-                   onchange="uploadDocument(this)" style="display:none;">
-        </label>
-        <span class="doc-upload-hint">PDF, PNG, JPG accepted</span>
-    </div>
 </details>
+{% endif %}
+
+<!-- Upload -->
+<div class="doc-upload-area">
+    <label class="doc-upload-btn">
+        &#x2B06; Upload Document
+        <input type="file" accept=".pdf,.png,.jpg,.jpeg,.webp" id="docUploadInput"
+               onchange="uploadDocument(this)" style="display:none;">
+    </label>
+    <span class="doc-upload-hint">PDF, PNG, JPG accepted</span>
+</div>
 
 <!-- Flights -->
 {% if flights %}
-<details class="doc-section" open>
+<details class="doc-section searchable-section" open>
     <summary class="doc-section-title">{{ icon_plane(18) }} Flights</summary>
     {% set outbound = flights | selectattr('direction', 'equalto', 'outbound') | list %}
     {% set inbound = flights | selectattr('direction', 'equalto', 'return') | list %}
@@ -50,7 +78,7 @@
     {% if group_flights %}
     <h3 class="flight-group-title">{{ group_label }}</h3>
     {% for flight in group_flights %}
-    <div class="flight-card-tripit {% if flight.document_id %}doc-backed{% else %}doc-planned{% endif %}" data-flight-id="{{ flight.id }}">
+    <div class="flight-card-tripit searchable {% if flight.document_id %}doc-backed{% else %}doc-planned{% endif %}" data-flight-id="{{ flight.id }}" data-search="{{ (flight.airline ~ ' ' ~ flight.flight_number ~ ' ' ~ (flight.confirmation_number or '') ~ ' ' ~ flight.route_from ~ ' ' ~ flight.route_to) | lower }}">
         <div class="flight-card-header">
             <span class="flight-airline">{{ flight.airline }}</span>
             <span class="flight-number">{{ flight.flight_number }}</span>
@@ -84,53 +112,51 @@
                 {% endif %}
             </div>
         </div>
-        <div class="doc-details">
-            {% if flight.cost_amount %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Cost</span>
-                <span>{{ flight.cost_type }}: {{ flight.cost_amount }}</span>
-            </div>
-            {% endif %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Confirmation</span>
-                <input type="text" class="confirmation-input" placeholder="Enter confirmation #"
-                       value="{{ flight.confirmation_number or '' }}"
-                       onchange="updateFlightConfirmation({{ flight.id }}, this.value)">
-            </div>
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Status</span>
-                <select class="status-select" onchange="updateFlightStatus({{ flight.id }}, this.value)">
-                    <option value="not_booked" {{ 'selected' if not flight.booking_status or flight.booking_status == 'not_booked' }}>Needs booking</option>
-                    <option value="researching" {{ 'selected' if flight.booking_status == 'researching' }}>Looking into</option>
-                    <option value="booked" {{ 'selected' if flight.booking_status == 'booked' }}>Reserved</option>
-                    <option value="confirmed" {{ 'selected' if flight.booking_status == 'confirmed' }}>Confirmed</option>
-                    <option value="cancelled" {{ 'selected' if flight.booking_status == 'cancelled' }}>Cancelled</option>
-                </select>
-            </div>
-            {% if flight.notes %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Notes</span>
-                <span>{{ flight.notes }}</span>
-            </div>
-            {% endif %}
-            {% set linked_flight_docs = doc_links.get('flight_' ~ flight.id, []) %}
-            {% if linked_flight_docs %}
-            <div class="doc-detail-row doc-attachments">
-                <span class="doc-detail-label">Documents</span>
-                <div class="doc-attachment-list">
-                    {% for doc in linked_flight_docs %}
-                    <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.original_name or doc.filename }}</a>
-                    {% endfor %}
+        <details class="doc-details-toggle">
+            <summary class="doc-details-summary">Details</summary>
+            <div class="doc-details">
+                {% if flight.cost_amount %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Cost</span>
+                    <span>{{ flight.cost_type }}: {{ flight.cost_amount }}</span>
                 </div>
+                {% endif %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Confirmation</span>
+                    <input type="text" class="confirmation-input" placeholder="Enter confirmation #"
+                           value="{{ flight.confirmation_number or '' }}"
+                           onchange="updateFlightConfirmation({{ flight.id }}, this.value)">
+                </div>
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Status</span>
+                    <select class="status-select" onchange="updateFlightStatus({{ flight.id }}, this.value)">
+                        <option value="not_booked" {{ 'selected' if not flight.booking_status or flight.booking_status == 'not_booked' }}>Needs booking</option>
+                        <option value="researching" {{ 'selected' if flight.booking_status == 'researching' }}>Looking into</option>
+                        <option value="booked" {{ 'selected' if flight.booking_status == 'booked' }}>Reserved</option>
+                        <option value="confirmed" {{ 'selected' if flight.booking_status == 'confirmed' }}>Confirmed</option>
+                        <option value="cancelled" {{ 'selected' if flight.booking_status == 'cancelled' }}>Cancelled</option>
+                    </select>
+                </div>
+                {% if flight.notes %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Notes</span>
+                    <span>{{ flight.notes }}</span>
+                </div>
+                {% endif %}
+                {% set linked_flight_docs = doc_links.get('flight_' ~ flight.id, []) %}
+                {% if linked_flight_docs %}
+                <div class="doc-detail-row doc-attachments">
+                    <span class="doc-detail-label">Documents</span>
+                    <div class="doc-attachment-list">
+                        {% for doc in linked_flight_docs %}
+                        <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                           target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc_display[doc.id].clean_name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="doc-detail-row doc-missing-hint">
-                <span class="doc-detail-label">Documents</span>
-                <span class="doc-needed">No document linked</span>
-            </div>
-            {% endif %}
-        </div>
+        </details>
     </div>
     {% endfor %}
     {% endif %}
@@ -140,15 +166,14 @@
 
 <!-- Accommodations (booked/confirmed only) -->
 {% if accommodations %}
-<details class="doc-section" open>
+<details class="doc-section searchable-section" open>
     <summary class="doc-section-title">{{ icon_hotel(18) }} Accommodations</summary>
     {% for item in accommodations %}
     {% set loc = item.location %}
     {% set opt = item.selected %}
-    <div class="doc-card {% if opt.document_id %}doc-backed{% else %}doc-planned{% endif %}">
+    <div class="doc-card searchable {% if opt.document_id %}doc-backed{% else %}doc-planned{% endif %}" data-search="{{ (opt.name ~ ' ' ~ loc.location_name ~ ' ' ~ (opt.confirmation_number or '')) | lower }}">
         <div class="doc-card-header">
             <strong>{{ opt.name }}</strong>
-            {% if opt.property_type %}<span class="doc-card-type">{{ opt.property_type }}</span>{% endif %}
             {% if opt.document_id %}
             <span class="doc-backed-icon" title="Document on file">&#x1F4C4;</span>
             {% endif %}
@@ -159,64 +184,58 @@
             {{ loc.check_in_date.strftime('%b %d') }} &ndash; {{ loc.check_out_date.strftime('%b %d') }}
             ({{ loc.nights }} night{{ 's' if loc.nights != 1 }})
         </div>
-        {% if opt.check_in_info or opt.check_out_info %}
-        <div class="doc-card-meta">
-            {% if opt.check_in_info %}Check-in: {{ opt.check_in_info }}{% endif %}
-            {% if opt.check_in_info and opt.check_out_info %} &middot; {% endif %}
-            {% if opt.check_out_info %}Check-out: {{ opt.check_out_info }}{% endif %}
-        </div>
+        {% if opt.confirmation_number %}
+        <div class="doc-card-conf">Conf: <span class="conf-value">{{ opt.confirmation_number }}</span></div>
         {% endif %}
-        {% if opt.maps_url or opt.address %}
-        <div class="doc-card-address">
-            <a href="{{ opt.maps_url or (opt.address | maps_link) }}" target="_blank" rel="noopener" class="{% if opt.maps_url %}maps-navigate-btn{% else %}navigate-link{% endif %}">
-                {{ icon_pin(14) }} {% if opt.maps_url %}Navigate{% else %}{{ opt.address }}{% endif %}
-            </a>
-        </div>
-        {% endif %}
-        <div class="doc-details">
-            {% if opt.price_low and opt.price_high %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Rate</span>
-                <span>${{ opt.price_low|int }}&ndash;${{ opt.price_high|int }}/night
-                    {% if opt.total_low %}&middot; Total: ${{ opt.total_low|int }}&ndash;${{ opt.total_high|int }}{% endif %}
-                </span>
-            </div>
-            {% endif %}
-            {% if opt.confirmation_number %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Confirmation</span>
-                <span class="confirmation-value">{{ opt.confirmation_number }}</span>
-            </div>
-            {% endif %}
-            {% if opt.booking_url %}
-            <div class="doc-detail-row">
-                <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="doc-link">View booking</a>
-            </div>
-            {% endif %}
-            {% set linked_docs = doc_links.get('accom_' ~ loc.id, []) %}
-            {% if linked_docs %}
-            <div class="doc-detail-row doc-attachments">
-                <span class="doc-detail-label">Documents</span>
-                <div class="doc-attachment-list">
-                    {% for doc in linked_docs %}
-                    <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
-                       target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc.original_name or doc.filename }}</a>
-                    {% endfor %}
+        <details class="doc-details-toggle">
+            <summary class="doc-details-summary">Details</summary>
+            <div class="doc-details">
+                {% if opt.check_in_info or opt.check_out_info %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Check-in/out</span>
+                    <span>{% if opt.check_in_info %}In: {{ opt.check_in_info }}{% endif %}{% if opt.check_in_info and opt.check_out_info %} &middot; {% endif %}{% if opt.check_out_info %}Out: {{ opt.check_out_info }}{% endif %}</span>
                 </div>
+                {% endif %}
+                {% if opt.maps_url or opt.address %}
+                <div class="doc-detail-row">
+                    <a href="{{ opt.maps_url or (opt.address | maps_link) }}" target="_blank" rel="noopener" class="{% if opt.maps_url %}maps-navigate-btn{% else %}navigate-link{% endif %}">
+                        {{ icon_pin(14) }} {% if opt.maps_url %}Navigate{% else %}{{ opt.address }}{% endif %}
+                    </a>
+                </div>
+                {% endif %}
+                {% if opt.price_low and opt.price_high %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Rate</span>
+                    <span>${{ opt.price_low|int }}&ndash;${{ opt.price_high|int }}/night
+                        {% if opt.total_low %}&middot; Total: ${{ opt.total_low|int }}&ndash;${{ opt.total_high|int }}{% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                {% if opt.booking_url %}
+                <div class="doc-detail-row">
+                    <a href="{{ opt.booking_url }}" target="_blank" rel="noopener" class="doc-link">View booking</a>
+                </div>
+                {% endif %}
+                {% set linked_docs = doc_links.get('accom_' ~ loc.id, []) %}
+                {% if linked_docs %}
+                <div class="doc-detail-row doc-attachments">
+                    <span class="doc-detail-label">Documents</span>
+                    <div class="doc-attachment-list">
+                        {% for doc in linked_docs %}
+                        <a href="{{ url_for('documents.serve_document', filename=doc.filename) }}"
+                           target="_blank" rel="noopener" class="doc-attachment-link">&#x1F4D1; {{ doc_display[doc.id].clean_name }}</a>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if opt.notes %}
+                <div class="doc-detail-row">
+                    <span class="doc-detail-label">Notes</span>
+                    <span>{{ opt.notes }}</span>
+                </div>
+                {% endif %}
             </div>
-            {% else %}
-            <div class="doc-detail-row doc-missing-hint">
-                <span class="doc-detail-label">Documents</span>
-                <span class="doc-needed">No document linked</span>
-            </div>
-            {% endif %}
-            {% if opt.notes %}
-            <div class="doc-detail-row">
-                <span class="doc-detail-label">Notes</span>
-                <span>{{ opt.notes }}</span>
-            </div>
-            {% endif %}
-        </div>
+        </details>
     </div>
     {% endfor %}
 </details>
@@ -224,10 +243,10 @@
 
 <!-- Transport -->
 {% if transport %}
-<details class="doc-section">
+<details class="doc-section searchable-section">
     <summary class="doc-section-title">{{ icon_train(18) }} Transport Routes</summary>
     {% for route in transport %}
-    <div class="doc-card transport-card doc-planned">
+    <div class="doc-card transport-card doc-planned searchable" data-search="{{ (route.route_from ~ ' ' ~ route.route_to ~ ' ' ~ (route.train_name or '') ~ ' ' ~ route.transport_type) | lower }}">
         <div class="transport-route">
             <span class="transport-from">{{ route.route_from }}</span>
             <span class="transport-arrow">&rarr;</span>
@@ -249,12 +268,12 @@
 
 <!-- Ticketed Activities & Events -->
 {% if ticketed_activities %}
-<details class="doc-section">
+<details class="doc-section searchable-section">
     <summary class="doc-section-title">{{ icon_lightbulb(18) }} Activities &amp; Events</summary>
     {% for item in ticketed_activities %}
     {% set a = item.activity %}
     {% set d = item.day %}
-    <div class="doc-card doc-planned">
+    <div class="doc-card doc-planned searchable" data-search="{{ (a.title ~ ' ' ~ item.location.name ~ ' day ' ~ d.day_number) | lower }}">
         <div class="doc-card-header">
             <strong>{{ a.title }}</strong>
             {% if a.jr_pass_covered %}<span class="jr-badge">JR Pass</span>{% endif %}

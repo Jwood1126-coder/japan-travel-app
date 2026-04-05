@@ -179,6 +179,24 @@ def auto_link_documents_fuzzy():
     return linked
 
 
+def _clean_display_name(name):
+    """Strip Gmail prefixes, underscores, and file extensions for display."""
+    if not name:
+        return name
+    import re
+    # Strip common email-forwarded prefixes
+    name = re.sub(r'^Gmail_-_', '', name)
+    name = re.sub(r'^Fwd__', 'Fwd: ', name)
+    name = re.sub(r'^RE__', 'RE: ', name)
+    # Strip file extension
+    name = re.sub(r'\.(pdf|png|jpg|jpeg|webp)$', '', name, flags=re.IGNORECASE)
+    # Replace underscores with spaces
+    name = name.replace('_', ' ')
+    # Collapse multiple spaces
+    name = re.sub(r' +', ' ', name).strip()
+    return name
+
+
 @documents_bp.route('/documents')
 def documents_view():
     flights = Flight.query.order_by(Flight.direction, Flight.leg_number).all()
@@ -234,8 +252,20 @@ def documents_view():
         else:
             doc_links[key] = []
 
-    # Unlinked documents (not attached to any booking)
+    # Separate linked vs unlinked documents
+    linked_docs = [d for d in all_docs if d.id in linked_doc_ids]
     unlinked_docs = [d for d in all_docs if d.id not in linked_doc_ids]
+
+    # Build clean display names and link descriptions
+    doc_display = {}
+    for doc in all_docs:
+        clean = _clean_display_name(doc.original_name or doc.filename)
+        link_desc = None
+        if doc.accommodations:
+            link_desc = ', '.join(o.name for o in doc.accommodations)
+        elif doc.flights:
+            link_desc = ', '.join(f.flight_number for f in doc.flights)
+        doc_display[doc.id] = {'clean_name': clean, 'link_desc': link_desc}
 
     return render_template('documents.html',
                            flights=flights,
@@ -243,8 +273,10 @@ def documents_view():
                            transport=transport,
                            ticketed_activities=ticketed_activities,
                            all_docs=all_docs,
+                           linked_docs=linked_docs,
                            unlinked_docs=unlinked_docs,
-                           doc_links=doc_links)
+                           doc_links=doc_links,
+                           doc_display=doc_display)
 
 
 @documents_bp.route('/api/documents/flight/<int:flight_id>/confirmation',
