@@ -99,6 +99,7 @@ def run_schema_migrations(app):
     _migrate_transport_audit_v1(cursor, conn)
     _migrate_address_fix_v1(cursor, conn)
     _migrate_takanoyu_host_info_v1(cursor, conn)
+    _migrate_tsukiya_host_info_v1(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -2003,3 +2004,36 @@ def _migrate_takanoyu_host_info_v1(cursor, conn):
 
     conn.commit()
     print('  TAKANOYU host info added — phone, check-in, maps pin, walking directions')
+
+
+def _migrate_tsukiya_host_info_v1(cursor, conn):
+    """Add Tsukiya-Mikazuki host details from Airbnb message.
+
+    Adds: check-in/out times, breakfast info, shared bathroom note,
+    phone, luggage storage option, and Google Maps link.
+    One-shot: uses sentinel to run only once.
+    """
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__tsukiya_host_v1' in row[0]:
+        return
+
+    # Update Tsukiya accommodation with host info
+    cursor.execute("""
+        UPDATE accommodation_option
+        SET check_in_info = 'Check-in 4:00-8:00 PM (after 8 PM = extra ¥500, must contact ahead). Check-out by 11:00 AM. Front desk closed 8 PM-8 AM. Can store luggage before check-in if you tell them arrival time.',
+            check_out_info = 'Check-out by 11:00 AM',
+            phone = '075-353-7920',
+            maps_url = 'https://bit.ly/2MANp4l',
+            user_notes = 'Room: Mikazuki (old western style, 1 double bed, no extra bed). NO private bathroom — 2 shared toilets + 1 shared bath. Breakfast available (Japanese only): request time 8:00/8:30/9:00/9:30. Wooden machiya house — expect some noise from neighbors. No room cleaning on consecutive nights (trash + supplies only). REPLY NEEDED: breakfast time + arrival time + any food allergies.'
+        WHERE name LIKE '%Tsukiya%'
+    """)
+
+    # Set sentinel
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __tsukiya_host_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__tsukiya_host_v1%')
+    """)
+
+    conn.commit()
+    print('  Tsukiya host info added — check-in times, breakfast, shared bath note')
