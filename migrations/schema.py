@@ -92,6 +92,7 @@ def run_schema_migrations(app):
     _migrate_url_integrity(cursor, conn)
     _migrate_fix_eliminated_booking_status(cursor, conn)
     _migrate_cancel_kyotofish(cursor, conn)
+    _migrate_book_kumomachiya(cursor, conn)
 
     # --- Gmail sync tables ---
     cursor.execute("""
@@ -1429,3 +1430,82 @@ def _migrate_cancel_kyotofish(cursor, conn):
         UPDATE trip SET notes = COALESCE(notes, '') || ' __kyotofish_cancelled_v1'
         WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__kyotofish_cancelled_v1%')
     """)
+
+
+def _migrate_book_kumomachiya(cursor, conn):
+    """Book KumoMachiya KOSUGI for Kyoto Stay 2 (Apr 14-16).
+
+    Replaces cancelled Kyotofish. Adds the option, selects it, and removes
+    stale Kyotofish check-in/check-out activities.
+
+    One-shot: uses sentinel to ensure this only runs once.
+    """
+    cursor.execute("SELECT notes FROM trip WHERE id = 1")
+    row = cursor.fetchone()
+    if row and row[0] and '__kumomachiya_booked_v1' in row[0]:
+        return
+
+    # Find Kyoto Stay 2 location
+    cursor.execute("""
+        SELECT id FROM accommodation_location
+        WHERE location_name LIKE '%Kyoto%Stay 2%'
+    """)
+    loc = cursor.fetchone()
+    if not loc:
+        print('  WARNING: Kyoto Stay 2 location not found, skipping KumoMachiya migration')
+        return
+    loc_id = loc[0]
+
+    # Check if KumoMachiya already exists (e.g. added manually)
+    cursor.execute("""
+        SELECT id FROM accommodation_option
+        WHERE location_id = ? AND name LIKE '%Kumo%'
+    """, (loc_id,))
+    existing = cursor.fetchone()
+
+    if existing:
+        # Already exists — just make sure it's selected and booked
+        cursor.execute("""
+            UPDATE accommodation_option
+            SET is_selected = 1, booking_status = 'booked',
+                confirmation_number = 'HMYR9JPSN4'
+            WHERE id = ?
+        """, (existing[0],))
+        print(f'  KumoMachiya already exists (id={existing[0]}), ensured selected+booked')
+    else:
+        # Get max rank for this location
+        cursor.execute("SELECT COALESCE(MAX(rank), 0) FROM accommodation_option WHERE location_id = ?", (loc_id,))
+        max_rank = cursor.fetchone()[0]
+
+        cursor.execute("""
+            INSERT INTO accommodation_option
+                (location_id, rank, name, property_type, is_selected, booking_status,
+                 confirmation_number, booking_url)
+            VALUES (?, ?, 'KumoMachiya KOSUGI', 'Machiya', 1, 'booked',
+                    'HMYR9JPSN4', 'https://www.airbnb.com/rooms/1068219798498726498')
+        """, (loc_id, max_rank + 1))
+        print(f'  Inserted KumoMachiya KOSUGI for Kyoto Stay 2 (location_id={loc_id})')
+
+    # Delete stale Kyotofish check-in/check-out activities
+    cursor.execute("""
+        DELETE FROM activity
+        WHERE title LIKE '%Kyotofish%'
+          AND (title LIKE '%Check in%' OR title LIKE '%Check out%')
+    """)
+    if cursor.rowcount:
+        print(f'  Deleted {cursor.rowcount} stale Kyotofish check-in/check-out activities')
+
+    # Update quick_notes
+    cursor.execute("""
+        UPDATE accommodation_location
+        SET quick_notes = 'KumoMachiya KOSUGI — Airbnb machiya, Apr 14-16. Conf: HMYR9JPSN4'
+        WHERE id = ?
+    """, (loc_id,))
+
+    # Set sentinel
+    cursor.execute("""
+        UPDATE trip SET notes = COALESCE(notes, '') || ' __kumomachiya_booked_v1'
+        WHERE id = 1 AND (notes IS NULL OR notes NOT LIKE '%__kumomachiya_booked_v1%')
+    """)
+
+    conn.commit()

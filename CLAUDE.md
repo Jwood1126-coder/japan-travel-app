@@ -140,7 +140,7 @@ This is the app's #1 bug class. Before creating or moving any time-bound entity,
 
 - `data/seed.db` is the canonical seed committed to git. `import_markdown.py` copies it to the working DB.
 - The migration system is **closed** — no new migration functions. Schema changes (new columns/tables) go in `migrations/schema.py` as idempotent DDL.
-- Boot-time is **read-only** (except DDL and document sync). All data repairs go in `scripts/` with `--dry-run` support.
+- Boot-time runs DDL, sentinel-guarded data migrations, and document sync. New data repairs go in `scripts/` with `--dry-run` support.
 - Never replace the production DB — it contains live bookings, chat history, photos, completions.
 
 ### Read Before Write
@@ -198,7 +198,7 @@ Add the route to the appropriate blueprint. Return `jsonify()`, emit Socket.IO e
 
 - **Git push = production deploy.** Every push to `main` auto-deploys to Railway. No staging environment.
 - **Boot sequence:** `start.py` (backup DB, seed if first deploy) → `wsgi.py` → `create_app()` → schema DDL → legacy verification → read-only audit → document sync → serve.
-- **Env vars:** `SECRET_KEY`, `TRIP_PASSWORD`, `ANTHROPIC_API_KEY`, `RAILWAY_VOLUME_MOUNT_PATH`. Production refuses default values.
+- **Env vars:** `SECRET_KEY`, `TRIP_PASSWORD`, `ANTHROPIC_API_KEY`, `RAILWAY_VOLUME_MOUNT_PATH`. Production refuses default `SECRET_KEY`; `TRIP_PASSWORD` check is currently disabled for pre-trip sharing.
 - **The production DB is irreplaceable** — it contains live data that does not exist elsewhere.
 - **Secrets are env vars.** Never hardcode passwords or API keys. Never commit `.env` files.
 - Never force-push or reset `main`.
