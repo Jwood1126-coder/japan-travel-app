@@ -116,8 +116,13 @@ def build_context():
         parts.append("\nTRANSPORT ROUTES:")
         for r in routes:
             jr = " [JR Pass]" if r.jr_pass_covered else ""
+            day_tag = ""
+            if r.day_id:
+                route_day = Day.query.get(r.day_id)
+                if route_day:
+                    day_tag = f" [Day {route_day.day_number}]"
             parts.append(f"  {r.route_from}->{r.route_to}: {r.transport_type} "
-                         f"{r.train_name or ''}{jr}")
+                         f"{r.train_name or ''}{jr}{day_tag}")
 
     # Budget summary
     budget = BudgetItem.query.all()

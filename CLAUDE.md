@@ -123,6 +123,7 @@ This is the app's #1 bug class. Before creating or moving any time-bound entity,
 - **Days vs. nights:** Check-in Apr 6 to check-out Apr 9 = 3 nights. Use `AccommodationLocation.nights` property, not `.num_nights` field.
 - **Transition days:** Checkout from city A and check-in to city B often share a date. The calendar handles this.
 - **Transport cards are for inter-city moves only.** Day-trip transit goes in activity descriptions. Intra-city navigation uses Google Maps links per activity.
+- **Transport route day linkage:** Routes must be linked to the day the traveler uses them (the departure day), not the arrival day. Verify geographic plausibility: a route's origin should match where the traveler is on that day.
 - **Overpacked days:** >10 active activities on one day is unrealistic. Flag it.
 
 ## Anti-Hallucination Rules

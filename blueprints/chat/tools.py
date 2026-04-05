@@ -270,7 +270,7 @@ TOOLS = [
                 "notes": {"type": "string"},
                 "url": {"type": "string", "description": "Operator website or timetable URL"},
             },
-            "required": ["route_from", "route_to", "transport_type"]
+            "required": ["route_from", "route_to", "transport_type", "day_number"]
         }
     },
     {

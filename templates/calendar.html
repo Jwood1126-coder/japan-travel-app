@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Calendar — Japan 2026{% endblock %}
-{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}">{% endblock %}
+{% block page_css %}<link rel="stylesheet" href="{{ url_for('static', filename='css/calendar.css') }}"><link rel="stylesheet" href="{{ url_for('static', filename='css/day.css') }}">{% endblock %}
 
 {% block content %}
 {% from "icons.html" import icon_plane, icon_hotel, icon_train, icon_pin, icon_check, icon_shinkansen %}

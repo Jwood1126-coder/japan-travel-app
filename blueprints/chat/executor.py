@@ -280,6 +280,7 @@ def execute_tool(tool_name, tool_input):
         elif tool_name == "add_transport_route":
             # Resolve day_number to day_id
             fields = dict(tool_input)
+            day = None
             if 'day_number' in fields:
                 day = Day.query.filter_by(day_number=fields.pop('day_number')).first()
                 if day:
@@ -289,7 +290,15 @@ def execute_tool(tool_name, tool_input):
             except ValueError as e:
                 return {"success": False, "error": str(e)}
             jr = " (JR Pass ✓)" if route.jr_pass_covered else ""
-            return {"success": True, "message": f"Added route: {route.route_from} → {route.route_to} ({route.transport_type}){jr}"}
+            msg = f"Added route: {route.route_from} → {route.route_to} ({route.transport_type}){jr}"
+            # Soft geographic warning if route origin doesn't match day's location
+            if day and day.location:
+                loc_name = day.location.name.lower()
+                origin = route.route_from.lower()
+                if loc_name not in origin and origin not in loc_name:
+                    msg += (f" ⚠️ Note: Day {day.day_number} is in {day.location.name} "
+                            f"but route origin is {route.route_from} — verify this is the correct day.")
+            return {"success": True, "message": msg}
 
         elif tool_name == "update_transport_route":
             # Fuzzy match by from/to
