@@ -501,3 +501,9 @@
 [data-theme="dark"] .planned-badge { background: #422006; color: #fbbf24; }
 [data-theme="dark"] .doc-needed { color: #fbbf24; }
 [data-theme="dark"] .doc-missing-hint .doc-detail-label { color: #fbbf24; }
+
+/* Status border dark mode adjustments */
+[data-theme="dark"] .activity-card { border-left-color: #6b7280; }
+[data-theme="dark"] .activity-card.confirmed { border-left-color: #34d399; }
+[data-theme="dark"] .activity-card.optional { border-left-color: #fbbf24; }
+[data-theme="dark"] .activity-card.book-ahead-card { border-left-color: #f87171; }

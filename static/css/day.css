@@ -68,6 +68,7 @@
     margin-bottom: 0.5rem;
     border-radius: 10px;
     border: 1px solid var(--pico-muted-border-color, #e2e8f0);
+    border-left: 4px solid #9ca3af;  /* default: grey for unconfirmed */
     transition: all 0.2s;
     min-height: 48px;
 }
@@ -141,7 +142,25 @@
 .activity-card.optional {
     border-style: dashed;
     border-color: var(--pico-muted-border-color, #cbd5e0);
+    border-left: 4px dashed #f59e0b;  /* amber dashed — optional */
     opacity: 0.85;
+}
+
+/* === Status color borders === */
+.activity-card.confirmed {
+    border-left: 4px solid #10b981;  /* green — confirmed/locked in */
+}
+
+.activity-card.completed {
+    border-left: 4px solid #9ca3af;  /* grey — done */
+}
+
+.activity-card.book-ahead-card {
+    border-left: 4px solid #ef4444;  /* red — needs booking */
+}
+
+.activity-card.confirmed.completed {
+    border-left: 4px solid #9ca3af;  /* completed overrides confirmed */
 }
 
 .optional-badge {
